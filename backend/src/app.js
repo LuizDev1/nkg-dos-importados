@@ -2,18 +2,15 @@ const express = require('express');
 require('dotenv').config();
 const pool = require('./config/banco');
 const produtoRoutes = require('./routes/produtoRoutes');
+const autenticacaoRoutes = require('./routes/autenticacaoRoutes');
 
-const app = express();
+const app = express();         
 app.use(express.json());
 app.use('/api', produtoRoutes);
+app.use('/api', autenticacaoRoutes);
 
 app.get('/health', async (req, res) => {
-  try {
-    const [resultado] = await pool.query('SELECT 1 + 1 AS soma');
-    res.json({ status: 'ok', banco: 'conectado', teste: resultado[0].soma });
-  } catch (erro) {
-    res.status(500).json({ status: 'erro', mensagem: erro.message });
-  }
+  // ...
 });
 
 const PORT = process.env.PORT || 3000;
