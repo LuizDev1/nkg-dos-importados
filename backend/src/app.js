@@ -1,9 +1,11 @@
 const express = require('express');
 require('dotenv').config();
 const pool = require('./config/banco');
+const produtoRoutes = require('./routes/produtoRoutes');
 
 const app = express();
 app.use(express.json());
+app.use('/api', produtoRoutes);
 
 app.get('/health', async (req, res) => {
   try {
