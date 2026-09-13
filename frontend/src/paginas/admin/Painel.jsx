@@ -9,13 +9,6 @@ export default function Painel() {
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-2xl font-bold">Painel administrativo</h1>
         <div className="flex items-center gap-4">
-          <span className="text-sm text-gray-500">Olá, {usuario?.nome}</span>
-          <button
-            onClick={logout}
-            className="text-sm text-red-600 hover:underline"
-          >
-            Sair
-          </button>
         </div>
       </div>
 

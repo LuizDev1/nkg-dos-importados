@@ -70,4 +70,3 @@ export function ProvedorCarrinho({ children }) {
 export function useCarrinho() {
   return useContext(ContextoCarrinho);
 }
-

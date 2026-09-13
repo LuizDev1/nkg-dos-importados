@@ -28,6 +28,8 @@ export function ProvedorAutenticacao({ children }) {
 
     localStorage.setItem('token', dados.token);
     localStorage.setItem('usuario', JSON.stringify(dados.usuario));
+
+    return dados;
   }
 
   async function registrar(dadosUsuario) {

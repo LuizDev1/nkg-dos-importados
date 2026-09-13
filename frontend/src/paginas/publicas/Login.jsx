@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAutenticacao } from '../../contextos/ContextoAutenticacao';
 
 export default function Login() {
@@ -10,6 +10,10 @@ export default function Login() {
 
   const { login } = useAutenticacao();
   const navegar = useNavigate();
+  const location = useLocation();
+
+  // Captura o destino anterior ou define '/' como padrão
+  const from = location.state?.from || '/';
 
   async function aoEnviar(evento) {
     evento.preventDefault();
@@ -17,8 +21,14 @@ export default function Login() {
     setCarregando(true);
 
     try {
-      await login(email, senha);
-      navegar('/');
+      const dados = await login(email, senha);
+      
+      // Admin sempre vai pro painel, cliente vai para a rota original
+      if (dados.usuario.perfil === 'admin') {
+        navegar('/admin', { replace: true });
+      } else {
+        navegar(from, { replace: true });
+      }
     } catch (erro) {
       setErro(erro.message);
     } finally {
