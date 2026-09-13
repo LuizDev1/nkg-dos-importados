@@ -1,0 +1,42 @@
+const pool = require('../config/banco');
+
+async function listarAtivos(){
+    const [produtos] = await pool.query('SELECT * from produtos where ativos = true');
+};
+
+async function listarTodos(){
+    const [produtos] = await pool.query ('SELECT * from produtos');  
+};
+
+async function buscarPorId(id){
+    const [produtos] = await pool.query ('SELECT * FROM produtos WHERE id = ?',[id]);
+};
+
+async function criar(dadosProdutos){
+    const {nome, categoria, preco, tag, foto_url, estoque_qtd} = dadosProdutos;
+
+    const [resultado] = await pool.query(
+        'INSERT INTO produtos (nome, categoria, preco, tag, foto_url, estoque_qtd) VALUES (?, ?, ?, ?, ?, ?)',
+    [nome, categoria, preco, tag, foto_url, estoque_qtd]
+    );
+
+    return resultado.insertId;
+};
+
+
+async function atualizar(id, dadosProduto) {
+  const { nome, categoria, preco, tag, foto_url, estoque_qtd } = dadosProduto;
+
+  await pool.query(
+    'UPDATE produtos SET nome = ?, categoria = ?, preco = ?, tag = ?, foto_url = ?, estoque_qtd = ? WHERE id = ?',
+    [nome, categoria, preco, tag, foto_url, estoque_qtd, id]
+  );
+}
+
+async function remover(id){
+    const [produtos] = await pool.query ('UPDATE produtos SET ativo = false WHERE id = ?',[id]);
+};
+
+async function reativar(id){
+    const [produtos] = await pool.query ('UPDATE produtos SET ativo = true WHERE id = ?',[id]);
+};
