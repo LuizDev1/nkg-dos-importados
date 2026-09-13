@@ -13,14 +13,13 @@ async function criarPagamento(req, res) {
     const itens = await ItemPedido.listarPorPedido(pedido.id);
     const order = await mercadoPagoService.criarOrder(pedido, itens);
 
-    res.json({ checkout_url: order.checkout_url });
+    res.json(order);
 } catch (erro) {
   console.error('Erro completo:', JSON.stringify(erro, null, 2));
   console.error('apiResponse:', erro.apiResponse);
   res.status(500).json({ mensagem: erro.message });
 }
 }
-
 async function receberWebhook(req, res) {
   try {
     const orderId = req.query['data.id'];

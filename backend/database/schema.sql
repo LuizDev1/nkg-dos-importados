@@ -47,3 +47,4 @@ CREATE TABLE itens_pedido (
   FOREIGN KEY (pedido_id) REFERENCES pedidos(id),
   FOREIGN KEY (produto_id) REFERENCES produtos(id)
 );
+
