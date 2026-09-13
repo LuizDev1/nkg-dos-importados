@@ -10,5 +10,11 @@ router.get('/pedidos/usuario/:usuarioId', verificarAutenticacao, pedidoControlle
 router.get('/pedidos/:id', verificarAutenticacao, pedidoController.buscar);
 router.post('/pedidos', verificarAutenticacao, pedidoController.criar);
 router.patch('/pedidos/:id/status', verificarAutenticacao, verificarAdmin, pedidoController.atualizarStatus);
+router.patch(
+  '/pedidos/:id/rastreio',
+  verificarAutenticacao,
+  verificarAdmin,
+  pedidoController.atualizarRastreio
+);
 
 module.exports = router;

@@ -51,3 +51,54 @@ export async function atualizarStatusPedido(id, payment_status) {
 
   return dados;
 }
+
+export async function atualizarCodigoRastreio(id, codigo_rastreio) {
+  const resposta = await fetch(`${API_URL}/pedidos/${id}/rastreio`, {
+    method: 'PATCH',
+    headers: headersComToken(),
+    body: JSON.stringify({ codigo_rastreio }),
+  });
+
+  const dados = await resposta.json();
+
+  if (!resposta.ok) {
+    throw new Error(dados.mensagem || 'Erro ao atualizar rastreio');
+  }
+
+  return dados;
+}
+
+export async function listarPedidosPorUsuario(usuarioId) {
+  const token = localStorage.getItem('token');
+
+  const resposta = await fetch(
+    `${API_URL}/pedidos/usuario/${usuarioId}`,
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+
+  const dados = await resposta.json();
+
+  if (!resposta.ok) {
+    throw new Error(dados.mensagem || 'Erro ao buscar pedidos do cliente');
+  }
+
+  return dados;
+}
+
+export async function buscarPedido(id) {
+  const resposta = await fetch(`${API_URL}/pedidos/${id}`, {
+    headers: headersComToken(),
+  });
+
+  const dados = await resposta.json();
+
+  if (!resposta.ok) {
+    throw new Error(dados.mensagem || 'Erro ao buscar pedido');
+  }
+
+  return dados;
+}

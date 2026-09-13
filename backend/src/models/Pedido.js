@@ -85,6 +85,18 @@ async function atualizarStatus(id, paymentStatus, paymentId = null) {
 
   return resultado.affectedRows;
 }
+
+async function atualizarRastreio(id, codigoRastreio) {
+  const [resultado] = await pool.query(
+    `UPDATE pedidos
+     SET codigo_rastreio = ?
+     WHERE id = ?`,
+    [codigoRastreio || null, id]
+  );
+
+  return resultado.affectedRows;
+}
+
 async function relatorioMensal() {
   const [resultado] = await pool.query(
     `SELECT
@@ -105,5 +117,6 @@ module.exports = {
   buscarPorId,
   criar,
   atualizarStatus,
-  relatorioMensal
+  atualizarRastreio,
+  relatorioMensal,
 };

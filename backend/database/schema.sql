@@ -49,3 +49,19 @@ CREATE TABLE itens_pedido (
   FOREIGN KEY (pedido_id) REFERENCES pedidos(id),
   FOREIGN KEY (produto_id) REFERENCES produtos(id)
 );
+
+CREATE TABLE IF NOT EXISTS configuracoes_loja (
+  id INT PRIMARY KEY,
+  whatsapp VARCHAR(30) NOT NULL DEFAULT '',
+  email_suporte VARCHAR(150) NOT NULL DEFAULT '',
+  aviso_ativo TINYINT(1) NOT NULL DEFAULT 0,
+  aviso_texto VARCHAR(255) NOT NULL DEFAULT '',
+  politica_devolucao TEXT,
+  frete_fixo DECIMAL(10,2) NOT NULL DEFAULT 0,
+  banner_url VARCHAR(500) NOT NULL DEFAULT '',
+  banner_titulo VARCHAR(150) NOT NULL DEFAULT '',
+  banner_link VARCHAR(500) NOT NULL DEFAULT ''
+);
+USE nkg_importados;
+
+
