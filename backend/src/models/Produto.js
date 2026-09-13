@@ -1,15 +1,21 @@
 const pool = require('../config/banco');
 
 async function listarAtivos(){
-    const [produtos] = await pool.query('SELECT * from produtos where ativos = true');
+    const [produtos] = await pool.query('SELECT * from produtos where ativo = true');
+
+    return produtos;
 };
 
 async function listarTodos(){
-    const [produtos] = await pool.query ('SELECT * from produtos');  
+    const [produtos] = await pool.query ('SELECT * from produtos');
+
+    return produtos;
 };
 
 async function buscarPorId(id){
     const [produtos] = await pool.query ('SELECT * FROM produtos WHERE id = ?',[id]);
+
+    return produtos;
 };
 
 async function criar(dadosProdutos){
@@ -39,4 +45,14 @@ async function remover(id){
 
 async function reativar(id){
     const [produtos] = await pool.query ('UPDATE produtos SET ativo = true WHERE id = ?',[id]);
+};
+
+module.exports = {
+  listarAtivos,
+  listarTodos,
+  buscarPorId,
+  criar,
+  atualizar,
+  remover,
+  reativar,
 };
