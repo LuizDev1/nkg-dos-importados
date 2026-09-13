@@ -31,7 +31,8 @@ async function buscarPorId(id) {
     `SELECT
       p.*,
       u.nome AS usuario_nome,
-      u.email AS usuario_email
+      u.email AS usuario_email,
+      u.cpf AS usuario_cpf
     FROM pedidos p
     INNER JOIN usuarios u ON u.id = p.usuario_id
     WHERE p.id = ?`,

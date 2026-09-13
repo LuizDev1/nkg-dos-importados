@@ -4,16 +4,14 @@ const pool = require('./config/banco');
 const produtoRoutes = require('./routes/produtoRoutes');
 const autenticacaoRoutes = require('./routes/autenticacaoRoutes');
 const pedidoRoutes = require('./routes/pedidoRoutes');
+const pagamentoRoutes = require('./routes/pagamentoRoutes');
 
 const app = express();         
 app.use(express.json());
 app.use('/api', produtoRoutes);
 app.use('/api', autenticacaoRoutes);
 app.use('/api', pedidoRoutes);
-
-app.get('/health', async (req, res) => {
-  // ...
-});
+app.use('/api', pagamentoRoutes);
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {

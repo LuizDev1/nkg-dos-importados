@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "@ngrok/ngrok": "^1.7.0",
+    "mercadopago": "^3.6.1"
+  }
+}
