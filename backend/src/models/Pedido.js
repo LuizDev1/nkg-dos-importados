@@ -85,6 +85,19 @@ async function atualizarStatus(id, paymentStatus, paymentId = null) {
 
   return resultado.affectedRows;
 }
+async function relatorioMensal() {
+  const [resultado] = await pool.query(
+    `SELECT
+      COALESCE(SUM(total), 0) AS total_vendido,
+      COUNT(*) AS quantidade_pedidos
+    FROM pedidos
+    WHERE payment_status = 'pago'
+      AND MONTH(criado_em) = MONTH(CURDATE())
+      AND YEAR(criado_em) = YEAR(CURDATE())`
+  );
+
+  return resultado[0];
+}
 
 module.exports = {
   listarTodos,
@@ -92,4 +105,5 @@ module.exports = {
   buscarPorId,
   criar,
   atualizarStatus,
+  relatorioMensal
 };

@@ -5,6 +5,8 @@ const client = new MercadoPagoConfig({
   accessToken: process.env.MERCADOPAGO_ACCESS_TOKEN,
 });
 
+const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
+
 async function criarOrder(pedido, itens) {
   const [primeiroNome, ...resto] = pedido.usuario_nome.split(' ');
   const sobrenome = resto.join(' ') || primeiroNome;
@@ -15,15 +17,15 @@ async function criarOrder(pedido, itens) {
   const body = {
     type: 'online',
     processing_mode: 'manual',
-    total_amount: String(Number(pedido.total).toFixed(2)), 
+    total_amount: String(Number(pedido.total).toFixed(2)),
     external_reference: String(pedido.id),
     items: itens.map((item) => ({
       title: String(item.produto_nome),
-      unit_price: String(Number(item.preco_unitario).toFixed(2)), 
+      unit_price: String(Number(item.preco_unitario).toFixed(2)),
       quantity: Number(item.quantidade),
     })),
-payer: {
-      email: String(pedido.usuario_email && pedido.usuario_email.includes('@testuser.com') ? pedido.usuario_email : 'test_user_1532400859416612283@testuser.com'), // <-- Força um e-mail de teste válido
+    payer: {
+      email: String(pedido.usuario_email && pedido.usuario_email.includes('@testuser.com') ? pedido.usuario_email : 'test_user_1532400859416612283@testuser.com'),
       first_name: String(primeiroNome),
       last_name: String(sobrenome),
       identification: {
@@ -33,10 +35,18 @@ payer: {
       address: {
         zip_code: cepLimpo,
         street_name: String(pedido.rua || 'Rua Principal'),
-        street_number: String(pedido.numero || '123'), 
+        street_number: String(pedido.numero || '123'),
         neighborhood: String(pedido.bairro || 'Centro'),
         city: String(pedido.cidade || 'Brasília'),
         state: estadoUf,
+      },
+    },
+    config: {
+      online: {
+        success_url: `${FRONTEND_URL}/pedido/${pedido.id}/sucesso`,
+        failure_url: `${FRONTEND_URL}/pedido/${pedido.id}/falha`,
+        pending_url: `${FRONTEND_URL}/pedido/${pedido.id}/pendente`,
+        auto_return: 'approved',
       },
     },
   };

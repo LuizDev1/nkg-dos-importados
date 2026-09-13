@@ -1,13 +1,14 @@
 const express = require('express');
 const pedidoController = require('../controllers/pedidoController');
+const verificarAutenticacao = require('../middlewares/autenticacaoMiddleware');
+const verificarAdmin = require('../middlewares/adminMiddleware');
 
 const router = express.Router();
 
-router.get('/pedidos', pedidoController.listar);
-router.get('/pedidos/usuario/:usuarioId',pedidoController.listarPorUsuario);
-router.get('/pedidos/:id', pedidoController.buscar);
-router.post('/pedidos', pedidoController.criar);
-router.patch('/pedidos/:id/status', pedidoController.atualizarStatus
-);
+router.get('/pedidos', verificarAutenticacao, verificarAdmin, pedidoController.listar);
+router.get('/pedidos/usuario/:usuarioId', verificarAutenticacao, pedidoController.listarPorUsuario);
+router.get('/pedidos/:id', verificarAutenticacao, pedidoController.buscar);
+router.post('/pedidos', verificarAutenticacao, pedidoController.criar);
+router.patch('/pedidos/:id/status', verificarAutenticacao, verificarAdmin, pedidoController.atualizarStatus);
 
 module.exports = router;

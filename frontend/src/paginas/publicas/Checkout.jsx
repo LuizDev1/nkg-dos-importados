@@ -4,7 +4,7 @@ import { useCarrinho } from '../../contextos/ContextoCarrinho';
 import { criarPedido } from '../../servicos/pedidoService';
 
 export default function Checkout() {
-  const { itens, total, limparCarrinho } = useCarrinho();
+  const { itens, total } = useCarrinho();
   const navigate = useNavigate();
   
   const [formulario, setFormulario] = useState({
@@ -65,7 +65,6 @@ export default function Checkout() {
         throw new Error(dadosPagamento.mensagem || 'Erro ao gerar link de pagamento');
       }
 
-      limparCarrinho();
       window.location.href = dadosPagamento.checkout_url;
 
     } catch (err) {

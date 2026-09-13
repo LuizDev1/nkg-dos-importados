@@ -1,13 +1,17 @@
+const API_URL = 'http://localhost:3000/api';
+
+function headersComToken() {
+  const token = localStorage.getItem('token');
+  return {
+    'Content-Type': 'application/json',
+    Authorization: token ? `Bearer ${token}` : '',
+  };
+}
+
 export async function criarPedido(dadosPedido) {
-
-  const token = localStorage.getItem('token'); 
-
-  const resposta = await fetch('http://localhost:3000/api/pedidos', {
+  const resposta = await fetch(`${API_URL}/pedidos`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': token ? `Bearer ${token}` : ''
-    },
+    headers: headersComToken(),
     body: JSON.stringify(dadosPedido),
   });
 
@@ -17,4 +21,33 @@ export async function criarPedido(dadosPedido) {
   }
 
   return await resposta.json();
+}
+
+export async function listarPedidosAdmin() {
+  const resposta = await fetch(`${API_URL}/pedidos`, {
+    headers: headersComToken(),
+  });
+
+  if (!resposta.ok) {
+    const erro = await resposta.json();
+    throw new Error(erro.mensagem || 'Erro ao carregar pedidos');
+  }
+
+  return resposta.json();
+}
+
+export async function atualizarStatusPedido(id, payment_status) {
+  const resposta = await fetch(`${API_URL}/pedidos/${id}/status`, {
+    method: 'PATCH',
+    headers: headersComToken(),
+    body: JSON.stringify({ payment_status }),
+  });
+
+  const dados = await resposta.json();
+
+  if (!resposta.ok) {
+    throw new Error(dados.mensagem || 'Erro ao atualizar status');
+  }
+
+  return dados;
 }

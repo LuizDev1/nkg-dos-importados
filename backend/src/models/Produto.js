@@ -13,9 +13,8 @@ async function listarTodos(){
 };
 
 async function buscarPorId(id){
-    const [produtos] = await pool.query ('SELECT * FROM produtos WHERE id = ?',[id]);
-
-    return produtos;
+    const [produtos] = await pool.query('SELECT * FROM produtos WHERE id = ?', [id]);
+    return produtos[0];
 };
 
 async function criar(dadosProdutos){
