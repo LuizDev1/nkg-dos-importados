@@ -1,13 +1,24 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useCarrinho } from '../../contextos/ContextoCarrinho';
+import { useAutenticacao } from '../../contextos/ContextoAutenticacao';
 import ItemCarrinho from '../../componentes/ItemCarrinho';
 
 export default function Carrinho() {
   const { itens, removerItem, alterarQuantidade, total } = useCarrinho();
+  const { usuario } = useAutenticacao();
   const navigate = useNavigate();
 
   function formatarMoeda(valor) {
     return valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  }
+
+  function handleFinalizarCompra() {
+    if (!usuario) {
+      // Envia o usuário para o login com a instrução de voltar para o checkout
+      navigate('/login', { state: { from: '/checkout' } });
+    } else {
+      navigate('/checkout');
+    }
   }
 
   if (itens.length === 0) {
@@ -37,7 +48,7 @@ export default function Carrinho() {
       <div className="mt-6 flex justify-between items-center border-t pt-4">
         <span className="text-lg font-bold">Total: {formatarMoeda(total)}</span>
         <button
-          onClick={() => navigate('/checkout')}
+          onClick={handleFinalizarCompra}
           className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700"
         >
           Finalizar compra
