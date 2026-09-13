@@ -8,6 +8,7 @@ CREATE TABLE usuarios (
   id INT PRIMARY KEY AUTO_INCREMENT,
   nome VARCHAR(150) NOT NULL,
   email VARCHAR(150) NOT NULL UNIQUE,
+  cpf VARCHAR(14) NULL,
   senha_hash VARCHAR(255) NOT NULL,
   perfil ENUM('admin', 'cliente') NOT NULL DEFAULT 'cliente',
   criado_em DATETIME DEFAULT CURRENT_TIMESTAMP
@@ -21,6 +22,7 @@ CREATE TABLE produtos (
   tag VARCHAR(100),
   foto_url VARCHAR(255),
   estoque_qtd INT NOT NULL DEFAULT 0,
+  ativo BOOLEAN NOT NULL DEFAULT TRUE,
   criado_em DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
