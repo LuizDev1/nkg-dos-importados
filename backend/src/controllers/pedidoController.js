@@ -210,10 +210,32 @@ async function atualizarStatus(req, res) {
   }
 }
 
+async function atualizarRastreio(req, res) {
+  const { codigo_rastreio } = req.body;
+
+  try {
+    const alterados = await Pedido.atualizarRastreio(
+      req.params.id,
+      codigo_rastreio
+    );
+
+    if (!alterados) {
+      return res.status(404).json({
+        mensagem: 'Pedido não encontrado',
+      });
+    }
+
+    res.json({ mensagem: 'Código de rastreio atualizado' });
+  } catch (erro) {
+    res.status(500).json({ mensagem: erro.message });
+  }
+}
+
 module.exports = {
   listar,
   listarPorUsuario,
   buscar,
   criar,
   atualizarStatus,
+  atualizarRastreio,
 };

@@ -31,6 +31,18 @@ export default function Painel() {
         >
           Relatórios
         </Link>
+        <Link
+          to="/admin/configuracoes"
+          className="bg-white rounded-lg shadow hover:shadow-md transition p-6 text-center font-semibold"
+        >
+          Configurações
+        </Link>
+        <Link
+        to="/admin/clientes"
+        className="bg-white rounded-lg shadow hover:shadow-md transition p-6 text-center font-semibold"
+        >
+        Clientes
+        </Link>
       </div>
     </div>
   );

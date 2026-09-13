@@ -6,6 +6,8 @@ const autenticacaoRoutes = require('./routes/autenticacaoRoutes');
 const pedidoRoutes = require('./routes/pedidoRoutes');
 const pagamentoRoutes = require('./routes/pagamentoRoutes');
 const relatorioRoutes = require('./routes/relatorioRoutes');
+const configuracaoRoutes = require('./routes/configuracaoRoutes');
+const usuarioRoutes = require('./routes/usuarioRoutes');
 const cors = require('cors');
 
 
@@ -17,6 +19,8 @@ app.use('/api', autenticacaoRoutes);
 app.use('/api', pedidoRoutes);
 app.use('/api', pagamentoRoutes);
 app.use('/api', relatorioRoutes);
+app.use('/api', configuracaoRoutes);
+app.use('/api', usuarioRoutes);
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
