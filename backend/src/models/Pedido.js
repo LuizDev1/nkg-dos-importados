@@ -1,4 +1,6 @@
 const pool = require('../config/banco');
+const mercadoPagoService = require('../services/mercadoPagoService');
+const Produto = require('./Produto');
 
 async function listarTodos() {
   const [pedidos] = await pool.query(
@@ -86,6 +88,47 @@ async function atualizarStatus(id, paymentStatus, paymentId = null) {
   return resultado.affectedRows;
 }
 
+async function confirmarPagamento(id, paymentId, itens, estoqueService) {
+  const conexao = await pool.getConnection();
+
+  try {
+    await conexao.beginTransaction();
+
+    const [pedidos] = await conexao.query(
+      'SELECT payment_status FROM pedidos WHERE id = ? FOR UPDATE',
+      [id]
+    );
+    const pedido = pedidos[0];
+
+    if (!pedido) {
+      await conexao.rollback();
+      return false;
+    }
+
+    if (pedido.payment_status === 'pago') {
+      await conexao.commit();
+      return true;
+    }
+
+    await estoqueService.baixarEstoque(itens, conexao);
+
+    await conexao.query(
+      `UPDATE pedidos
+       SET payment_status = 'pago', payment_id = COALESCE(?, payment_id)
+       WHERE id = ?`,
+      [paymentId, id]
+    );
+
+    await conexao.commit();
+    return true;
+  } catch (erro) {
+    await conexao.rollback();
+    throw erro;
+  } finally {
+    conexao.release();
+  }
+}
+
 async function atualizarRastreio(id, codigoRastreio) {
   const [resultado] = await pool.query(
     `UPDATE pedidos
@@ -95,6 +138,63 @@ async function atualizarRastreio(id, codigoRastreio) {
   );
 
   return resultado.affectedRows;
+}
+
+async function cancelarPedido(id, paymentId = null) {
+  const conexao = await pool.getConnection();
+
+  try {
+    await conexao.beginTransaction();
+
+    const [pedidos] = await conexao.query(
+      'SELECT * FROM pedidos WHERE id = ? FOR UPDATE',
+      [id]
+    );
+
+    const pedido = pedidos[0];
+    if (!pedido) {
+      await conexao.rollback();
+      return false;
+    }
+
+    if (pedido.payment_status === 'cancelado') {
+      await conexao.commit();
+      return false;
+    }
+
+    const [itens] = await conexao.query(
+      'SELECT produto_id, quantidade FROM itens_pedido WHERE pedido_id = ?',
+      [id]
+    );
+
+    for (const item of itens) {
+      await conexao.query(
+        'UPDATE produtos SET estoque_qtd = estoque_qtd + ? WHERE id = ?',
+        [item.quantidade, item.produto_id]
+      );
+    }
+
+    if (paymentId) {
+      try {
+        await mercadoPagoService.solicitarReembolso(paymentId);
+      } catch (erro) {
+        console.warn('Reembolso do Mercado Pago falhou:', erro.message);
+      }
+    }
+
+    await conexao.query(
+      `UPDATE pedidos SET payment_status = 'cancelado', payment_id = COALESCE(?, payment_id) WHERE id = ?`,
+      [paymentId, id]
+    );
+
+    await conexao.commit();
+    return true;
+  } catch (erro) {
+    await conexao.rollback();
+    throw erro;
+  } finally {
+    conexao.release();
+  }
 }
 
 async function relatorioMensal() {
@@ -117,6 +217,8 @@ module.exports = {
   buscarPorId,
   criar,
   atualizarStatus,
+  confirmarPagamento,
   atualizarRastreio,
+  cancelarPedido,
   relatorioMensal,
 };

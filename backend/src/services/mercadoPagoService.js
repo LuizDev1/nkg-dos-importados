@@ -1,11 +1,11 @@
 const { MercadoPagoConfig, Order } = require('mercadopago');
-const crypto = require('crypto');
-
 const client = new MercadoPagoConfig({
   accessToken: process.env.MERCADOPAGO_ACCESS_TOKEN,
 });
 
-const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
+const FRONTEND_URL = (
+  process.env.FRONTEND_URL || 'http://localhost:5173'
+).replace(/\/$/, '');
 
 async function criarOrder(pedido, itens) {
   const [primeiroNome, ...resto] = pedido.usuario_nome.split(' ');
@@ -56,13 +56,25 @@ async function criarOrder(pedido, itens) {
     headers: {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${process.env.MERCADOPAGO_ACCESS_TOKEN}`,
-      'X-Idempotency-Key': crypto.randomUUID(),
+      'X-Idempotency-Key': `pedido-${pedido.id}`,
     },
     body: JSON.stringify(body),
   });
 
   const dados = await resposta.json();
   console.log('resposta da order:', JSON.stringify(dados, null, 2));
+
+  if (!resposta.ok) {
+    const detalhe = dados.message
+      || dados.error
+      || dados.cause?.map((causa) => causa.description).join('; ')
+      || JSON.stringify(dados)
+      || 'resposta inválida';
+    throw new Error(
+      `Mercado Pago (${resposta.status}) ao criar pagamento: ${detalhe}`
+    );
+  }
+
   return dados;
 }
 
@@ -72,4 +84,50 @@ async function buscarOrder(id) {
   return resultado;
 }
 
-module.exports = { criarOrder, buscarOrder };
+async function buscarPagamento(id) {
+  const resposta = await fetch(
+    `https://api.mercadopago.com/v1/payments/${encodeURIComponent(id)}`,
+    {
+      headers: {
+        Authorization: `Bearer ${process.env.MERCADOPAGO_ACCESS_TOKEN}`,
+      },
+    }
+  );
+  const dados = await resposta.json();
+
+  if (!resposta.ok) {
+    const detalhe = dados.message || dados.error || 'resposta inválida';
+    throw new Error(
+      `Mercado Pago (${resposta.status}) ao consultar pagamento: ${detalhe}`
+    );
+  }
+
+  return dados;
+}
+
+async function solicitarReembolso(paymentId) {
+  const resposta = await fetch(
+    `https://api.mercadopago.com/v1/payments/${encodeURIComponent(paymentId)}/refunds`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${process.env.MERCADOPAGO_ACCESS_TOKEN}`,
+      },
+      body: JSON.stringify({}),
+    }
+  );
+
+  const dados = await resposta.json();
+
+  if (!resposta.ok) {
+    const detalhe = dados.message || dados.error || 'resposta inválida';
+    throw new Error(
+      `Mercado Pago (${resposta.status}) ao solicitar reembolso: ${detalhe}`
+    );
+  }
+
+  return dados;
+}
+
+module.exports = { criarOrder, buscarOrder, buscarPagamento, solicitarReembolso };
