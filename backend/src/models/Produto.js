@@ -45,11 +45,13 @@ async function remover(id){
 async function reativar(id){
     const [produtos] = await pool.query ('UPDATE produtos SET ativo = true WHERE id = ?',[id]);
 };
-async function diminuirEstoque(id, quantidade) {
-  await pool.query(
+async function diminuirEstoque(id, quantidade, conexao = pool) {
+  const [resultado] = await conexao.query(
     'UPDATE produtos SET estoque_qtd = estoque_qtd - ? WHERE id = ? AND estoque_qtd >= ?',
     [quantidade, id, quantidade]
   );
+
+  return resultado.affectedRows;
 }
 module.exports = {
   listarAtivos,

@@ -1,4 +1,5 @@
 const Usuario = require('../models/Usuario');
+const Log = require('../models/Log');
 
 async function listarClientes(req, res) {
   try {
@@ -19,6 +20,13 @@ async function atualizarStatus(req, res) {
 
   try {
     await Usuario.atualizarStatus(req.params.id, status);
+    await Log.registrar({
+      tipo: 'cliente',
+      acao: 'status_atualizado',
+      entidade_id: req.params.id,
+      usuario_id: req.usuario.id,
+      detalhes: { status },
+    });
     res.json({ mensagem: 'Status atualizado com sucesso' });
   } catch (erro) {
     console.error(erro);

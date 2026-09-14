@@ -11,6 +11,7 @@ CREATE TABLE usuarios (
   cpf VARCHAR(14) NULL,
   senha_hash VARCHAR(255) NOT NULL,
   perfil ENUM('admin', 'cliente') NOT NULL DEFAULT 'cliente',
+  status ENUM('ativo', 'bloqueado') NOT NULL DEFAULT 'ativo',
   criado_em DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -61,6 +62,18 @@ CREATE TABLE IF NOT EXISTS configuracoes_loja (
   banner_url VARCHAR(500) NOT NULL DEFAULT '',
   banner_titulo VARCHAR(150) NOT NULL DEFAULT '',
   banner_link VARCHAR(500) NOT NULL DEFAULT ''
+);
+
+CREATE TABLE IF NOT EXISTS logs (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  tipo VARCHAR(50) NOT NULL,
+  acao VARCHAR(100) NOT NULL,
+  entidade_id INT,
+  usuario_id INT,
+  detalhes JSON,
+  criado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_logs_tipo_entidade (tipo, entidade_id),
+  INDEX idx_logs_criado_em (criado_em)
 );
 USE nkg_importados;
 

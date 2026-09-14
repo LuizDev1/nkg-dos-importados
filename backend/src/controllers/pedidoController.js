@@ -1,6 +1,7 @@
 const pool = require('../config/banco');
 const Pedido = require('../models/Pedido');
 const ItemPedido = require('../models/ItemPedido');
+const Log = require('../models/Log');
 
 const tiposEntregaPermitidos = ['envio', 'entrega_local'];
 
@@ -22,8 +23,12 @@ async function listar(req, res) {
 
 async function listarPorUsuario(req, res) {
   try {
+    const usuarioId = req.usuario.perfil === 'admin'
+      ? req.params.usuarioId
+      : req.usuario.id;
+
     const pedidos = await Pedido.listarPorUsuario(
-      req.params.usuarioId
+      usuarioId
     );
 
     res.json(pedidos);
@@ -42,6 +47,15 @@ async function buscar(req, res) {
       });
     }
 
+    if (
+      req.usuario.perfil !== 'admin'
+      && String(pedido.usuario_id) !== String(req.usuario.id)
+    ) {
+      return res.status(403).json({
+        mensagem: 'Você não tem acesso a este pedido',
+      });
+    }
+
     pedido.itens = await ItemPedido.listarPorPedido(pedido.id);
 
     return res.json(pedido);
@@ -54,7 +68,6 @@ async function buscar(req, res) {
 
 async function criar(req, res) {
   const {
-    usuario_id,
     tipo_entrega,
     endereco_entrega,
     telefone_contato,
@@ -62,7 +75,6 @@ async function criar(req, res) {
   } = req.body;
 
   if (
-    !usuario_id ||
     !tipo_entrega ||
     !endereco_entrega ||
     !telefone_contato
@@ -95,6 +107,7 @@ async function criar(req, res) {
     for (const item of itens) {
       const produtoId = Number(item.produto_id);
       const quantidade = Number(item.quantidade);
+      const precoInformado = item.preco_unitario != null ? Number(item.preco_unitario) : null;
 
       if (
         !Number.isInteger(produtoId) ||
@@ -106,7 +119,7 @@ async function criar(req, res) {
       }
 
       const [produtos] = await conexao.query(
-        `SELECT id, preco, estoque_qtd
+        `SELECT id, preco, estoque_qtd, ativo
         FROM produtos
         WHERE id = ?
         FOR UPDATE`,
@@ -119,10 +132,18 @@ async function criar(req, res) {
         throw new Error(`Produto ${produtoId} não encontrado`);
       }
 
+      if (produto.ativo === 0 || produto.ativo === false) {
+        throw new Error(`Produto ${produtoId} indisponível no momento`);
+      }
+
       if (produto.estoque_qtd < quantidade) {
         throw new Error(
           `Estoque insuficiente para o produto ${produtoId}`
         );
+      }
+
+      if (precoInformado != null && Math.abs(precoInformado - Number(produto.preco)) > 0.01) {
+        throw new Error(`Preço do produto ${produtoId} foi alterado e precisa ser revalidado`);
       }
 
       const precoUnitario = Number(produto.preco);
@@ -135,17 +156,11 @@ async function criar(req, res) {
         preco_unitario: precoUnitario,
       });
 
-      await conexao.query(
-        `UPDATE produtos
-        SET estoque_qtd = estoque_qtd - ?
-        WHERE id = ?`,
-        [quantidade, produtoId]
-      );
     }
 
     const pedidoId = await Pedido.criar(
       {
-        usuario_id,
+        usuario_id: req.usuario.id,
         tipo_entrega,
         endereco_entrega,
         telefone_contato,
@@ -159,6 +174,14 @@ async function criar(req, res) {
       itensPreparados,
       conexao
     );
+
+    await Log.registrar({
+      tipo: 'pedido',
+      acao: 'criado',
+      entidade_id: pedidoId,
+      usuario_id: req.usuario.id,
+      detalhes: { itens: itensPreparados },
+    });
 
     await conexao.commit();
 
@@ -200,6 +223,14 @@ async function atualizarStatus(req, res) {
       });
     }
 
+    await Log.registrar({
+      tipo: 'pedido',
+      acao: 'status_atualizado',
+      entidade_id: req.params.id,
+      usuario_id: req.usuario.id,
+      detalhes: { payment_status, payment_id },
+    });
+
     return res.json({
       mensagem: 'Status do pedido atualizado',
     });
@@ -225,9 +256,46 @@ async function atualizarRastreio(req, res) {
       });
     }
 
+    await Log.registrar({
+      tipo: 'pedido',
+      acao: 'rastreio_atualizado',
+      entidade_id: req.params.id,
+      usuario_id: req.usuario.id,
+      detalhes: { codigo_rastreio },
+    });
+
     res.json({ mensagem: 'Código de rastreio atualizado' });
   } catch (erro) {
     res.status(500).json({ mensagem: erro.message });
+  }
+}
+
+async function cancelar(req, res) {
+  try {
+    const pedido = await Pedido.buscarPorId(req.params.id);
+
+    if (!pedido) {
+      return res.status(404).json({ mensagem: 'Pedido não encontrado' });
+    }
+
+    if (req.usuario.perfil !== 'admin' && String(pedido.usuario_id) !== String(req.usuario.id)) {
+      return res.status(403).json({ mensagem: 'Você não tem acesso a este pedido' });
+    }
+
+    const pedidoCancelado = await Pedido.cancelarPedido(pedido.id, pedido.payment_id);
+
+    await Log.registrar({
+      tipo: 'pedido',
+      acao: 'cancelado',
+      entidade_id: pedido.id,
+      usuario_id: req.usuario.id,
+      detalhes: { payment_id: pedido.payment_id },
+    });
+
+    return res.json({ mensagem: pedidoCancelado ? 'Pedido cancelado com sucesso' : 'Pedido já estava cancelado' });
+  } catch (erro) {
+    console.error('Erro ao cancelar pedido:', erro);
+    return res.status(500).json({ mensagem: erro.message });
   }
 }
 
@@ -238,4 +306,5 @@ module.exports = {
   criar,
   atualizarStatus,
   atualizarRastreio,
+  cancelar,
 };

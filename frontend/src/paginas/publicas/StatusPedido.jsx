@@ -1,6 +1,9 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useCarrinho } from '../../contextos/ContextoCarrinho';
+import { useAutenticacao } from '../../contextos/ContextoAutenticacao';
+
+const API_URL = import.meta.env.VITE_API_URL || '/api';
 
 const CONTEUDO = {
   sucesso: {
@@ -23,6 +26,8 @@ const CONTEUDO = {
 export default function StatusPedido() {
   const { id, resultado } = useParams();
   const { limparCarrinho } = useCarrinho();
+  const { token } = useAutenticacao();
+  const sincronizado = useRef(false);
 
   const conteudo = CONTEUDO[resultado] || CONTEUDO.falha;
 
@@ -30,7 +35,23 @@ export default function StatusPedido() {
     if (resultado === 'sucesso') {
       limparCarrinho();
     }
-  }, [resultado, limparCarrinho]);
+
+    if (resultado === 'sucesso' || resultado === 'falha') {
+      const parametros = new URLSearchParams(window.location.search);
+      const paymentId = parametros.get('payment_id') || parametros.get('collection_id');
+      if (paymentId && token && !sincronizado.current) {
+        sincronizado.current = true;
+        fetch(`${API_URL}/pagamentos/${id}/sincronizar`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ payment_id: paymentId }),
+        }).catch(() => {});
+      }
+    }
+  }, [resultado, limparCarrinho, id, token]);
 
   return (
     <div className="max-w-md mx-auto px-4 py-16 text-center">

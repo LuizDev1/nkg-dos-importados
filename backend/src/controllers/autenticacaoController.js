@@ -4,7 +4,14 @@ const jwt = require('jsonwebtoken');
 
 async function registrar(req, res){
     try{
-        const id = await Usuario.criar(req.body);
+        const { nome, email, senha, cpf } = req.body;
+        const id = await Usuario.criar({
+            nome,
+            email,
+            senha,
+            cpf,
+            perfil: 'cliente'
+        });
         res.status(201).json({ id });
     }catch(erro){
         res.status(500).json({mensagem: erro.message});
@@ -18,6 +25,10 @@ async function login(req, res) {
     const usuario = await Usuario.buscarPorEmail(email);
     if (!usuario) {
       return res.status(401).json({ mensagem: 'E-mail ou senha inválidos' });
+    }
+
+    if (usuario.status === 'bloqueado') {
+      return res.status(403).json({ mensagem: 'Usuário bloqueado' });
     }
 
     const senhaCorreta = await bcrypt.compare(senha, usuario.senha_hash);

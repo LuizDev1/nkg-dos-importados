@@ -4,6 +4,8 @@ import { useCarrinho } from '../../contextos/ContextoCarrinho';
 import { useAutenticacao } from '../../contextos/ContextoAutenticacao';
 import { criarPedido } from '../../servicos/pedidoService';
 
+const API_URL = import.meta.env.VITE_API_URL || '/api';
+
 export default function Checkout() {
   const { itens, total } = useCarrinho();
   const { usuario } = useAutenticacao();
@@ -16,6 +18,7 @@ export default function Checkout() {
   const [carregando, setCarregando] = useState(false);
   const [buscandoCep, setBuscandoCep] = useState(false);
   const [erro, setErro] = useState('');
+  const [pedidoEmProcessamento, setPedidoEmProcessamento] = useState(false);
 
   useEffect(() => {
     if (itens.length === 0) {
@@ -115,9 +118,10 @@ export default function Checkout() {
   async function finalizarCompra(e) {
     e.preventDefault();
 
-    if (!validarCampos()) return;
+    if (!validarCampos() || pedidoEmProcessamento) return;
 
     setCarregando(true);
+    setPedidoEmProcessamento(true);
     setErro('');
 
     try {
@@ -130,14 +134,15 @@ export default function Checkout() {
         telefone_contato: formulario.telefone,
         itens: itens.map(item => ({
           produto_id: item.produto_id,
-          quantidade: item.quantidade
+          quantidade: item.quantidade,
+          preco_unitario: Number(item.preco),
         }))
       };
 
       const respostaPedido = await criarPedido(payload);
 
       const token = localStorage.getItem('token');
-      const respostaPagamento = await fetch(`http://localhost:3000/api/pagamentos/${respostaPedido.id}`, {
+      const respostaPagamento = await fetch(`${API_URL}/pagamentos/${respostaPedido.id}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -157,6 +162,7 @@ export default function Checkout() {
       setErro(err.message);
     } finally {
       setCarregando(false);
+      setPedidoEmProcessamento(false);
     }
   }
 
