@@ -19,6 +19,13 @@ router.patch(
   usuarioController.atualizarStatus
 );
 
-router.patch('/usuarios/:id/cpf', usuarioController.atualizarCpf);
+router.patch(
+  '/usuarios/:id/cpf',
+  verificarAutenticacao,
+  usuarioController.atualizarCpf
+);
+
+router.get('/meus-dados', verificarAutenticacao, usuarioController.exportarDados);
+router.delete('/meus-dados', verificarAutenticacao, usuarioController.anonimizarConta);
 
 module.exports = router;

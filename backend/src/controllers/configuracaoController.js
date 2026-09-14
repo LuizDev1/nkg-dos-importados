@@ -20,7 +20,6 @@ async function atualizar(req, res) {
     aviso_ativo = false,
     aviso_texto = '',
     politica_devolucao = '',
-    frete_fixo = 0,
     banner_url = '',
     banner_titulo = '',
     banner_link = '',
@@ -30,7 +29,7 @@ async function atualizar(req, res) {
     await pool.execute(
       `UPDATE configuracoes_loja
        SET whatsapp = ?, email_suporte = ?, aviso_ativo = ?,
-           aviso_texto = ?, politica_devolucao = ?, frete_fixo = ?,
+           aviso_texto = ?, politica_devolucao = ?,
            banner_url = ?, banner_titulo = ?, banner_link = ?
        WHERE id = 1`,
       [
@@ -39,7 +38,6 @@ async function atualizar(req, res) {
         Boolean(aviso_ativo),
         String(aviso_texto).trim(),
         String(politica_devolucao).trim(),
-        Number(frete_fixo) || 0,
         String(banner_url).trim(),
         String(banner_titulo).trim(),
         String(banner_link).trim(),

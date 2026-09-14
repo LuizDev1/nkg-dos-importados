@@ -11,7 +11,10 @@ async function verificarAutenticacao(req, res, next) {
   const token = authHeader.slice('Bearer '.length);
 
   try {
-    const dados = jwt.verify(token, process.env.JWT_SECRET);
+    const opcoes = {};
+    if (process.env.JWT_ISSUER) opcoes.issuer = process.env.JWT_ISSUER;
+    if (process.env.JWT_AUDIENCE) opcoes.audience = process.env.JWT_AUDIENCE;
+    const dados = jwt.verify(token, process.env.JWT_SECRET, opcoes);
 
     const usuario = await Usuario.buscarPorId(dados.id);
     if (!usuario) {
@@ -22,7 +25,7 @@ async function verificarAutenticacao(req, res, next) {
       return res.status(403).json({ mensagem: 'Usuário bloqueado' });
     }
 
-    req.usuario = { ...dados, status: usuario.status };
+    req.usuario = { id: usuario.id, perfil: usuario.perfil, status: usuario.status };
     next();
   } catch (erro) {
     if (erro.name === 'JsonWebTokenError' || erro.name === 'TokenExpiredError') {

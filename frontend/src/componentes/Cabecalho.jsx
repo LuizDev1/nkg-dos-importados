@@ -30,6 +30,12 @@ export default function Cabecalho() {
               )}
             </Link>
           )}
+          {usuario && !isAdmin && (
+            <>
+              <Link to="/meus-pedidos" className="text-gray-600 hover:text-blue-600">Meus pedidos</Link>
+              <Link to="/privacidade" className="text-gray-600 hover:text-blue-600">Privacidade</Link>
+            </>
+          )}
 
           {/* Autenticação */}
           {usuario ? (

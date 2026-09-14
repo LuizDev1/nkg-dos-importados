@@ -7,6 +7,7 @@ const mercadoPagoService = require('../services/mercadoPagoService');
 
 function validarAssinaturaWebhook(req) {
   const assinatura = String(req.headers['x-signature'] || '').trim();
+  const requestId = String(req.headers['x-request-id'] || '').trim();
   const secret = process.env.MERCADOPAGO_WEBHOOK_SECRET;
 
   if (!secret) {
@@ -17,13 +18,33 @@ function validarAssinaturaWebhook(req) {
     throw new Error('Assinatura do webhook ausente');
   }
 
-  const payload = Buffer.isBuffer(req.body) ? req.body : Buffer.from(JSON.stringify(req.body || {}));
-  const hash = crypto.createHmac('sha256', secret).update(payload).digest('hex');
-  const assinaturaNormalizada = assinatura.startsWith('v1=')
-    ? assinatura.slice(3)
-    : assinatura.includes('=')
-      ? assinatura.split('=').slice(1).join('=')
-      : assinatura;
+  const partes = Object.fromEntries(assinatura.split(',').map((parte) => parte.split('=').map((valor) => valor.trim())));
+  const dataId = String(req.query?.['data.id'] || req.body?.data?.id || '').toLowerCase();
+  const ts = partes.ts;
+  const v1 = partes.v1;
+
+  if (!requestId || !dataId || !ts || !v1) {
+    const payload = Buffer.isBuffer(req.body)
+      ? req.body
+      : Buffer.from(JSON.stringify(req.body || {}));
+    const hashLegado = crypto.createHmac('sha256', secret).update(payload).digest('hex');
+    const assinaturaLegado = assinatura.replace(/^v1=/, '');
+    const assinaturaBuffer = Buffer.from(assinaturaLegado);
+    const hashBuffer = Buffer.from(hashLegado);
+
+    if (
+      assinaturaBuffer.length !== hashBuffer.length
+      || !crypto.timingSafeEqual(hashBuffer, assinaturaBuffer)
+    ) {
+      throw new Error('Assinatura do webhook inválida');
+    }
+
+    return;
+  }
+
+  const manifesto = `id:${dataId};request-id:${requestId};ts:${ts};`;
+  const hash = crypto.createHmac('sha256', secret).update(manifesto).digest('hex');
+  const assinaturaNormalizada = v1;
 
   const assinaturaBuffer = Buffer.from(assinaturaNormalizada);
   const hashBuffer = Buffer.from(hash);
@@ -67,6 +88,7 @@ async function receberWebhook(req, res) {
     validarAssinaturaWebhook({ headers: req.headers, body: rawBody });
 
     const orderId = req.query['data.id'];
+    const eventoId = `${req.headers['x-request-id'] || req.query.type || 'evento'}:${orderId}:${req.headers['x-signature'] || 'sem-assinatura'}`;
 
     console.log('Webhook Mercado Pago recebido:', {
       tipo: req.query.type,
@@ -90,22 +112,28 @@ async function receberWebhook(req, res) {
       return res.status(400).send();
     }
 
+    if (!await Pedido.registrarWebhook(eventoId, req.query.type || 'desconhecido')) {
+      return res.status(200).send();
+    }
+
     const itens = await ItemPedido.listarPorPedido(pedidoId);
 
     if (order.status === 'processed') {
-      await Pedido.confirmarPagamento(
+      const confirmado = await Pedido.confirmarPagamento(
         pedidoId,
         order.id,
         itens,
         estoqueService
       );
 
-      await Log.registrar({
-        tipo: 'pedido',
-        acao: 'pagamento_confirmado',
-        entidade_id: pedidoId,
-        detalhes: { payment_id: order.id, status: order.status },
-      });
+      if (confirmado) {
+        await Log.registrar({
+          tipo: 'pedido',
+          acao: 'pagamento_confirmado',
+          entidade_id: pedidoId,
+          detalhes: { payment_id: order.id, status: order.status },
+        });
+      }
     } else {
       const statusTraduzido = {
         cancelled: 'cancelado',

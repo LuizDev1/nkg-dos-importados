@@ -25,7 +25,7 @@ async function buscar(req, res){
         const produto = await Produto.buscarPorId(req.params.id);
         res.json(produto);
     }catch(erro){
-        res.status(500).json({mensagem: erro.message});
+        res.status(500).json({mensagem: 'Erro ao buscar produto'});
     }
 };
 
@@ -41,7 +41,7 @@ async function criar(req, res){
         });
         res.status(201).json({ id });
     }catch(erro){
-        res.status(500).json({mensagem: erro.message});
+        res.status(500).json({mensagem: 'Erro ao criar produto'});
     }
 };
 
@@ -57,7 +57,7 @@ async function atualizar(req, res){
         });
         res.json({ mensagem: 'Produto atualizado' });
     }catch(erro){
-        res.status(500).json({mensagem: erro.message});
+        res.status(500).json({mensagem: 'Erro ao atualizar produto'});
     }
 };
 

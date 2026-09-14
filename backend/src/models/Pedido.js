@@ -1,6 +1,4 @@
 const pool = require('../config/banco');
-const mercadoPagoService = require('../services/mercadoPagoService');
-const Produto = require('./Produto');
 
 async function listarTodos() {
   const [pedidos] = await pool.query(
@@ -50,24 +48,48 @@ async function criar(dadosPedido, conexao = pool) {
     tipo_entrega,
     endereco_entrega,
     telefone_contato,
+    cep_entrega,
+    frete_servico_id,
+    prazo_entrega_dias,
+    subtotal,
+    frete,
+    desconto,
+    codigo_promocao,
     total,
+    idempotency_key,
   } = dadosPedido;
 
   const [resultado] = await conexao.query(
     `INSERT INTO pedidos
       (
         usuario_id,
+        idempotency_key,
         tipo_entrega,
         endereco_entrega,
         telefone_contato,
+        cep_entrega,
+        frete_servico_id,
+        prazo_entrega_dias,
+        subtotal,
+        frete,
+        desconto,
+        codigo_promocao,
         total
       )
-    VALUES (?, ?, ?, ?, ?)`,
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)` ,
     [
       usuario_id,
+      idempotency_key,
       tipo_entrega,
       endereco_entrega,
       telefone_contato,
+      cep_entrega,
+      frete_servico_id,
+      prazo_entrega_dias,
+      subtotal,
+      frete,
+      desconto,
+      codigo_promocao,
       total,
     ]
   );
@@ -76,16 +98,97 @@ async function criar(dadosPedido, conexao = pool) {
 }
 
 async function atualizarStatus(id, paymentStatus, paymentId = null) {
-  const [resultado] = await pool.query(
-    `UPDATE pedidos
-    SET
-      payment_status = ?,
-      payment_id = COALESCE(?, payment_id)
-    WHERE id = ?`,
-    [paymentStatus, paymentId, id]
-  );
+  const conexao = await pool.getConnection();
 
-  return resultado.affectedRows;
+  try {
+    await conexao.beginTransaction();
+    const [pedidos] = await conexao.query(
+      'SELECT * FROM pedidos WHERE id = ? FOR UPDATE',
+      [id]
+    );
+    const pedido = pedidos[0];
+
+    if (!pedido) {
+      await conexao.rollback();
+      return 0;
+    }
+
+    if (pedido.payment_status === paymentStatus && (!paymentId || pedido.payment_id === paymentId)) {
+      await conexao.commit();
+      return 1;
+    }
+
+    if (['recusado', 'cancelado'].includes(paymentStatus) && pedido.estoque_reservado) {
+      const [itens] = await conexao.query(
+        'SELECT produto_id, quantidade FROM itens_pedido WHERE pedido_id = ?',
+        [id]
+      );
+      for (const item of itens) {
+        await conexao.query(
+          'UPDATE produtos SET estoque_qtd = estoque_qtd + ? WHERE id = ?',
+          [item.quantidade, item.produto_id]
+        );
+      }
+    }
+
+    await conexao.query(
+      `UPDATE pedidos
+       SET payment_status = ?,
+           status_pedido = CASE WHEN ? = 'cancelado' THEN 'cancelado' WHEN ? = 'recusado' THEN 'cancelado' ELSE status_pedido END,
+           estoque_reservado = CASE WHEN ? IN ('recusado', 'cancelado') THEN FALSE ELSE estoque_reservado END,
+           payment_id = COALESCE(?, payment_id)
+       WHERE id = ?`,
+      [paymentStatus, paymentStatus, paymentStatus, paymentStatus, paymentId, id]
+    );
+    await conexao.commit();
+    return 1;
+  } catch (erro) {
+    await conexao.rollback();
+    throw erro;
+  } finally {
+    conexao.release();
+  }
+}
+
+async function atualizarStatusOperacional(id, novoStatus) {
+  const transicoes = {
+    pago: ['em_preparacao', 'cancelado'],
+    em_preparacao: ['enviado', 'cancelado'],
+    enviado: ['entregue'],
+    reembolso_pendente: ['reembolsado'],
+  };
+  const conexao = await pool.getConnection();
+
+  try {
+    await conexao.beginTransaction();
+    const [pedidos] = await conexao.query(
+      'SELECT status_pedido FROM pedidos WHERE id = ? FOR UPDATE',
+      [id]
+    );
+    const pedido = pedidos[0];
+
+    if (!pedido) {
+      await conexao.rollback();
+      return { encontrado: false };
+    }
+
+    if (!transicoes[pedido.status_pedido]?.includes(novoStatus)) {
+      await conexao.rollback();
+      return { encontrado: true, permitido: false, atual: pedido.status_pedido };
+    }
+
+    await conexao.query(
+      'UPDATE pedidos SET status_pedido = ? WHERE id = ?',
+      [novoStatus, id]
+    );
+    await conexao.commit();
+    return { encontrado: true, permitido: true, atual: novoStatus };
+  } catch (erro) {
+    await conexao.rollback();
+    throw erro;
+  } finally {
+    conexao.release();
+  }
 }
 
 async function confirmarPagamento(id, paymentId, itens, estoqueService) {
@@ -105,16 +208,17 @@ async function confirmarPagamento(id, paymentId, itens, estoqueService) {
       return false;
     }
 
-    if (pedido.payment_status === 'pago') {
+    if (
+      pedido.payment_status === 'pago'
+      || ['cancelado', 'reembolso_pendente', 'reembolsado'].includes(pedido.status_pedido)
+    ) {
       await conexao.commit();
-      return true;
+      return pedido.payment_status === 'pago';
     }
-
-    await estoqueService.baixarEstoque(itens, conexao);
 
     await conexao.query(
       `UPDATE pedidos
-       SET payment_status = 'pago', payment_id = COALESCE(?, payment_id)
+       SET payment_status = 'pago', status_pedido = 'pago', payment_id = COALESCE(?, payment_id)
        WHERE id = ?`,
       [paymentId, id]
     );
@@ -140,7 +244,7 @@ async function atualizarRastreio(id, codigoRastreio) {
   return resultado.affectedRows;
 }
 
-async function cancelarPedido(id, paymentId = null) {
+async function cancelarPedido(id) {
   const conexao = await pool.getConnection();
 
   try {
@@ -157,7 +261,7 @@ async function cancelarPedido(id, paymentId = null) {
       return false;
     }
 
-    if (pedido.payment_status === 'cancelado') {
+    if (pedido.status_pedido === 'cancelado') {
       await conexao.commit();
       return false;
     }
@@ -167,24 +271,25 @@ async function cancelarPedido(id, paymentId = null) {
       [id]
     );
 
-    for (const item of itens) {
+    if (pedido.estoque_reservado) {
+      for (const item of itens) {
       await conexao.query(
         'UPDATE produtos SET estoque_qtd = estoque_qtd + ? WHERE id = ?',
         [item.quantidade, item.produto_id]
       );
-    }
-
-    if (paymentId) {
-      try {
-        await mercadoPagoService.solicitarReembolso(paymentId);
-      } catch (erro) {
-        console.warn('Reembolso do Mercado Pago falhou:', erro.message);
       }
     }
 
     await conexao.query(
-      `UPDATE pedidos SET payment_status = 'cancelado', payment_id = COALESCE(?, payment_id) WHERE id = ?`,
-      [paymentId, id]
+      `UPDATE pedidos
+       SET payment_status = 'cancelado',
+           status_pedido = CASE
+             WHEN payment_status = 'pago' AND payment_id IS NOT NULL THEN 'reembolso_pendente'
+             ELSE 'cancelado'
+           END,
+           estoque_reservado = FALSE
+       WHERE id = ?`,
+      [id]
     );
 
     await conexao.commit();
@@ -195,6 +300,34 @@ async function cancelarPedido(id, paymentId = null) {
   } finally {
     conexao.release();
   }
+}
+
+async function buscarPorIdempotency(usuarioId, idempotencyKey, conexao = pool) {
+  const [pedidos] = await conexao.query(
+    'SELECT * FROM pedidos WHERE usuario_id = ? AND idempotency_key = ?',
+    [usuarioId, idempotencyKey]
+  );
+  return pedidos[0] || null;
+}
+
+async function registrarWebhook(eventoId, tipo) {
+  try {
+    await pool.query(
+      'INSERT INTO webhook_eventos (evento_id, tipo) VALUES (?, ?)',
+      [eventoId, tipo]
+    );
+    return true;
+  } catch (erro) {
+    if (erro.code === 'ER_DUP_ENTRY') return false;
+    throw erro;
+  }
+}
+
+async function marcarReembolsoPendente(id) {
+  await pool.query(
+    `UPDATE pedidos SET status_pedido = 'reembolso_pendente' WHERE id = ? AND payment_status = 'cancelado'`,
+    [id]
+  );
 }
 
 async function relatorioMensal() {
@@ -217,8 +350,12 @@ module.exports = {
   buscarPorId,
   criar,
   atualizarStatus,
+  atualizarStatusOperacional,
   confirmarPagamento,
   atualizarRastreio,
   cancelarPedido,
+  buscarPorIdempotency,
+  registrarWebhook,
+  marcarReembolsoPendente,
   relatorioMensal,
 };
