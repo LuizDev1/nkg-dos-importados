@@ -193,14 +193,14 @@ export default function DetalheMeuPedido() {
           <span>Subtotal dos produtos</span>
           <span>
             {formatarValor(
-              Number(pedido.total) - Number(pedido.valor_frete || 0)
+              pedido.subtotal ?? Number(pedido.total) - Number(pedido.frete || 0)
             )}
           </span>
         </div>
 
         <div className="flex justify-between">
           <span>Frete</span>
-          <span>{formatarValor(pedido.valor_frete || 0)}</span>
+          <span>{formatarValor(pedido.frete || 0)}</span>
         </div>
 
         <div className="border-t pt-3 flex justify-between">
