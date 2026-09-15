@@ -4,6 +4,8 @@ const ItemPedido = require('../models/ItemPedido');
 const Log = require('../models/Log');
 const estoqueService = require('../services/estoqueService');
 const mercadoPagoService = require('../services/mercadoPagoService');
+const notificacaoService = require('../services/notificacaoService'); // 📧 NOVO
+const pool = require('../config/banco'); // 🗄️ NOVO: Para buscar o e-mail
 
 function validarAssinaturaWebhook(req) {
   const assinatura = String(req.headers['x-signature'] || '').trim();
@@ -89,7 +91,6 @@ async function receberWebhook(req, res) {
 
     const orderId = req.query['data.id'];
     const requestId = String(req.headers['x-request-id'] || '').trim();
-    // Usar requestId + orderId + timestamp como ID único do evento
     const eventoId = `${requestId}:${orderId}:${Date.now()}`;
 
     console.log('Webhook Mercado Pago recebido:', {
@@ -114,7 +115,6 @@ async function receberWebhook(req, res) {
       return res.status(400).send();
     }
 
-    // Registrar webhook - retorna false se for duplicado
     if (!await Pedido.registrarWebhook(eventoId, req.query.type || 'desconhecido')) {
       console.log('Webhook duplicado, ignorando:', orderId);
       return res.status(200).send();
@@ -137,6 +137,16 @@ async function receberWebhook(req, res) {
           entidade_id: pedidoId,
           detalhes: { payment_id: order.id, status: order.status },
         });
+
+        // 📧 NOVO: Avisa que o pagamento caiu via Webhook
+        try {
+          const [usuarios] = await pool.query('SELECT email FROM usuarios WHERE id = (SELECT usuario_id FROM pedidos WHERE id = ?)', [pedidoId]);
+          if (usuarios.length > 0) {
+            notificacaoService.notificarStatusPedido(usuarios[0].email, pedidoId, 'pago').catch(console.error);
+          }
+        } catch (erroEmail) {
+          console.error('Erro ao notificar cliente:', erroEmail);
+        }
       }
     } else if (order.status === 'cancelled' || order.status === 'refused') {
       const statusTraduzido = order.status === 'cancelled' ? 'cancelado' : 'recusado';
@@ -195,6 +205,16 @@ async function sincronizarPagamento(req, res) {
         itens,
         estoqueService
       );
+
+      // 📧 NOVO: Avisa que o pagamento foi sincronizado com sucesso
+      try {
+        const [usuarios] = await pool.query('SELECT email FROM usuarios WHERE id = ?', [pedido.usuario_id]);
+        if (usuarios.length > 0) {
+          notificacaoService.notificarStatusPedido(usuarios[0].email, pedido.id, 'pago').catch(console.error);
+        }
+      } catch (erroEmail) {
+        console.error('Erro ao notificar cliente:', erroEmail);
+      }
     }
 
     const statusTraduzido = {

@@ -32,8 +32,27 @@ export default function StatusPedido() {
   const pedidoAtualRef = useRef(null);
   const [pedido, setPedido] = useState(null);
   const [erroPedido, setErroPedido] = useState('');
+  
+  let conteudo;
 
-  const conteudo = CONTEUDO[resultado] || CONTEUDO.falha;
+  if (pedido) {
+    if (['pago', 'em_preparacao', 'enviado', 'entregue'].includes(pedido.status_pedido)) {
+      conteudo = CONTEUDO.sucesso;
+      if (pedido.status_pedido === 'enviado') {
+        conteudo = { ...conteudo, titulo: 'Pedido Enviado!', mensagem: 'Seu pedido já está a caminho do seu endereço.' };
+      }
+    } else if (pedido.status_pedido === 'aguardando_pagamento') {
+      conteudo = CONTEUDO.pendente;
+    } else {
+      conteudo = CONTEUDO.falha;
+    }
+  } else {
+    if (resultado === 'acompanhamento') {
+      conteudo = { titulo: 'Buscando informações...', mensagem: 'Aguarde um momento.', cor: 'text-gray-500' };
+    } else {
+      conteudo = CONTEUDO[resultado] || CONTEUDO.falha;
+    }
+  }
 
   useEffect(() => {
     if (resultado === 'sucesso') {
@@ -78,7 +97,7 @@ export default function StatusPedido() {
     }, 10000);
 
     return () => clearInterval(intervalo);
-  }, [resultado, limparCarrinho, id, token]);
+  }, [resultado, id, token]);
 
   const etapas = [
     ['aguardando_pagamento', 'Aguardando confirmação do pagamento'],

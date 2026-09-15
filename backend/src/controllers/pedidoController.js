@@ -4,6 +4,7 @@ const ItemPedido = require('../models/ItemPedido');
 const Log = require('../models/Log');
 const Promocao = require('../models/Promocao');
 const melhorEnvioService = require('../services/melhorEnvioService');
+const notificacaoService = require('../services/notificacaoService'); // 📧 NOVO: Serviço de e-mail
 
 const tiposEntregaPermitidos = ['envio', 'entrega_local'];
 
@@ -334,6 +335,17 @@ async function atualizarStatusOperacional(req, res) {
       usuario_id: req.usuario.id,
       detalhes: { status_pedido },
     });
+    
+    // 📧 NOVO: Dispara o e-mail em segundo plano
+    try {
+      const [usuarios] = await pool.query('SELECT email FROM usuarios WHERE id = (SELECT usuario_id FROM pedidos WHERE id = ?)', [req.params.id]);
+      if (usuarios.length > 0) {
+        notificacaoService.notificarStatusPedido(usuarios[0].email, req.params.id, status_pedido).catch(console.error);
+      }
+    } catch (erroEmail) {
+      console.error('Erro ao notificar cliente:', erroEmail);
+    }
+
     return res.json({ mensagem: 'Status operacional atualizado' });
   } catch (erro) {
     return res.status(500).json({ mensagem: 'Erro ao atualizar status operacional' });
@@ -367,6 +379,17 @@ async function atualizarRastreio(req, res) {
   } catch (erro) {
     res.status(500).json({ mensagem: erro.message });
   }
+  try {
+      const [usuarios] = await pool.query(
+        'SELECT email FROM usuarios WHERE id = (SELECT usuario_id FROM pedidos WHERE id = ?)', 
+        [req.params.id]
+      );
+      if (usuarios.length > 0) {
+        notificacaoService.notificarStatusPedido(usuarios[0].email, req.params.id, 'enviado').catch(console.error);
+      }
+    } catch (erroEmail) {
+      console.error('Erro ao notificar cliente sobre o envio:', erroEmail);
+    }
 }
 
 async function cancelar(req, res) {
@@ -425,6 +448,15 @@ async function cancelar(req, res) {
       detalhes: { payment_id: pedido.payment_id },
     });
 
+    try {
+      const [usuarios] = await pool.query('SELECT email FROM usuarios WHERE id = ?', [pedido.usuario_id]);
+      if (usuarios.length > 0) {
+        notificacaoService.notificarStatusPedido(usuarios[0].email, pedido.id, 'cancelado').catch(console.error);
+      }
+    } catch (erroEmail) {
+      console.error('Erro ao notificar cliente:', erroEmail);
+    }
+
     return res.json({ 
       mensagem: 'Pedido cancelado com sucesso',
       reembolso: reembolsoPendente ? 'pendente' : 'processando'
@@ -434,6 +466,7 @@ async function cancelar(req, res) {
     return res.status(500).json({ mensagem: erro.message });
   }
 }
+
 
 module.exports = {
   listar,

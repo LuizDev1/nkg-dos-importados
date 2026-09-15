@@ -11,8 +11,6 @@ export default function Login() {
   const { login } = useAutenticacao();
   const navegar = useNavigate();
   const location = useLocation();
-
-  // Captura o destino anterior ou define '/' como padrão
   const from = location.state?.from || '/';
 
   async function aoEnviar(evento) {
@@ -23,7 +21,6 @@ export default function Login() {
     try {
       const dados = await login(email, senha);
       
-      // Admin sempre vai pro painel, cliente vai para a rota original
       if (dados.usuario.perfil === 'admin') {
         navegar('/admin', { replace: true });
       } else {
@@ -37,48 +34,58 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
+    <div className="min-h-screen flex items-center justify-center bg-[#0d0d0d] bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-zinc-900 via-[#0d0d0d] to-black px-4">
       <form
         onSubmit={aoEnviar}
-        className="bg-white p-8 rounded-lg shadow-md w-full max-w-sm"
+        className="bg-zinc-950/80 backdrop-blur-md border border-zinc-800/80 p-8 rounded-2xl shadow-2xl w-full max-w-md"
       >
-        <h1 className="text-2xl font-bold mb-6 text-center">Entrar</h1>
+        <div className="text-center mb-8">
+          <span className="text-[10px] tracking-[0.3em] uppercase text-amber-500/90 border-b border-amber-500/30 pb-1">
+            Moda Internacional · Est. 2026
+          </span>
+          <h1 className="text-4xl font-black tracking-[0.2em] text-zinc-100 mt-4">NKG</h1>
+          <p className="text-xs tracking-[0.3em] text-amber-500/80 font-medium uppercase mt-1">Dos Importados</p>
+        </div>
 
         {erro && (
-          <p className="bg-red-100 text-red-700 text-sm p-2 rounded mb-4">
+          <div className="bg-red-950/60 border border-red-900/50 text-red-200 text-xs p-3 rounded-lg mb-6 text-center">
             {erro}
-          </p>
+          </div>
         )}
 
-        <label className="block text-sm font-medium mb-1">E-mail</label>
-        <input
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-          className="w-full border rounded px-3 py-2 mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
+        <div className="mb-4">
+          <label className="block text-[11px] uppercase tracking-[0.2em] text-zinc-400 mb-2 font-medium">E-mail</label>
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            className="w-full bg-zinc-900/90 border border-zinc-800 rounded-lg px-4 py-3 text-zinc-100 text-sm focus:outline-none focus:border-amber-500/80 transition-colors"
+          />
+        </div>
 
-        <label className="block text-sm font-medium mb-1">Senha</label>
-        <input
-          type="password"
-          value={senha}
-          onChange={(e) => setSenha(e.target.value)}
-          required
-          className="w-full border rounded px-3 py-2 mb-6 focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
+        <div className="mb-6">
+          <label className="block text-[11px] uppercase tracking-[0.2em] text-zinc-400 mb-2 font-medium">Senha</label>
+          <input
+            type="password"
+            value={senha}
+            onChange={(e) => setSenha(e.target.value)}
+            required
+            className="w-full bg-zinc-900/90 border border-zinc-800 rounded-lg px-4 py-3 text-zinc-100 text-sm focus:outline-none focus:border-amber-500/80 transition-colors"
+          />
+        </div>
 
         <button
           type="submit"
           disabled={carregando}
-          className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 disabled:opacity-50"
+          className="w-full bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold py-3.5 px-4 rounded-lg tracking-[0.15em] text-xs uppercase transition-all shadow-lg shadow-amber-500/10 disabled:opacity-50"
         >
           {carregando ? 'Entrando...' : 'Entrar'}
         </button>
 
-        <p className="text-sm text-center mt-4">
+        <p className="text-xs text-center mt-6 text-zinc-400 tracking-wider">
           Não tem conta?{' '}
-          <Link to="/cadastro" className="text-blue-600 hover:underline">
+          <Link to="/cadastro" className="text-amber-400 hover:text-amber-300 font-medium underline underline-offset-4">
             Cadastre-se
           </Link>
         </p>
