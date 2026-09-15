@@ -20,9 +20,8 @@ export default function Painel() {
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {SECOES.map(([rota, titulo, descricao, icone]) => (
+        {SECOES.map(([rota, titulo, descricao]) => (
           <Link key={rota} to={rota} className="admin-card group rounded border border-[#2b281f] bg-[#111210] p-5">
-            <span className="mb-5 flex h-10 w-10 items-center justify-center rounded border border-[#4a4025] bg-[#1b1810] font-bold text-[#d4af45]">{icone}</span>
             <h2 className="font-semibold text-[#f4efe5] group-hover:text-[#d4af45]">{titulo}</h2>
             <p className="mt-2 text-sm leading-6 text-gray-500">{descricao}</p>
           </Link>

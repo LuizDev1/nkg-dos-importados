@@ -17,7 +17,7 @@ const STATUS = {
   },
   cancelado: {
     texto: 'Cancelado',
-    classe: 'border border-zinc-500/60 bg-zinc-500/20 text-zinc-200',
+    classe: 'border border-red-500/50 bg-red-500/15 text-red-200',
   },
 };
 

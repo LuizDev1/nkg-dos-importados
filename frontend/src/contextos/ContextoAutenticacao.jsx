@@ -7,6 +7,7 @@ export function ProvedorAutenticacao({ children }) {
   const [usuario, setUsuario] = useState(null);
   const [token, setToken] = useState(null);
   const [carregando, setCarregando] = useState(true);
+  const [sessaoEncerrada, setSessaoEncerrada] = useState(false);
 
   useEffect(() => {
     const tokenSalvo = localStorage.getItem('token');
@@ -22,6 +23,7 @@ export function ProvedorAutenticacao({ children }) {
 
   async function login(email, senha) {
     const dados = await loginServico(email, senha);
+    setSessaoEncerrada(false);
 
     setToken(dados.token);
     setUsuario(dados.usuario);
@@ -37,6 +39,7 @@ export function ProvedorAutenticacao({ children }) {
   }
 
   function logout() {
+    setSessaoEncerrada(true);
     setToken(null);
     setUsuario(null);
     localStorage.removeItem('token');
@@ -50,7 +53,7 @@ export function ProvedorAutenticacao({ children }) {
   }
 
   return (
-    <ContextoAutenticacao.Provider value={{ usuario, token, carregando, login, registrar, logout, atualizarUsuario }}>
+    <ContextoAutenticacao.Provider value={{ usuario, token, carregando, login, registrar, logout, atualizarUsuario, sessaoEncerrada }}>
       {children}
     </ContextoAutenticacao.Provider>
   );

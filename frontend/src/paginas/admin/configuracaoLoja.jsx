@@ -1,3 +1,4 @@
+import CampoRotulado from '../../componentes/CampoRotulado';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
@@ -82,19 +83,19 @@ export default function ConfiguracaoLoja() {
         onSubmit={salvar}
         className="bg-white rounded-lg shadow p-6 space-y-4"
       >
-        <input
+        <CampoRotulado rotulo="WhatsApp de suporte"
           type="tel"
           name="whatsapp"
-          value={formulario.whatsapp}
+          value={formulario.whatsapp ?? ''}
           onChange={alterar}
           placeholder="WhatsApp de suporte"
           className="w-full border p-2 rounded"
         />
 
-        <input
+        <CampoRotulado rotulo="E-mail de suporte"
           type="email"
           name="email_suporte"
-          value={formulario.email_suporte}
+          value={formulario.email_suporte ?? ''}
           onChange={alterar}
           placeholder="E-mail de suporte"
           className="w-full border p-2 rounded"
@@ -110,18 +111,18 @@ export default function ConfiguracaoLoja() {
           Exibir aviso no topo da loja
         </label>
 
-        <input
+        <CampoRotulado rotulo="Texto do aviso"
           type="text"
           name="aviso_texto"
-          value={formulario.aviso_texto}
+          value={formulario.aviso_texto ?? ''}
           onChange={alterar}
           placeholder="Texto do aviso"
           className="w-full border p-2 rounded"
         />
 
-        <textarea
+        <CampoRotulado rotulo="Política de devolução" as="textarea"
           name="politica_devolucao"
-          value={formulario.politica_devolucao}
+          value={formulario.politica_devolucao ?? ''}
           onChange={alterar}
           placeholder="Política de devolução"
           rows="6"

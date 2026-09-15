@@ -288,7 +288,9 @@ export default function DetalheProduto() {
           <div className="mt-6 border-t border-gray-200 pt-5">
             <h2 className="mb-3 font-semibold">Calcular entrega</h2>
             {usuario ? (
-              <form onSubmit={calcularFrete} className="flex gap-2">
+              <form onSubmit={calcularFrete} className="flex items-end gap-2">
+                <label className="flex-1 min-w-0 text-sm text-[#aaa399]">
+                  CEP de entrega
                 <input
                   type="text"
                   inputMode="numeric"
@@ -299,8 +301,9 @@ export default function DetalheProduto() {
                   }}
                   placeholder="00000-000"
                   aria-label="CEP de entrega"
-                  className="min-w-0 flex-1 rounded border border-gray-300 px-3 py-2"
+                  className="mt-2 w-full rounded border border-gray-300 px-3 py-2"
                 />
+                </label>
                 <button
                   type="submit"
                   disabled={calculandoFrete}

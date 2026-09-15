@@ -1,3 +1,4 @@
+import { corStatus } from '../../servicos/statusVisual';
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { buscarMeuPedido } from '../../servicos/pedidoService';
@@ -17,7 +18,7 @@ const STATUS = {
   },
   cancelado: {
     texto: 'Cancelado',
-    classe: 'border border-zinc-500/60 bg-zinc-500/20 text-zinc-200',
+    classe: 'border border-red-500/50 bg-red-500/15 text-red-200',
   },
 };
 
@@ -127,7 +128,9 @@ export default function DetalheMeuPedido() {
         <div className="space-y-2 text-sm">
           <p>
             <strong>Status do pedido:</strong>{' '}
-            {STATUS_PEDIDO[pedido.status_pedido] || pedido.status_pedido || 'Ainda não disponível'}
+            <span className={corStatus(pedido.status_pedido)}>
+              {STATUS_PEDIDO[pedido.status_pedido] || pedido.status_pedido || 'Ainda não disponível'}
+            </span>
           </p>
           <p>
             <strong>Tipo de entrega:</strong>{' '}

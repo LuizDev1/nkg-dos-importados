@@ -60,6 +60,13 @@ input:focus, select:focus, textarea:focus {
   outline: none;
 }
 
+.status-verde { color: #4ade80 !important; }
+.status-amarelo { color: #facc15 !important; }
+.status-vermelho { color: #f87171 !important; }
+select.status-verde { border-color: #166534 !important; }
+select.status-amarelo { border-color: #854d0e !important; }
+select.status-vermelho { border-color: #991b1b !important; }
+select.status-cancelado { color: #f87171 !important; border-color: #7f1d1d !important; }
 .bg-white { background-color: #111210 !important; }
 .bg-gray-50, .bg-gray-100 { background-color: #151613 !important; }
 .border-gray-100, .border-gray-200, .border-gray-300 { border-color: #343024 !important; }
@@ -97,6 +104,53 @@ button:focus-visible, a:focus-visible { outline: 2px solid #d4af45; outline-offs
 .nav-link:hover::after {
   transform: scaleX(1);
   transform-origin: left;
+}
+
+.nav-icone {
+  position: relative;
+  width: 44px;
+  height: 44px;
+  border: 1px solid transparent;
+  border-radius: .65rem;
+}
+.nav-icone:hover, .nav-icone:focus-visible {
+  color: #f0d77e;
+  background: linear-gradient(145deg, #292519, #12130f);
+  border-color: #51452b;
+  transform: translateY(-3px);
+  box-shadow: 0 7px 14px rgb(0 0 0 / 45%), inset 0 1px 0 rgb(240 215 126 / 18%);
+}
+.nav-icone::before {
+  content: attr(aria-label);
+  position: absolute;
+  top: calc(100% + 10px);
+  left: 50%;
+  z-index: 60;
+  padding: .45rem .7rem;
+  border: 1px solid #51452b;
+  border-radius: .4rem;
+  background: #171810;
+  color: #f4efe5;
+  font-size: .75rem;
+  font-weight: 500;
+  text-transform: none;
+  letter-spacing: normal;
+  white-space: nowrap;
+  box-shadow: 0 6px 16px rgb(0 0 0 / 35%);
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transform: translate(-50%, -4px);
+  transition: opacity 160ms ease, transform 160ms ease, visibility 160ms ease;
+}
+.nav-icone:hover::before, .nav-icone:focus-visible::before {
+  opacity: 1;
+  visibility: visible;
+  transform: translate(-50%, 0);
+}
+@media (prefers-reduced-motion: reduce) {
+  .nav-icone, .nav-icone::before { transition: none; }
+  .nav-icone:hover, .nav-icone:focus-visible { transform: none; }
 }
 
 .botao-voltar {
@@ -140,6 +194,7 @@ h1, h2, h3 { letter-spacing: -0.02em; }
 .admin-area main tbody td { border-color: #29261d; }
 .admin-card { transition: transform 320ms cubic-bezier(.2,.75,.2,1), border-color 320ms ease, box-shadow 320ms ease; }
 .admin-card:hover { transform: translateY(-4px); border-color: #8b7437; box-shadow: 0 18px 50px rgb(0 0 0 / 32%); }
+.admin-area main .formulario-conta,
 .admin-area main .variacoes-form {
   border: 0;
   background: transparent !important;

@@ -1,3 +1,4 @@
+import { corStatus } from '../../servicos/statusVisual';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { listarPedidosAdmin, atualizarStatusOperacional } from '../../servicos/pedidoService';
@@ -15,7 +16,7 @@ const STATUS_CORES = {
   em_preparacao: 'text-blue-600',
   enviado: 'text-blue-600',
   entregue: 'text-green-700',
-  cancelado: 'text-gray-400',
+  cancelado: 'status-cancelado text-red-400',
   reembolso_pendente: 'text-yellow-600',
   reembolsado: 'text-gray-500',
 };
@@ -99,7 +100,9 @@ export default function Pedidos() {
                 <td className="p-3">
                   {new Date(pedido.criado_em).toLocaleDateString('pt-BR')}
                 </td>
-                <td className="p-3">{STATUS_LABELS[pedido.payment_status] || pedido.payment_status}</td>
+                <td className={`p-3 ${corStatus(pedido.payment_status)}`}>
+                  {STATUS_LABELS[pedido.payment_status] || pedido.payment_status}
+                </td>
                 <td className="p-3">
                   {(() => {
                     const opcoes = TRANSICOES[pedido.status_pedido] || [];
@@ -108,7 +111,7 @@ export default function Pedidos() {
                     value=""
                     disabled={opcoes.length === 0}
                     onChange={(e) => aoMudarStatus(pedido.id, e.target.value)}
-                    className={`border rounded px-2 py-1 bg-white ${STATUS_CORES[pedido.status_pedido] || ''}`}
+                    className={`border rounded px-2 py-1 bg-white ${corStatus(pedido.status_pedido)}`}
                   >
                     <option value="">{STATUS_LABELS[pedido.status_pedido] || 'Sem status'}</option>
                     {opcoes.map((status) => (

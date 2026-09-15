@@ -1,3 +1,4 @@
+import { corStatus } from '../../servicos/statusVisual';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { listarPedidosPorUsuario } from '../../servicos/pedidoService';
@@ -58,7 +59,7 @@ export default function MeusPedidos() {
                 <tr key={pedido.id} className="border-t">
                   <td className="p-3">#{pedido.id}</td>
                   <td className="p-3">{Number(pedido.total).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
-                  <td className="p-3">{STATUS[pedido.status_pedido] || STATUS[pedido.payment_status] || 'Em análise'}</td>
+                  <td className={`p-3 ${corStatus(pedido.status_pedido || pedido.payment_status)}`}>{STATUS[pedido.status_pedido] || STATUS[pedido.payment_status] || 'Em análise'}</td>
                   <td className="p-3">{new Date(pedido.criado_em).toLocaleDateString('pt-BR')}</td>
                   <td className="p-3"><Link to={`/pedido/${pedido.id}/acompanhamento`} className="text-blue-600 hover:underline">Acompanhar</Link></td>
                 </tr>

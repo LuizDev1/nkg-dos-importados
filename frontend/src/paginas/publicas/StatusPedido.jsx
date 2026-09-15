@@ -124,7 +124,7 @@ export default function StatusPedido() {
           <p className="font-semibold mb-4">Acompanhamento</p>
           <ol className="space-y-3">
             {etapas.map(([status, titulo], indice) => (
-              <li key={status} className={indice <= etapaAtual ? 'text-green-600' : 'text-gray-400'}>
+              <li key={status} className={indice <= etapaAtual ? 'text-green-400' : 'text-yellow-400'}>
                 <span className="inline-block w-5">{indice <= etapaAtual ? '✓' : '○'}</span>
                 {titulo}
               </li>

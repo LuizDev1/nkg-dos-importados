@@ -1,3 +1,4 @@
+import { corStatus } from '../../servicos/statusVisual';
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import {
@@ -70,7 +71,11 @@ export default function DetalhePedido() {
       <div className="bg-white rounded-lg shadow p-5 mb-6 space-y-1">
         <p><strong>Cliente:</strong> {pedido.usuario_nome}</p>
         <p><strong>E-mail:</strong> {pedido.usuario_email}</p>
-        <p><strong>Status:</strong> {pedido.payment_status}</p>
+        <p><strong>Status:</strong>{' '}
+          <span className={corStatus(pedido.payment_status)}>
+            {pedido.payment_status}
+          </span>
+        </p>
         <p><strong>Entrega:</strong> {pedido.tipo_entrega}</p>
         <p><strong>Endereço:</strong> {pedido.endereco_entrega}</p>
         <p><strong>Telefone:</strong> {pedido.telefone_contato}</p>

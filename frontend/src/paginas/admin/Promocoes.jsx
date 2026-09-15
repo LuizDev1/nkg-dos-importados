@@ -1,3 +1,5 @@
+import { corStatus } from '../../servicos/statusVisual';
+import CampoRotulado from '../../componentes/CampoRotulado';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
@@ -156,12 +158,12 @@ export default function Promocoes() {
       {erro && <p className="text-red-600 mb-4">{erro}</p>}
 
       <form onSubmit={aoSalvar} className="bg-white rounded-lg shadow p-4 mb-8 grid grid-cols-2 sm:grid-cols-3 gap-3">
-        <input name="codigo" value={form.codigo} onChange={aoMudarCampo} placeholder="Código" required maxLength="50" className="border rounded px-2 py-1" />
-        <select name="tipo" value={form.tipo} onChange={aoMudarCampo} className="border rounded px-2 py-1">
+        <CampoRotulado rotulo="Código" name="codigo" value={form.codigo} onChange={aoMudarCampo} placeholder="Código" required maxLength="50" className="border rounded px-2 py-1" />
+        <CampoRotulado rotulo="Tipo de desconto" as="select" name="tipo" value={form.tipo} onChange={aoMudarCampo} className="border rounded px-2 py-1">
           <option value="percentual">Percentual</option>
           <option value="fixo">Valor fixo</option>
-        </select>
-        <input name="valor" value={form.valor} onChange={aoMudarCampo} placeholder={form.tipo === 'percentual' ? 'Percentual' : 'Valor'} type="number" min="0.01" step="0.01" required className="border rounded px-2 py-1" />
+        </CampoRotulado>
+        <CampoRotulado rotulo={form.tipo === 'percentual' ? 'Percentual' : 'Valor'} name="valor" value={form.valor} onChange={aoMudarCampo} placeholder={form.tipo === 'percentual' ? 'Percentual' : 'Valor'} type="number" min="0.01" step="0.01" required className="border rounded px-2 py-1" />
         <fieldset className="text-sm text-gray-600">
           <legend>Início</legend>
           <div className="flex gap-2">
@@ -176,7 +178,7 @@ export default function Promocoes() {
             <input name="fim_hora" value={form.fim_hora} onChange={aoMudarCampo} type="time" aria-label="Hora de fim" className="w-full border rounded px-2 py-1 text-gray-900" />
           </div>
         </fieldset>
-        <input name="uso_maximo" value={form.uso_maximo} onChange={aoMudarCampo} placeholder="Limite de usos" type="number" min="1" step="1" className="border rounded px-2 py-1" />
+        <CampoRotulado rotulo="Limite de usos" name="uso_maximo" value={form.uso_maximo} onChange={aoMudarCampo} placeholder="Limite de usos" type="number" min="1" step="1" className="border rounded px-2 py-1" />
         <div className="col-span-2 flex justify-end gap-2 sm:col-span-3">
           {Boolean(editandoId) && (
             <button type="button" onClick={() => { setEditandoId(null); setForm(FORM_VAZIO); }} className="rounded border px-4 py-2">
@@ -207,7 +209,7 @@ export default function Promocoes() {
                   <td className="p-3 font-semibold">{promocao.codigo}</td>
                   <td className="p-3">{promocao.tipo === 'percentual' ? `${promocao.valor}%` : `R$ ${Number(promocao.valor).toFixed(2).replace('.', ',')}`}</td>
                   <td className="p-3">{promocao.usos}{promocao.uso_maximo ? ` / ${promocao.uso_maximo}` : ''}</td>
-                  <td className="p-3">{promocao.ativo ? 'Ativa' : 'Inativa'}</td>
+                  <td className={`p-3 ${corStatus(promocao.ativo ? 'ativo' : 'inativo')}`}>{promocao.ativo ? 'Ativa' : 'Inativa'}</td>
                   <td className="p-3">
                     <div className="flex gap-3">
                       <button onClick={() => aoEditar(promocao)} className="text-blue-600 hover:underline">Editar</button>
