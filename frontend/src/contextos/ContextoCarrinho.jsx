@@ -1,6 +1,9 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import { abandonarPedidoPendente } from '../servicos/pedidoService';
 
+import { buscarProduto } from '../servicos/produtoService';
+import { limitarQuantidade, atualizarEstoqueCarrinho } from '../utilitarios/estoqueCarrinho.mjs';
+
 const ContextoCarrinho = createContext(null);
 
 export function ProvedorCarrinho({ children }) {
@@ -15,6 +18,26 @@ export function ProvedorCarrinho({ children }) {
     localStorage.setItem('carrinho', JSON.stringify(itens));
   }, [itens]);
 
+  const [carregandoEstoque, setCarregandoEstoque] = useState(true);
+  const [erroEstoque, setErroEstoque] = useState('');
+  const produtosCarrinho = [...new Set(itens.map(item => String(item.produto_id)))].sort().join(',');
+
+  useEffect(() => {
+    let ativo = true;
+    setCarregandoEstoque(true);
+    setErroEstoque('');
+    const ids = produtosCarrinho ? produtosCarrinho.split(',') : [];
+    Promise.all(ids.map(async id => [id, await buscarProduto(id)]))
+      .then(resultados => {
+        if (!ativo) return;
+        const produtos = new Map(resultados);
+        setItens(atuais => atualizarEstoqueCarrinho(atuais, produtos));
+      })
+      .catch(() => { if (ativo) setErroEstoque('Erro ao atualizar estoque. Recarregue a página para tentar novamente.'); })
+      .finally(() => { if (ativo) setCarregandoEstoque(false); });
+    return () => { ativo = false; };
+  }, [produtosCarrinho]);
+
   function invalidarPedidoPendente() {
     const pedidoId = localStorage.getItem('pedido_pendente_carrinho');
     if (!pedidoId) return;
@@ -25,6 +48,9 @@ export function ProvedorCarrinho({ children }) {
   }
 
   function adicionarItem(produto, quantidade = 1, variacao = null) {
+    const estoque = Number(variacao ? variacao.estoque_qtd : produto.estoque_qtd);
+    if (!Number.isInteger(quantidade) || quantidade < 1 || !Number.isFinite(estoque) || estoque < 1) return;
+    quantidade = Math.min(quantidade, estoque);
     invalidarPedidoPendente();
     const chave = variacao ? `${produto.id}:${variacao.id}` : String(produto.id);
     setItens((atual) => {
@@ -33,7 +59,7 @@ export function ProvedorCarrinho({ children }) {
       if (existente) {
         return atual.map((item) =>
           item.chave === chave
-            ? { ...item, quantidade: item.quantidade + quantidade }
+            ? { ...item, estoque_qtd: estoque, quantidade: Math.min(Number(item.quantidade) + quantidade, estoque) }
             : item
         );
       }
@@ -41,6 +67,7 @@ export function ProvedorCarrinho({ children }) {
       return [
         ...atual,
         {
+          estoque_qtd: estoque,
           produto_id: produto.id,
           variacao_id: variacao?.id || null,
           variacao_nome: variacao?.nome || null,
@@ -60,12 +87,14 @@ export function ProvedorCarrinho({ children }) {
   }
 
   function alterarQuantidade(chave, quantidade) {
-    if (quantidade < 1) return;
+    if (!Number.isInteger(quantidade) || quantidade < 1) return;
     invalidarPedidoPendente();
 
     setItens((atual) =>
       atual.map((item) =>
-        item.chave === chave ? { ...item, quantidade } : item
+        item.chave === chave && limitarQuantidade(quantidade, item.estoque_qtd) !== null
+          ? { ...item, quantidade: limitarQuantidade(quantidade, item.estoque_qtd) }
+          : item
       )
     );
   }
@@ -79,7 +108,7 @@ export function ProvedorCarrinho({ children }) {
 
   return (
     <ContextoCarrinho.Provider
-      value={{ itens, adicionarItem, removerItem, alterarQuantidade, limparCarrinho, total, quantidadeTotal }}
+      value={{ carregandoEstoque, erroEstoque, itens, adicionarItem, removerItem, alterarQuantidade, limparCarrinho, total, quantidadeTotal }}
     >
       {children}
     </ContextoCarrinho.Provider>

@@ -9,6 +9,11 @@ const jwt = require('jsonwebtoken');
 const melhorEnvioService = require('../src/services/melhorEnvioService');
 const usuariosTeste = [];
 const produtosTeste = [];
+const mercadoPagoService = require('../src/services/mercadoPagoService');
+const notificacaoService = require('../src/services/notificacaoService');
+test.mock.method(mercadoPagoService, 'solicitarReembolso', async () => ({}));
+test.mock.method(mercadoPagoService, 'buscarOrder', async () => { throw new Error('Order de teste inexistente'); });
+test.mock.method(notificacaoService, 'notificarStatusPedido', async () => {});
 
 async function criarUsuarioTeste(email, senha, perfil = 'cliente', status = 'ativo') {
   const id = await Usuario.criar({
@@ -163,7 +168,7 @@ test('cliente pode cancelar pedido e receber estoque de volta', async () => {
   produtosTeste.push(produto.insertId);
 
   const [pedido] = await pool.query(
-    'INSERT INTO pedidos (usuario_id, payment_status, payment_id, tipo_entrega, endereco_entrega, telefone_contato, total) VALUES (?, ?, ?, ?, ?, ?, ?)',
+    'INSERT INTO pedidos (usuario_id, payment_status, payment_id, tipo_entrega, endereco_entrega, telefone_contato, total, estoque_reservado) VALUES (?, ?, ?, ?, ?, ?, ?, TRUE)',
     [usuario.id, 'pago', 'pay_123', 'envio', 'Rua B, 456', '(61)98888-7777', 99.80]
   );
 
@@ -179,11 +184,19 @@ test('cliente pode cancelar pedido e receber estoque de volta', async () => {
   assert.equal(resposta.status, 200);
   assert.match(resposta.body.mensagem, /cancelado/i);
 
-  const [pedidoAtualizado] = await pool.query('SELECT payment_status FROM pedidos WHERE id = ?', [pedido.insertId]);
+  const [pedidoAtualizado] = await pool.query('SELECT payment_status, status_pedido, reembolso_status FROM pedidos WHERE id = ?', [pedido.insertId]);
   const [estoqueAtualizado] = await pool.query('SELECT estoque_qtd FROM produtos WHERE id = ?', [produto.insertId]);
 
   assert.equal(pedidoAtualizado[0].payment_status, 'cancelado');
   assert.equal(Number(estoqueAtualizado[0].estoque_qtd), 5);
+  assert.equal(pedidoAtualizado[0].status_pedido, 'reembolso_pendente');
+  assert.equal(pedidoAtualizado[0].reembolso_status, 'solicitado');
+  const repetida = await request(app)
+    .patch('/api/pedidos/' + pedido.insertId + '/cancelar')
+    .set('Authorization', 'Bearer ' + token);
+  assert.equal(repetida.status, 409);
+  const [estoqueRepetido] = await pool.query('SELECT estoque_qtd FROM produtos WHERE id = ?', [produto.insertId]);
+  assert.equal(Number(estoqueRepetido[0].estoque_qtd), 5);
 });
 
 test('cancelamento de pagamento pendente não cria reembolso', async () => {

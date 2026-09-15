@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { buscarProduto, listarProdutos } from '../../servicos/produtoService';
 import { cotarFrete } from '../../servicos/freteService';
@@ -34,8 +34,24 @@ export default function DetalheProduto() {
   const { usuario } = useAutenticacao();
   const { estaFavorito, alternarFavorito } = useFavoritos();
   const navigate = useNavigate();
+  const freteVersao = useRef(0);
+  const paginaVersao = useRef(0);
+  const timerAdicionado = useRef(null);
+  const [erroCarrinho, setErroCarrinho] = useState('');
 
   useEffect(() => {
+    let ativo = true;
+    paginaVersao.current += 1;
+    clearTimeout(timerAdicionado.current);
+    setSalvandoAvaliacao(false);
+    freteVersao.current += 1;
+    setCalculandoFrete(false);
+    setErroFrete('');
+    setAvisoEstoque('');
+    setMensagemAvaliacao('');
+    setFormAvaliacao({ nota: 5, comentario: '', foto_url: '' });
+    setAdicionado(false);
+    setErroCarrinho('');
     async function carregar() {
       setCarregando(true);
       setErro('');
@@ -43,6 +59,7 @@ export default function DetalheProduto() {
       setPodeAvaliar(false);
       try {
         const dados = await buscarProduto(id);
+        if (!ativo) return;
         setProduto(dados);
         setImagemSelecionada(dados.foto_url || dados.imagens?.[0]?.imagem_url || '');
         setQuantidade(1);
@@ -50,16 +67,21 @@ export default function DetalheProduto() {
         setCotacao(null);
 
         try {
-          setAvaliacoes(await listarAvaliacoes(id));
+          const lista = await listarAvaliacoes(id);
+          if (!ativo) return;
+          setAvaliacoes(lista);
         } catch {
+          if (!ativo) return;
           setAvaliacoes([]);
         }
 
         if (usuario && usuario.perfil !== 'admin') {
           try {
             const permissao = await verificarPermissaoAvaliacao(id);
+            if (!ativo) return;
             setPodeAvaliar(Boolean(permissao.pode_avaliar));
           } catch {
+            if (!ativo) return;
             setPodeAvaliar(false);
           }
         } else {
@@ -69,30 +91,50 @@ export default function DetalheProduto() {
         if (dados?.categoria) {
           try {
             const produtosRelacionados = await listarProdutos({ categoria: dados.categoria });
+            if (!ativo) return;
             setRelacionados(
               produtosRelacionados.filter((item) => String(item.id) !== String(dados.id)).slice(0, 4)
             );
           } catch {
+            if (!ativo) return;
             setRelacionados([]);
           }
         } else {
           setRelacionados([]);
         }
       } catch (erro) {
-        setErro(erro.message);
+        if (ativo) setErro(erro.message);
       } finally {
-        setCarregando(false);
+        if (ativo) setCarregando(false);
       }
     }
 
     carregar();
+    return () => { ativo = false; freteVersao.current += 1; paginaVersao.current += 1; clearTimeout(timerAdicionado.current); };
   }, [id, usuario]);
 
   function aoAdicionar() {
-    const variacao = (produto.variacoes || []).find((item) => String(item.id) === variacaoId);
+    const variacao = (produto.variacoes || []).find(
+      (item) => String(item.id) === variacaoId
+    );
+
+    const estoque = Number(variacao ? variacao.estoque_qtd : produto.estoque_qtd);
+    if (!Number.isInteger(quantidade) || quantidade < 1 || quantidade > estoque || !Number.isFinite(estoque)
+      || (produto.variacoes?.length && !variacao)) {
+      setErroCarrinho('Escolha uma variação e uma quantidade válida dentro do estoque.');
+      return;
+    }
+    setErroCarrinho('');
     adicionarItem(produto, quantidade, variacao || null);
+
+    if (!usuario) {
+      navigate('/login', { state: { from: '/carrinho' } });
+      return;
+    }
+
     setAdicionado(true);
-    setTimeout(() => setAdicionado(false), 1200);
+    clearTimeout(timerAdicionado.current);
+    timerAdicionado.current = setTimeout(() => setAdicionado(false), 1200);
   }
 
   async function calcularFrete(evento) {
@@ -105,17 +147,18 @@ export default function DetalheProduto() {
       return;
     }
 
+    const versao = ++freteVersao.current;
     setCalculandoFrete(true);
     try {
       const resultado = await cotarFrete(cep, [{
         produto_id: produto.id,
         quantidade,
       }]);
-      setCotacao(resultado);
+      if (versao === freteVersao.current) setCotacao(resultado);
     } catch (erro) {
-      setErroFrete(erro.message);
+      if (versao === freteVersao.current) setErroFrete(erro.message);
     } finally {
-      setCalculandoFrete(false);
+      if (versao === freteVersao.current) setCalculandoFrete(false);
     }
   }
 
@@ -124,16 +167,19 @@ export default function DetalheProduto() {
       navigate('/login');
       return;
     }
+    const versao = paginaVersao.current;
     try {
       const resposta = await cadastrarAvisoEstoque(produto.id, variacaoSelecionada?.id);
-      setAvisoEstoque(resposta.mensagem);
+      if (versao === paginaVersao.current) setAvisoEstoque(resposta.mensagem);
     } catch (erroAviso) {
-      setAvisoEstoque(erroAviso.message);
+      if (versao === paginaVersao.current) setAvisoEstoque(erroAviso.message);
     }
   }
 
   async function enviarAvaliacao(evento) {
     evento.preventDefault();
+    if (salvandoAvaliacao) return;
+    const versao = paginaVersao.current;
     setSalvandoAvaliacao(true);
     setMensagemAvaliacao('');
     try {
@@ -142,13 +188,16 @@ export default function DetalheProduto() {
         nota: Number(formAvaliacao.nota),
         foto_url: formAvaliacao.foto_url.trim(),
       });
+      if (versao !== paginaVersao.current) return;
       setMensagemAvaliacao(resposta.mensagem);
-      setAvaliacoes(await listarAvaliacoes(produto.id));
+      const lista = await listarAvaliacoes(produto.id);
+      if (versao !== paginaVersao.current) return;
+      setAvaliacoes(lista);
       setFormAvaliacao({ nota: 5, comentario: '', foto_url: '' });
     } catch (erroAvaliacao) {
-      setMensagemAvaliacao(erroAvaliacao.message);
+      if (versao === paginaVersao.current) setMensagemAvaliacao(erroAvaliacao.message);
     } finally {
-      setSalvandoAvaliacao(false);
+      if (versao === paginaVersao.current) setSalvandoAvaliacao(false);
     }
   }
 
@@ -229,7 +278,7 @@ export default function DetalheProduto() {
               <select
                 id="variacao"
                 value={variacaoId}
-                onChange={(e) => { setVariacaoId(e.target.value); setQuantidade(1); setCotacao(null); setAvisoEstoque(''); }}
+                onChange={(e) => { freteVersao.current += 1; setCalculandoFrete(false); setVariacaoId(e.target.value); setQuantidade(1); setCotacao(null); setAvisoEstoque(''); }}
                 className="w-full rounded border border-gray-300 px-3 py-2"
               >
                 <option value="">Selecione</option>
@@ -252,8 +301,10 @@ export default function DetalheProduto() {
               value={quantidade}
               onChange={(e) => {
                 const novaQuantidade = Number(e.target.value);
-                setQuantidade(Math.min(Math.max(novaQuantidade || 1, 1), estoqueDisponivel));
+                setQuantidade(Math.min(Math.max(Math.trunc(novaQuantidade) || 1, 1), estoqueDisponivel));
                 setCotacao(null);
+                freteVersao.current += 1;
+                setCalculandoFrete(false);
               }}
               className="w-20 border rounded px-2 py-1 text-center"
             />
@@ -262,27 +313,28 @@ export default function DetalheProduto() {
           <button
             onClick={aoAdicionar}
             disabled={estoqueDisponivel === 0}
-            className={`w-full py-3 rounded transition ${
-              adicionado
+            className={`w-full py-3 rounded transition ${adicionado
                 ? 'bg-green-600 text-white'
                 : estoqueDisponivel === 0
-                ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                : 'bg-blue-600 text-white hover:bg-blue-700'
-            }`}
+                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  : 'bg-blue-600 text-white hover:bg-blue-700'
+              }`}
           >
             {adicionado ? 'Adicionado!' : 'Adicionar ao carrinho'}
           </button>
 
+          {erroCarrinho && <p role="alert" className="mt-2 text-sm text-red-600">{erroCarrinho}</p>}
+
           {((produto.variacoes?.length > 0 && variacaoSelecionada && estoqueDisponivel === 0)
             || (!produto.variacoes?.length && estoqueDisponivel === 0)) && (
-            <button
-              type="button"
-              onClick={solicitarAviso}
-              className="mt-3 w-full rounded border border-[#d4af45] px-4 py-3 font-semibold text-[#d4af45] hover:bg-[#d4af45] hover:text-[#090a09]"
-            >
-              Avise-me quando estiver disponível
-            </button>
-          )}
+              <button
+                type="button"
+                onClick={solicitarAviso}
+                className="mt-3 w-full rounded border border-[#d4af45] px-4 py-3 font-semibold text-[#d4af45] hover:bg-[#d4af45] hover:text-[#090a09]"
+              >
+                Avise-me quando estiver disponível
+              </button>
+            )}
           {avisoEstoque && <p className="mt-2 text-center text-sm text-[#c6c0b5]">{avisoEstoque}</p>}
 
           <div className="mt-6 border-t border-gray-200 pt-5">
@@ -291,18 +343,22 @@ export default function DetalheProduto() {
               <form onSubmit={calcularFrete} className="flex items-end gap-2">
                 <label className="flex-1 min-w-0 text-sm text-[#aaa399]">
                   CEP de entrega
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  value={cep}
-                  onChange={(evento) => {
-                    const numeros = evento.target.value.replace(/\D/g, '').slice(0, 8);
-                    setCep(numeros.replace(/^(\d{5})(\d)/, '$1-$2'));
-                  }}
-                  placeholder="00000-000"
-                  aria-label="CEP de entrega"
-                  className="mt-2 w-full rounded border border-gray-300 px-3 py-2"
-                />
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    value={cep}
+                    onChange={(evento) => {
+                      const numeros = evento.target.value.replace(/\D/g, '').slice(0, 8);
+                      freteVersao.current += 1;
+                      setCotacao(null);
+                      setErroFrete('');
+                      setCalculandoFrete(false);
+                      setCep(numeros.replace(/^(\d{5})(\d)/, '$1-$2'));
+                    }}
+                    placeholder="00000-000"
+                    aria-label="CEP de entrega"
+                    className="mt-2 w-full rounded border border-gray-300 px-3 py-2"
+                  />
                 </label>
                 <button
                   type="submit"

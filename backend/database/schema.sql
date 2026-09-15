@@ -90,6 +90,7 @@ CREATE TABLE pedidos (
   usuario_id INT NOT NULL,
   idempotency_key VARCHAR(100) NULL,
   payment_status ENUM('pendente', 'pago', 'recusado', 'cancelado') NOT NULL DEFAULT 'pendente',
+  reembolso_status VARCHAR(30) NULL,
   status_pedido ENUM('aguardando_pagamento', 'pago', 'em_preparacao', 'enviado', 'entregue', 'cancelado', 'reembolso_pendente', 'reembolsado') NOT NULL DEFAULT 'aguardando_pagamento',
   payment_id VARCHAR(150),
   estoque_reservado BOOLEAN NOT NULL DEFAULT TRUE,
