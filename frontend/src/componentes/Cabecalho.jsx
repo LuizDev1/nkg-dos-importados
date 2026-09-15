@@ -34,6 +34,15 @@ export default function Cabecalho() {
           {/* Autenticação */}
           {usuario ? (
             <>
+              {!isAdmin && (
+                <Link
+                  to="/minha-conta/pedidos"
+                  className="text-gray-600 hover:text-blue-600"
+                >
+                  Meus pedidos
+                </Link>
+              )}
+
               <span className="text-gray-500">Olá, {usuario.nome}</span>
               <button onClick={logout} className="text-red-600 hover:underline">
                 Sair
