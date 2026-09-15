@@ -102,3 +102,31 @@ export async function buscarPedido(id) {
 
   return dados;
 }
+
+export async function listarMeusPedidos() {
+  const resposta = await fetch(`${API_URL}/pedidos/me`, {
+    headers: headersComToken(),
+  });
+
+  const dados = await resposta.json();
+
+  if (!resposta.ok) {
+    throw new Error(dados.mensagem || 'Erro ao carregar seus pedidos');
+  }
+
+  return dados;
+}
+
+export async function buscarMeuPedido(id) {
+  const resposta = await fetch(`${API_URL}/pedidos/me/${id}`, {
+    headers: headersComToken(),
+  });
+
+  const dados = await resposta.json();
+
+  if (!resposta.ok) {
+    throw new Error(dados.mensagem || 'Erro ao carregar o pedido');
+  }
+
+  return dados;
+}
