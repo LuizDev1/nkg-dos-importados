@@ -1,4 +1,4 @@
-import { Routes, Route } from 'react-router-dom';
+import { Navigate, Routes, Route } from 'react-router-dom';
 import Login from '../paginas/publicas/Login';
 import Cadastro from '../paginas/publicas/Cadastro';
 import Home from '../paginas/publicas/Home';
@@ -16,7 +16,8 @@ import Clientes from '../paginas/admin/Clientes';
 import DetalheCliente from '../paginas/admin/DetalheCliente';
 import DetalhePedido from '../paginas/admin/DetalhePedido';
 import Promocoes from '../paginas/admin/Promocoes';
-import MeusPedidos from '../paginas/publicas/MeusPedidos';
+import MeusPedidosCliente from '../paginas/cliente/MeusPedidos';
+import DetalheMeuPedido from '../paginas/cliente/DetalheMeuPedido';
 import Privacidade from '../paginas/publicas/Privacidade';
 
 export default function RotasApp() {
@@ -45,11 +46,7 @@ export default function RotasApp() {
       <Route path="/pedido/:id/:resultado" element={<StatusPedido />} />
       <Route
         path="/meus-pedidos"
-        element={
-          <RotaPrivada somenteCliente>
-            <MeusPedidos />
-          </RotaPrivada>
-        }
+        element={<Navigate to="/minha-conta/pedidos" replace />}
       />
       <Route
         path="/privacidade"
@@ -64,7 +61,7 @@ export default function RotasApp() {
         path="/minha-conta/pedidos"
         element={
           <RotaPrivada>
-            <MeusPedidos />
+            <MeusPedidosCliente />
           </RotaPrivada>
         }
       />
