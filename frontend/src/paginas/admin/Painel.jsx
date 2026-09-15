@@ -7,6 +7,7 @@ const SECOES = [
   ['/admin/configuracoes', 'Configurações', 'Contato e informações gerais', 'C'],
   ['/admin/promocoes', 'Promoções', 'Cupons e campanhas comerciais', '%'],
   ['/admin/banners', 'Banners', 'Destaques visuais da vitrine', 'B'],
+  ['/admin/perguntas', 'Perguntas', 'Dúvidas enviadas pelos clientes', '?'],
   ['/admin/clientes', 'Clientes', 'Contas e histórico de compras', 'U'],
 ];
 

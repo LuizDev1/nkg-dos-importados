@@ -33,6 +33,13 @@ const STATUS_PEDIDO = {
   reembolsado: 'Reembolsado',
 };
 
+const ETAPAS_ENTREGA = [
+  ['pago', 'Pagamento aprovado'],
+  ['em_preparacao', 'Em preparação'],
+  ['enviado', 'Enviado'],
+  ['entregue', 'Entregue'],
+];
+
 function formatarValor(valor) {
   return Number(valor).toLocaleString('pt-BR', {
     style: 'currency',
@@ -91,6 +98,10 @@ export default function DetalheMeuPedido() {
     texto: pedido.payment_status,
     classe: 'border border-[#8f793d] bg-[#d4af45]/15 text-[#f0d77e]',
   };
+  const etapaAtual = ETAPAS_ENTREGA.findIndex(([chave]) => chave === pedido.status_pedido);
+  const rastreioUrl = pedido.codigo_rastreio
+    ? `https://rastreamento.correios.com.br/app/index.php?objetos=${encodeURIComponent(pedido.codigo_rastreio)}`
+    : null;
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-8">
@@ -119,6 +130,22 @@ export default function DetalheMeuPedido() {
           {status.texto}
         </span>
       </div>
+
+      {!['cancelado', 'reembolso_pendente', 'reembolsado'].includes(pedido.status_pedido) && (
+        <section className="mb-6 rounded-lg bg-white p-5 shadow" aria-label="Andamento do pedido">
+          <h2 className="mb-5 text-lg font-semibold">Andamento do pedido</h2>
+          <ol className="grid grid-cols-2 gap-y-5 sm:grid-cols-4">
+            {ETAPAS_ENTREGA.map(([chave, titulo], indice) => {
+              const concluida = etapaAtual >= indice;
+              const atual = etapaAtual === indice;
+              return <li key={chave} className="flex items-center gap-2 pr-2 text-sm">
+                <span aria-hidden="true" className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold ${concluida ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-500'}`}>{concluida ? '✓' : indice + 1}</span>
+                <span className={atual ? 'font-semibold text-blue-700' : concluida ? 'text-gray-800' : 'text-gray-500'}>{titulo}</span>
+              </li>;
+            })}
+          </ol>
+        </section>
+      )}
 
       <section className="bg-white rounded-lg shadow p-5 mb-6">
         <h2 className="text-lg font-semibold mb-4">
@@ -151,7 +178,7 @@ export default function DetalheMeuPedido() {
 
           <p>
             <strong>Código de rastreio:</strong>{' '}
-            {pedido.codigo_rastreio || 'Ainda não disponível'}
+            {rastreioUrl ? <a href={rastreioUrl} target="_blank" rel="noreferrer" className="font-medium text-blue-700 underline hover:text-blue-900">{pedido.codigo_rastreio} (acompanhar entrega)</a> : 'Ainda não disponível'}
           </p>
         </div>
       </section>
@@ -167,11 +194,11 @@ export default function DetalheMeuPedido() {
               key={item.id}
               className="p-5 flex flex-col gap-4 sm:flex-row"
             >
-              <img
-                src={item.foto_url || 'https://placehold.co/120'}
-                alt={item.produto_nome}
-                className="w-24 h-24 rounded object-cover"
-              />
+              {item.foto_url ? (
+                <img src={item.foto_url} alt={item.produto_nome} className="w-24 h-24 rounded object-cover" />
+              ) : (
+                <div role="img" aria-label={`Imagem indisponível de ${item.produto_nome}`} className="flex h-24 w-24 shrink-0 items-center justify-center rounded bg-gray-200 text-center text-[10px] text-gray-500">Sem imagem</div>
+              )}
 
               <div className="flex-1">
                 <Link

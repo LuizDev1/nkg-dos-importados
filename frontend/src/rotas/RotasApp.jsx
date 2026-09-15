@@ -22,6 +22,7 @@ import DetalheMeuPedido from '../paginas/cliente/DetalheMeuPedido';
 import Privacidade from '../paginas/publicas/Privacidade';
 import Favoritos from '../paginas/cliente/Favoritos';
 import MinhaConta from '../paginas/cliente/MinhaConta';
+import Perguntas from '../paginas/admin/Perguntas';
 
 export default function RotasApp() {
   return (
@@ -145,6 +146,7 @@ export default function RotasApp() {
           </RotaPrivada>
         }
       />
+      <Route path="/admin/perguntas" element={<RotaPrivada somenteAdmin><Perguntas /></RotaPrivada>} />
       <Route
         path="/admin/clientes/:id"
         element={

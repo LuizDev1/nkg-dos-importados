@@ -24,6 +24,7 @@ const FORM_VAZIO = {
   foto_url: '',
   imagens_urls: '',
   estoque_qtd: '',
+  estoque_minimo: '5',
   peso_kg: '0.300',
   largura_cm: '20',
   altura_cm: '10',
@@ -73,6 +74,7 @@ export default function Produtos() {
       foto_url: produto.foto_url || '',
       imagens_urls: (produto.imagens || []).map((imagem) => imagem.imagem_url).join('\n'),
       estoque_qtd: produto.estoque_qtd,
+      estoque_minimo: produto.estoque_minimo ?? 5,
       peso_kg: produto.peso_kg || '0.300',
       largura_cm: produto.largura_cm || '20',
       altura_cm: produto.altura_cm || '10',
@@ -166,6 +168,7 @@ export default function Produtos() {
         <CampoRotulado rotulo="Tag" name="tag" value={form.tag} onChange={aoMudarCampo} placeholder="Tag" className="border rounded px-2 py-1" />
         <SeletorFotos key={editandoId || 'novo'} rotulo="Fotos do produto" fotos={[form.foto_url, ...form.imagens_urls.split(/\r?\n/)].filter(Boolean)} onCarregando={setEnviandoFotos} onChange={fotos => setForm(atual => ({ ...atual, foto_url: fotos[0] || '', imagens_urls: fotos.slice(1).join('\n') }))} />
         <CampoRotulado rotulo="Estoque" name="estoque_qtd" value={form.estoque_qtd} onChange={aoMudarCampo} placeholder="Estoque" type="number" required className="border rounded px-2 py-1" />
+        <CampoRotulado rotulo="Alerta em" name="estoque_minimo" value={form.estoque_minimo} onChange={aoMudarCampo} placeholder="Estoque mínimo" type="number" min="0" required className="border rounded px-2 py-1" />
         <CampoRotulado rotulo="Peso (kg)" name="peso_kg" value={form.peso_kg} onChange={aoMudarCampo} placeholder="Peso (kg)" type="number" min="0.001" step="0.001" required className="border rounded px-2 py-1" />
         <CampoRotulado rotulo="Largura (cm)" name="largura_cm" value={form.largura_cm} onChange={aoMudarCampo} placeholder="Largura (cm)" type="number" min="1" step="0.01" required className="border rounded px-2 py-1" />
         <CampoRotulado rotulo="Altura (cm)" name="altura_cm" value={form.altura_cm} onChange={aoMudarCampo} placeholder="Altura (cm)" type="number" min="1" step="0.01" required className="border rounded px-2 py-1" />

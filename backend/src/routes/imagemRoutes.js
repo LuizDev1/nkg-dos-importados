@@ -19,7 +19,7 @@ router.post('/imagens', autenticar, admin, express.raw({ type: ['image/jpeg', 'i
     await fs.mkdir(pasta, { recursive: true });
     const nome = randomUUID() + '.' + extensao;
     await fs.writeFile(path.join(pasta, nome), bytes, { flag: 'wx' });
-    return res.status(201).json({ imagem_url: '/api/uploads/' + nome });
+    return res.status(201).json({ imagem_url: '/api/media/' + nome });
   } catch {
     return res.status(500).json({ mensagem: 'Erro ao salvar foto' });
   }

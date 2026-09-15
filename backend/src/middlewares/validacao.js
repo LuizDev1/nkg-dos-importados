@@ -34,7 +34,11 @@ const schemas = {
   autenticacao: z.object({
     nome: z.string().trim().min(2).max(150),
     email: z.string().trim().email().max(150),
-    senha: z.string().min(8).max(128),
+    senha: z.string().min(8, 'A senha deve ter pelo menos 8 caracteres').max(128)
+      .regex(/[a-z]/, 'A senha deve conter uma letra minúscula')
+      .regex(/[A-Z]/, 'A senha deve conter uma letra maiúscula')
+      .regex(/\d/, 'A senha deve conter um número')
+      .regex(/[^A-Za-z0-9]/, 'A senha deve conter um símbolo, como @ ou #'),
     cpf: z.string().trim().max(14).refine(validarCpf, 'CPF inválido').transform(normalizarCpf),
   }).strict(),
   login: z.object({
@@ -124,8 +128,13 @@ function validar(schema) {
     const resultado = schema.safeParse(req.body);
 
     if (!resultado.success) {
+      const errosSenha = resultado.error.issues
+        .filter((erro) => erro.path.join('.') === 'senha')
+        .map((erro) => erro.message);
       return res.status(400).json({
-        mensagem: 'Dados inválidos',
+        mensagem: errosSenha.length
+          ? `Não foi possível se cadastrar. ${errosSenha.join(' ')}`
+          : resultado.error.issues[0].message || 'Dados inválidos',
         erros: resultado.error.issues.map((erro) => ({
           campo: erro.path.join('.'),
           mensagem: erro.message,

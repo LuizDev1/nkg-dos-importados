@@ -28,11 +28,11 @@ export default function CartaoProduto({ produto }) {
       </button>}
       <Link to={`/produto/${produto.id}`} className="flex flex-1 flex-col">
       <div className="overflow-hidden bg-[#171714]">
-        <img
-          src={produto.foto_url || 'https://placehold.co/200'}
-          alt={produto.nome}
-          className="h-52 w-full object-cover transition duration-500 group-hover:scale-105"
-        />
+        {produto.foto_url ? (
+          <img src={produto.foto_url} alt={produto.nome} className="h-52 w-full object-cover transition duration-500 group-hover:scale-105" />
+        ) : (
+          <div role="img" aria-label={`Imagem indisponível de ${produto.nome}`} className="flex h-52 w-full items-center justify-center bg-[#24251f] text-xs uppercase tracking-[0.18em] text-[#aaa396]">Sem imagem</div>
+        )}
       </div>
       <div className="flex flex-1 flex-col p-4">
         <p className="mb-2 text-[10px] uppercase tracking-[0.22em] text-[#9b823c]">{produto.categoria}</p>

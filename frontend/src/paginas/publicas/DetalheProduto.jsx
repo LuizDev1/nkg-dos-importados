@@ -8,6 +8,7 @@ import CartaoProduto from '../../componentes/CartaoProduto';
 import { useFavoritos } from '../../contextos/ContextoFavoritos';
 import { cadastrarAvisoEstoque } from '../../servicos/avisoEstoqueService';
 import { listarAvaliacoes, salvarAvaliacao, verificarPermissaoAvaliacao, marcarAvaliacaoUtil } from '../../servicos/avaliacaoService';
+import PerguntasProduto from '../../componentes/PerguntasProduto';
 
 export default function DetalheProduto() {
   const { id } = useParams();
@@ -279,11 +280,11 @@ export default function DetalheProduto() {
 
       <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-8">
         <div>
-          <img
-            src={imagemSelecionada || 'https://placehold.co/400'}
-            alt={produto.nome}
-            className="h-80 w-full rounded-lg object-cover transition-opacity"
-          />
+          {imagemSelecionada ? (
+            <img src={imagemSelecionada} alt={produto.nome} className="h-80 w-full rounded-lg object-cover transition-opacity" />
+          ) : (
+            <div role="img" aria-label={`Imagem indisponível de ${produto.nome}`} className="flex h-80 w-full items-center justify-center rounded-lg bg-[#24251f] text-sm uppercase tracking-[0.18em] text-[#aaa396]">Sem imagem</div>
+          )}
           {imagensProduto.length > 1 && (
             <div className="mt-3 grid grid-cols-5 gap-2" aria-label="Galeria do produto">
               {imagensProduto.map((url, indice) => (
@@ -333,20 +334,25 @@ export default function DetalheProduto() {
 
           {produto.variacoes?.length > 0 && (
             <div className="mb-4">
-              <label htmlFor="variacao" className="mb-2 block text-sm font-medium">Escolha uma variação:</label>
-              <select
-                id="variacao"
-                value={variacaoId}
-                onChange={(e) => { freteVersao.current += 1; setCalculandoFrete(false); setVariacaoId(e.target.value); setQuantidade(1); setCotacao(null); setAvisoEstoque(''); }}
-                className="w-full rounded border border-gray-300 px-3 py-2"
-              >
-                <option value="">Selecione</option>
-                {produto.variacoes.map((variacao) => (
-                  <option key={variacao.id} value={variacao.id}>
-                    {variacao.nome}{!variacao.estoque_qtd ? ' - indisponível' : ` - ${variacao.estoque_qtd} disponíveis`}
-                  </option>
-                ))}
-              </select>
+              <p id="variacoes-label" className="mb-2 text-sm font-medium">Escolha uma variação:</p>
+              <div className="flex flex-wrap gap-2" role="group" aria-labelledby="variacoes-label">
+                {produto.variacoes.map((variacao) => {
+                  const selecionada = String(variacao.id) === variacaoId;
+                  const indisponivel = Number(variacao.estoque_qtd) <= 0;
+                  return (
+                    <button
+                      key={variacao.id}
+                      type="button"
+                      disabled={indisponivel}
+                      aria-pressed={selecionada}
+                      onClick={() => { freteVersao.current += 1; setCalculandoFrete(false); setVariacaoId(String(variacao.id)); setQuantidade(1); setCotacao(null); setAvisoEstoque(''); setErroCarrinho(''); }}
+                      className={`rounded border px-3 py-2 text-sm font-semibold transition focus:outline-none focus:ring-2 focus:ring-[#d4af45] focus:ring-offset-2 ${selecionada ? 'border-[#d4af45] bg-[#d4af45] text-[#090a09]' : indisponivel ? 'cursor-not-allowed border-gray-200 bg-gray-100 text-gray-400 line-through' : 'border-[#49422f] text-[#d4af45] hover:border-[#d4af45] hover:bg-[#d4af45]/10'}`}
+                    >
+                      {variacao.nome}{indisponivel ? ' · indisponível' : ` · ${variacao.estoque_qtd} disponíveis`}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           )}
 
@@ -590,6 +596,8 @@ export default function DetalheProduto() {
         )}
 
       </section>
+
+      <PerguntasProduto produtoId={id} />
 
       {relacionados.length > 0 && (
         <section className="mt-12 border-t border-gray-200 pt-8">
