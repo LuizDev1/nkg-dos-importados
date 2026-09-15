@@ -44,6 +44,12 @@ export default function Painel() {
           Promoções
         </Link>
         <Link
+          to="/admin/banners"
+          className="bg-white rounded-lg shadow hover:shadow-md transition p-6 text-center font-semibold"
+        >
+          Banners
+        </Link>
+        <Link
         to="/admin/clientes"
         className="bg-white rounded-lg shadow hover:shadow-md transition p-6 text-center font-semibold"
         >

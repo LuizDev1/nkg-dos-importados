@@ -40,27 +40,6 @@ export default function Checkout() {
     }
   }, [usuario, navigate]);
 
-  useEffect(() => {
-    async function carregarFrete() {
-      try {
-        const configuracoes = await buscarConfiguracoes();
-        const frete = Number(configuracoes.frete_fixo || 0);
-
-        if (!Number.isFinite(frete) || frete < 0) {
-          throw new Error('Valor de frete inválido');
-        }
-
-        setValorFrete(frete);
-      } catch (erro) {
-        setErroFrete(erro.message || 'Erro ao carregar o frete');
-      } finally {
-        setCarregandoFrete(false);
-      }
-    }
-
-    carregarFrete();
-  }, []);
-
   if (itens.length === 0 || !usuario) return null;
 
   async function buscarCep(cep) {
@@ -149,7 +128,7 @@ export default function Checkout() {
   async function finalizarCompra(e) {
     e.preventDefault();
 
-    if (carregandoFrete || erroFrete || pedidoEmProcessamento || !validarCampos()) {
+    if (pedidoEmProcessamento || !validarCampos()) {
       return;
     }
 
@@ -244,25 +223,50 @@ export default function Checkout() {
             {!cotacaoFrete && <p>Frete calculado no servidor ao finalizar</p>}
             {cotacaoFrete && cotacaoFrete.opcoes?.length > 1 && (
               <div className="mt-3">
-                <label className="block text-sm text-gray-600">Escolha a entrega</label>
-                <select
-                  value={freteServicoId}
-                  onChange={(e) => {
-                    const opcao = cotacaoFrete.opcoes.find((item) => item.servico_id === e.target.value);
-                    setFreteServicoId(e.target.value);
-                    setCotacaoFrete((atual) => ({ ...atual, ...opcao }));
-                  }}
-                  className="w-full border rounded px-3 py-2 text-gray-900"
-                >
+                <p className="mb-2 text-sm font-semibold text-gray-700">Escolha a entrega</p>
+                <div className="grid gap-2 sm:grid-cols-2">
                   {cotacaoFrete.opcoes.map((opcao) => (
-                    <option key={opcao.servico_id} value={opcao.servico_id}>
-                      {opcao.servico_nome} - {Number(opcao.valor).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} - até {opcao.prazo_dias} dias
-                    </option>
+                    <label
+                      key={opcao.servico_id}
+                      className={`cursor-pointer rounded-lg border p-3 transition ${
+                        freteServicoId === opcao.servico_id
+                          ? 'border-blue-600 bg-blue-50 ring-1 ring-blue-600'
+                          : 'border-gray-200 hover:border-blue-300'
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="frete"
+                        value={opcao.servico_id}
+                        checked={freteServicoId === opcao.servico_id}
+                        onChange={() => {
+                          setFreteServicoId(opcao.servico_id);
+                          setCotacaoFrete((atual) => ({ ...atual, ...opcao }));
+                        }}
+                        className="mr-2"
+                      />
+                      <span className="font-semibold">
+                        {opcao.nome_exibicao || `${opcao.transportadora} - ${opcao.servico_nome}`}
+                      </span>
+                      <span className="mt-1 block text-sm text-gray-600">
+                        {Number(opcao.valor).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                        {' · '}até {opcao.prazo_dias} dias
+                      </span>
+                    </label>
                   ))}
-                </select>
+                </div>
               </div>
             )}
-            {cotacaoFrete && <p className="mt-2">Frete: {Number(cotacaoFrete.valor).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>}
+            {cotacaoFrete?.gratuito ? (
+              <p className="mt-2 font-semibold text-green-600">Entrega grátis</p>
+            ) : cotacaoFrete ? (
+              <p className="mt-2">
+                Frete: {Number(cotacaoFrete.valor).toLocaleString('pt-BR', {
+                  style: 'currency',
+                  currency: 'BRL',
+                })}
+              </p>
+            ) : null}
           </div>
         )}
       </div>
@@ -341,13 +345,11 @@ export default function Checkout() {
         >
           {carregando
             ? 'Processando...'
-            : carregandoFrete
-              ? 'Carregando frete...'
-              : erroFrete
-                ? 'Frete indisponível'
-                : buscandoCep
-                  ? 'Buscando CEP...'
-                  : 'Ir para o Pagamento'}
+            : buscandoCep
+              ? 'Buscando CEP...'
+              : cotacaoFrete?.opcoes?.length > 1 && freteServicoId
+                ? 'Ir para o Pagamento'
+                : 'Calcular frete e continuar'}
         </button>
       </form>
     </div>

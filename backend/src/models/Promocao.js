@@ -44,4 +44,22 @@ async function desativar(id) {
   return resultado.affectedRows;
 }
 
-module.exports = { buscarValida, incrementarUso, listar, criar, desativar };
+async function reativar(id) {
+  const [resultado] = await pool.query(
+    'UPDATE promocoes SET ativo = TRUE WHERE id = ?',
+    [id]
+  );
+  return resultado.affectedRows;
+}
+
+async function atualizar(id, dados) {
+  const [resultado] = await pool.query(
+    `UPDATE promocoes
+     SET codigo = ?, tipo = ?, valor = ?, inicio_em = ?, fim_em = ?, uso_maximo = ?
+     WHERE id = ?`,
+    [dados.codigo, dados.tipo, dados.valor, dados.inicio_em || null, dados.fim_em || null, dados.uso_maximo || null, id]
+  );
+  return resultado.affectedRows;
+}
+
+module.exports = { buscarValida, incrementarUso, listar, criar, atualizar, desativar, reativar };

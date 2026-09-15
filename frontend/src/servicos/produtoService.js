@@ -8,13 +8,26 @@ function headersComToken() {
   };
 }
 
-export async function listarProdutos() {
-  const resposta = await fetch(`${API_URL}/produtos`);
+export async function listarProdutos(filtros = {}) {
+  const parametros = new URLSearchParams();
+
+  Object.entries(filtros).forEach(([chave, valor]) => {
+    if (valor !== '' && valor != null) parametros.set(chave, valor);
+  });
+
+  const query = parametros.toString();
+  const resposta = await fetch(`${API_URL}/produtos${query ? `?${query}` : ''}`);
 
   if (!resposta.ok) {
     throw new Error('Erro ao carregar produtos');
   }
 
+  return resposta.json();
+}
+
+export async function listarCategorias() {
+  const resposta = await fetch(`${API_URL}/produtos/categorias`);
+  if (!resposta.ok) throw new Error('Erro ao carregar categorias');
   return resposta.json();
 }
 
