@@ -1,0 +1,10 @@
+USE nkg_importados;
+
+ALTER TABLE usuarios ADD COLUMN anonimizado_em DATETIME NULL;
+
+CREATE TABLE IF NOT EXISTS webhook_eventos (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  evento_id VARCHAR(180) NOT NULL UNIQUE,
+  tipo VARCHAR(80) NOT NULL,
+  recebido_em DATETIME DEFAULT CURRENT_TIMESTAMP
+);

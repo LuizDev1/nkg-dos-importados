@@ -178,7 +178,7 @@ export default function Promocoes() {
         </fieldset>
         <input name="uso_maximo" value={form.uso_maximo} onChange={aoMudarCampo} placeholder="Limite de usos" type="number" min="1" step="1" className="border rounded px-2 py-1" />
         <div className="col-span-2 flex justify-end gap-2 sm:col-span-3">
-          {editandoId && (
+          {Boolean(editandoId) && (
             <button type="button" onClick={() => { setEditandoId(null); setForm(FORM_VAZIO); }} className="rounded border px-4 py-2">
               Cancelar
             </button>

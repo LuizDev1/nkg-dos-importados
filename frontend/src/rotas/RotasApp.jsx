@@ -21,6 +21,7 @@ import MeusPedidosCliente from '../paginas/cliente/MeusPedidos';
 import DetalheMeuPedido from '../paginas/cliente/DetalheMeuPedido';
 import Privacidade from '../paginas/publicas/Privacidade';
 import Favoritos from '../paginas/cliente/Favoritos';
+import MinhaConta from '../paginas/cliente/MinhaConta';
 
 export default function RotasApp() {
   return (

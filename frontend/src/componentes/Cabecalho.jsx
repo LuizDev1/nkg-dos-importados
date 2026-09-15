@@ -35,6 +35,7 @@ export default function Cabecalho() {
                 <>
                   <Link to="/favoritos" className="nav-link text-[#d4af45]">Favoritos</Link>
                   <Link to="/minha-conta/pedidos" className="nav-link text-[#d4af45]">Meus pedidos</Link>
+                  <Link to="/minha-conta" className="nav-link text-[#d4af45]">Minha conta</Link>
                 </>
               )}
 

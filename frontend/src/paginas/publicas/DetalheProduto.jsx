@@ -317,7 +317,7 @@ export default function DetalheProduto() {
             )}
 
             {erroFrete && <p className="mt-2 text-sm text-red-600">{erroFrete}</p>}
-            {cotacao?.gratuito && (
+            {Boolean(cotacao?.gratuito) && (
               <p className="mt-3 rounded bg-green-50 p-3 text-sm font-semibold text-green-700">
                 Entrega grátis
               </p>
@@ -363,7 +363,7 @@ export default function DetalheProduto() {
           </p>
         </div>
 
-        {podeAvaliar && (
+        {Boolean(podeAvaliar) && (
             <form onSubmit={enviarAvaliacao} className="mb-8 grid gap-4 rounded-xl border border-[#302b20] bg-[#11120f] p-5">
               <p className="font-semibold">Avalie este produto</p>
               <label className="text-sm">

@@ -58,7 +58,7 @@ export default function Banners() {
         <input type="url" value={form.link_url} onChange={(e) => setForm({ ...form, link_url: e.target.value })} placeholder="Link ao clicar (opcional)" className="rounded border p-2 sm:col-span-2" />
         <label className="flex items-center gap-2"><input type="checkbox" checked={form.ativo} onChange={(e) => setForm({ ...form, ativo: e.target.checked })} /> Banner ativo</label>
         <div className="flex justify-end gap-2">
-          {editandoId && <button type="button" onClick={() => { setEditandoId(null); setForm(VAZIO); }} className="rounded border px-4 py-2">Cancelar</button>}
+          {Boolean(editandoId) && <button type="button" onClick={() => { setEditandoId(null); setForm(VAZIO); }} className="rounded border px-4 py-2">Cancelar</button>}
           <button disabled={salvando} className="rounded bg-blue-600 px-4 py-2 text-white disabled:opacity-50">{salvando ? 'Salvando...' : editandoId ? 'Salvar alterações' : 'Criar banner'}</button>
         </div>
       </form>

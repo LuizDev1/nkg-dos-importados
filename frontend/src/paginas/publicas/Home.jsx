@@ -85,7 +85,7 @@ export default function Home() {
 
   return (
     <div className="min-h-full bg-transparent">
-      {configuracoes.aviso_ativo && configuracoes.aviso_texto && (
+      {Number(configuracoes.aviso_ativo) === 1 && Boolean(configuracoes.aviso_texto) && (
         <div className="bg-transparent px-4 py-2 text-center text-xs uppercase tracking-[0.12em] text-[#d4af45]">
           {configuracoes.aviso_texto}
         </div>

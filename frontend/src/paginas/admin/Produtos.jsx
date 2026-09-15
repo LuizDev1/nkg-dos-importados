@@ -169,7 +169,7 @@ export default function Produtos() {
           <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
             {editandoId ? 'Salvar edição' : 'Adicionar produto'}
           </button>
-          {editandoId && (
+          {Boolean(editandoId) && (
             <button type="button" onClick={cancelarEdicao} className="text-gray-600 px-4 py-2">
               Cancelar
             </button>
