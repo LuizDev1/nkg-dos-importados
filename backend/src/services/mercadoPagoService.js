@@ -7,6 +7,61 @@ const FRONTEND_URL = (
   process.env.FRONTEND_URL || 'http://localhost:5173'
 ).replace(/\/$/, '');
 
+function montarItensOrder(pedido, itens) {
+  const linhas = itens.map((item) => ({
+    titulo: String(item.produto_nome),
+    quantidade: Number(item.quantidade),
+    totalCentavos: Math.round(Number(item.preco_unitario) * Number(item.quantidade) * 100),
+  }));
+  const subtotalCentavos = linhas.reduce((total, linha) => total + linha.totalCentavos, 0);
+  const descontoCentavos = Math.min(
+    subtotalCentavos,
+    Math.max(0, Math.round(Number(pedido.desconto || 0) * 100))
+  );
+  let descontoDistribuido = 0;
+  const itensOrder = [];
+
+  linhas.forEach((linha, indice) => {
+    const descontoLinha = indice === linhas.length - 1
+      ? descontoCentavos - descontoDistribuido
+      : Math.round(descontoCentavos * linha.totalCentavos / subtotalCentavos);
+    descontoDistribuido += descontoLinha;
+    const totalLinha = linha.totalCentavos - descontoLinha;
+    const quantidade = linha.quantidade;
+    const precoUnitarioCentavos = Math.floor(totalLinha / quantidade);
+    const ultimaUnidadeCentavos = totalLinha - (precoUnitarioCentavos * (quantidade - 1));
+
+    if (quantidade > 1 && ultimaUnidadeCentavos !== precoUnitarioCentavos) {
+      itensOrder.push({
+        title: linha.titulo,
+        unit_price: (precoUnitarioCentavos / 100).toFixed(2),
+        quantity: quantidade - 1,
+      });
+      itensOrder.push({
+        title: linha.titulo,
+        unit_price: (ultimaUnidadeCentavos / 100).toFixed(2),
+        quantity: 1,
+      });
+    } else {
+      itensOrder.push({
+        title: linha.titulo,
+        unit_price: (precoUnitarioCentavos / 100).toFixed(2),
+        quantity: quantidade,
+      });
+    }
+  });
+
+  if (Number(pedido.frete) > 0) {
+    itensOrder.push({
+      title: 'Frete',
+      unit_price: Number(pedido.frete).toFixed(2),
+      quantity: 1,
+    });
+  }
+
+  return itensOrder;
+}
+
 async function criarOrder(pedido, itens) {
   const [primeiroNome, ...resto] = pedido.usuario_nome.split(' ');
   const sobrenome = resto.join(' ') || primeiroNome;
@@ -19,11 +74,7 @@ async function criarOrder(pedido, itens) {
     processing_mode: 'manual',
     total_amount: String(Number(pedido.total).toFixed(2)),
     external_reference: String(pedido.id),
-    items: itens.map((item) => ({
-      title: String(item.produto_nome),
-      unit_price: String(Number(item.preco_unitario).toFixed(2)),
-      quantity: Number(item.quantidade),
-    })),
+    items: montarItensOrder(pedido, itens),
     payer: {
       email: String(pedido.usuario_email && pedido.usuario_email.includes('@testuser.com') ? pedido.usuario_email : 'test_user_1532400859416612283@testuser.com'),
       first_name: String(primeiroNome),

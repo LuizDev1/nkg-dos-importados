@@ -21,8 +21,10 @@ async function criar(dadosProdutos){
     const {nome, categoria, preco, tag, foto_url, estoque_qtd} = dadosProdutos;
 
     const [resultado] = await pool.query(
-        'INSERT INTO produtos (nome, categoria, preco, tag, foto_url, estoque_qtd) VALUES (?, ?, ?, ?, ?, ?)',
-    [nome, categoria, preco, tag, foto_url, estoque_qtd]
+        `INSERT INTO produtos
+          (nome, categoria, preco, tag, foto_url, estoque_qtd, peso_kg, largura_cm, altura_cm, comprimento_cm)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [nome, categoria, preco, tag, foto_url, estoque_qtd, dadosProdutos.peso_kg, dadosProdutos.largura_cm, dadosProdutos.altura_cm, dadosProdutos.comprimento_cm]
     );
 
     return resultado.insertId;
@@ -30,11 +32,14 @@ async function criar(dadosProdutos){
 
 
 async function atualizar(id, dadosProduto) {
-  const { nome, categoria, preco, tag, foto_url, estoque_qtd } = dadosProduto;
+  const { nome, categoria, preco, tag, foto_url, estoque_qtd, peso_kg, largura_cm, altura_cm, comprimento_cm } = dadosProduto;
 
   await pool.query(
-    'UPDATE produtos SET nome = ?, categoria = ?, preco = ?, tag = ?, foto_url = ?, estoque_qtd = ? WHERE id = ?',
-    [nome, categoria, preco, tag, foto_url, estoque_qtd, id]
+    `UPDATE produtos
+     SET nome = ?, categoria = ?, preco = ?, tag = ?, foto_url = ?, estoque_qtd = ?,
+       peso_kg = ?, largura_cm = ?, altura_cm = ?, comprimento_cm = ?
+     WHERE id = ?`,
+    [nome, categoria, preco, tag, foto_url, estoque_qtd, peso_kg, largura_cm, altura_cm, comprimento_cm, id]
   );
 }
 

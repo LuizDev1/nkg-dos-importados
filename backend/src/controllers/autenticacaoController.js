@@ -39,7 +39,11 @@ async function login(req, res) {
     const token = jwt.sign(
       { id: usuario.id, perfil: usuario.perfil },
       process.env.JWT_SECRET,
-      { expiresIn: '8h' }
+      {
+        expiresIn: process.env.JWT_EXPIRES_IN || '15m',
+        ...(process.env.JWT_ISSUER ? { issuer: process.env.JWT_ISSUER } : {}),
+        ...(process.env.JWT_AUDIENCE ? { audience: process.env.JWT_AUDIENCE } : {}),
+      }
     );
 
     res.json({ token, usuario: { id: usuario.id, nome: usuario.nome, perfil: usuario.perfil } });

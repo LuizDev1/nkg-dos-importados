@@ -1,14 +1,36 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { listarPedidosAdmin, atualizarStatusPedido } from '../../servicos/pedidoService';
+import { listarPedidosAdmin, atualizarStatusOperacional } from '../../servicos/pedidoService';
 
-const STATUS_OPCOES = ['pendente', 'pago', 'recusado', 'cancelado'];
+const TRANSICOES = {
+  pago: ['em_preparacao', 'cancelado'],
+  em_preparacao: ['enviado', 'cancelado'],
+  enviado: ['entregue'],
+  reembolso_pendente: ['reembolsado'],
+};
 
 const STATUS_CORES = {
-  pendente: 'text-yellow-600',
+  aguardando_pagamento: 'text-yellow-600',
   pago: 'text-green-600',
-  recusado: 'text-red-600',
+  em_preparacao: 'text-blue-600',
+  enviado: 'text-blue-600',
+  entregue: 'text-green-700',
   cancelado: 'text-gray-400',
+  reembolso_pendente: 'text-yellow-600',
+  reembolsado: 'text-gray-500',
+};
+
+const STATUS_LABELS = {
+  aguardando_pagamento: 'Aguardando confirmação',
+  pendente: 'Pendente',
+  pago: 'Pagamento aprovado',
+  recusado: 'Pagamento recusado',
+  cancelado: 'Cancelado',
+  em_preparacao: 'Em preparação',
+  enviado: 'Enviado',
+  entregue: 'Entregue',
+  reembolso_pendente: 'Reembolso em processamento',
+  reembolsado: 'Reembolso concluído',
 };
 
 export default function Pedidos() {
@@ -34,7 +56,7 @@ export default function Pedidos() {
 
   async function aoMudarStatus(pedidoId, novoStatus) {
     try {
-      await atualizarStatusPedido(pedidoId, novoStatus);
+      await atualizarStatusOperacional(pedidoId, novoStatus);
       await carregar();
     } catch (erro) {
       setErro(erro.message);
@@ -60,7 +82,8 @@ export default function Pedidos() {
               <th className="p-3">Cliente</th>
               <th className="p-3">Total</th>
               <th className="p-3">Data</th>
-              <th className="p-3">Status</th>
+              <th className="p-3">Pagamento</th>
+              <th className="p-3">Operação</th>
             </tr>
           </thead>
           <tbody>
@@ -76,18 +99,26 @@ export default function Pedidos() {
                 <td className="p-3">
                   {new Date(pedido.criado_em).toLocaleDateString('pt-BR')}
                 </td>
+                <td className="p-3">{STATUS_LABELS[pedido.payment_status] || pedido.payment_status}</td>
                 <td className="p-3">
+                  {(() => {
+                    const opcoes = TRANSICOES[pedido.status_pedido] || [];
+                    return (
                   <select
-                    value={pedido.payment_status}
+                    value=""
+                    disabled={opcoes.length === 0}
                     onChange={(e) => aoMudarStatus(pedido.id, e.target.value)}
-                    className={`border rounded px-2 py-1 bg-white ${STATUS_CORES[pedido.payment_status]}`}
+                    className={`border rounded px-2 py-1 bg-white ${STATUS_CORES[pedido.status_pedido] || ''}`}
                   >
-                    {STATUS_OPCOES.map((status) => (
+                    <option value="">{STATUS_LABELS[pedido.status_pedido] || 'Sem status'}</option>
+                    {opcoes.map((status) => (
                       <option key={status} value={status}>
-                        {status}
+                        {STATUS_LABELS[status] || status}
                       </option>
                     ))}
                   </select>
+                    );
+                  })()}
                 </td>
               </tr>
             ))}

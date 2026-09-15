@@ -71,6 +71,62 @@ async function atualizarCpf(id, cpf) {
   await pool.query('UPDATE usuarios SET cpf = ? WHERE id = ?', [cpf, id]);
 }
 
+async function exportarDados(id) {
+  const [usuarios] = await pool.query(
+    `SELECT id, nome, email, cpf, perfil, status, criado_em, anonimizado_em
+     FROM usuarios WHERE id = ?`,
+    [id]
+  );
+
+  const [pedidos] = await pool.query(
+    `SELECT id, payment_status, status_pedido, tipo_entrega, total, criado_em
+     FROM pedidos WHERE usuario_id = ? ORDER BY criado_em DESC`,
+    [id]
+  );
+
+  return { usuario: usuarios[0] || null, pedidos };
+}
+
+async function anonimizar(id) {
+  const conexao = await pool.getConnection();
+
+  try {
+    await conexao.beginTransaction();
+    const [usuarios] = await conexao.query(
+      'SELECT id, anonimizado_em FROM usuarios WHERE id = ? FOR UPDATE',
+      [id]
+    );
+
+    if (!usuarios[0]) {
+      await conexao.rollback();
+      return false;
+    }
+    if (usuarios[0].anonimizado_em) {
+      await conexao.commit();
+      return true;
+    }
+
+    await conexao.query(
+      `UPDATE usuarios
+       SET nome = 'Usuário anonimizado',
+           email = CONCAT('anonimizado+', id, '@dados.invalid'),
+           cpf = NULL,
+           senha_hash = SHA2(UUID(), 256),
+           status = 'bloqueado',
+           anonimizado_em = NOW()
+       WHERE id = ?`,
+      [id]
+    );
+    await conexao.commit();
+    return true;
+  } catch (erro) {
+    await conexao.rollback();
+    throw erro;
+  } finally {
+    conexao.release();
+  }
+}
+
 module.exports = {
   buscarPorEmail,
   buscarPorId,
@@ -78,4 +134,6 @@ module.exports = {
   listarClientes,
   atualizarStatus,
   atualizarCpf,
+  exportarDados,
+  anonimizar,
 };

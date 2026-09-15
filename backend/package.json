@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node src/app.js",
     "dev": "nodemon src/app.js",
-    "test": "node --test"
+    "test": "node --test",
+    "tunnel": "node ngrok-tunnel.js"
   },
   "dependencies": {
     "@google/genai": "^2.22.0",
@@ -18,7 +19,9 @@
     "express-rate-limit": "^8.7.0",
     "helmet": "^8.3.0",
     "jsonwebtoken": "^9.0.3",
-    "mysql2": "^3.24.4"
+    "mysql2": "^3.24.4",
+    "resend": "^6.28.0",
+    "zod": "^4.6.5"
   },
   "devDependencies": {
     "nodemon": "^3.1.14",

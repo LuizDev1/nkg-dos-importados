@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useCarrinho } from '../contextos/ContextoCarrinho';
+import { useAutenticacao } from '../contextos/ContextoAutenticacao';
 
 export default function CartaoProduto({ produto }) {
   const [adicionado, setAdicionado] = useState(false);
   const { adicionarItem } = useCarrinho();
+  const { usuario } = useAutenticacao();
 
   function aoAdicionar() {
     adicionarItem(produto);
@@ -29,14 +31,16 @@ export default function CartaoProduto({ produto }) {
           currency: 'BRL',
         })}
       </p>
-      <button
-        onClick={aoAdicionar}
-        className={`mt-auto py-2 rounded transition ${
-          adicionado ? 'bg-green-600 text-white' : 'bg-blue-600 text-white hover:bg-blue-700'
-        }`}
-      >
-        {adicionado ? 'Adicionado!' : 'Adicionar ao carrinho'}
-      </button>
+      {usuario?.perfil !== 'admin' && (
+        <button
+          onClick={aoAdicionar}
+          className={`mt-auto py-2 rounded transition ${
+            adicionado ? 'bg-green-600 text-white' : 'bg-blue-600 text-white hover:bg-blue-700'
+          }`}
+        >
+          {adicionado ? 'Adicionado!' : 'Adicionar ao carrinho'}
+        </button>
+      )}
     </div>
   );
 }
