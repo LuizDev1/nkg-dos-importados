@@ -158,13 +158,27 @@ async function criar(req, res) {
 
     }
 
+    const [configuracoes] = await conexao.query(
+      `SELECT frete_fixo
+      FROM configuracoes_loja
+      WHERE id = 1`
+    );
+
+    const valorFrete =
+      tipo_entrega === 'envio'
+        ? Number(configuracoes[0]?.frete_fixo || 0)
+        : 0;
+
+    const totalComFrete = total + valorFrete;
+
     const pedidoId = await Pedido.criar(
       {
         usuario_id: req.usuario.id,
         tipo_entrega,
         endereco_entrega,
         telefone_contato,
-        total: total.toFixed(2),
+        valor_frete: valorFrete.toFixed(2),
+        total: totalComFrete.toFixed(2),
       },
       conexao
     );
@@ -187,7 +201,9 @@ async function criar(req, res) {
 
     return res.status(201).json({
       id: pedidoId,
-      total: total.toFixed(2),
+      subtotal: total.toFixed(2),
+      valor_frete: valorFrete.toFixed(2),
+      total: totalComFrete.toFixed(2),
       mensagem: 'Pedido criado com sucesso',
     });
   } catch (erro) {
@@ -298,11 +314,45 @@ async function cancelar(req, res) {
     return res.status(500).json({ mensagem: erro.message });
   }
 }
+async function listarMeusPedidos(req, res) {
+  try {
+    const pedidos = await Pedido.listarPorUsuario(req.usuario.id);
+    return res.json(pedidos);
+  } catch (erro) {
+    return res.status(500).json({
+      mensagem: erro.message,
+    });
+  }
+}
+async function buscarMeuPedido(req, res) {
+  try {
+    const pedido = await Pedido.buscarPorId(req.params.id);
+
+    if (
+      !pedido ||
+      String(pedido.usuario_id) !== String(req.usuario.id)
+    ) {
+      return res.status(404).json({
+        mensagem: 'Pedido não encontrado',
+      });
+    }
+
+    pedido.itens = await ItemPedido.listarPorPedido(pedido.id);
+
+    return res.json(pedido);
+  } catch (erro) {
+    return res.status(500).json({
+      mensagem: erro.message,
+    });
+  }
+}
 
 module.exports = {
   listar,
   listarPorUsuario,
+  listarMeusPedidos,
   buscar,
+  buscarMeuPedido,
   criar,
   atualizarStatus,
   atualizarRastreio,
