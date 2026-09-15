@@ -1,36 +1,40 @@
 const pool = require('../config/banco');
 
 async function listarAtivos(filtros = {}){
-    const condicoes = ['ativo = true'];
+    const condicoes = ['p.ativo = true'];
     const parametros = [];
 
     if (filtros.busca) {
-      condicoes.push('(nome LIKE ? OR categoria LIKE ? OR tag LIKE ?)');
+      condicoes.push('(p.nome LIKE ? OR p.categoria LIKE ? OR p.tag LIKE ?)');
       const termo = `%${filtros.busca}%`;
       parametros.push(termo, termo, termo);
     }
     if (filtros.categoria) {
-      condicoes.push('categoria = ?');
+      condicoes.push('p.categoria = ?');
       parametros.push(filtros.categoria);
     }
     if (filtros.precoMinimo != null) {
-      condicoes.push('preco >= ?');
+      condicoes.push('p.preco >= ?');
       parametros.push(filtros.precoMinimo);
     }
     if (filtros.precoMaximo != null) {
-      condicoes.push('preco <= ?');
+      condicoes.push('p.preco <= ?');
       parametros.push(filtros.precoMaximo);
     }
 
     const ordenacoes = {
-      recentes: 'criado_em DESC',
-      menor_preco: 'preco ASC',
-      maior_preco: 'preco DESC',
-      nome: 'nome ASC',
+      recentes: 'p.criado_em DESC',
+      menor_preco: 'p.preco ASC',
+      maior_preco: 'p.preco DESC',
+      nome: 'p.nome ASC',
+      melhor_avaliados: 'avaliacao_media DESC, avaliacoes_total DESC, p.criado_em DESC',
     };
     const ordenacao = ordenacoes[filtros.ordenacao] || ordenacoes.recentes;
     const [produtos] = await pool.query(
-      `SELECT * FROM produtos WHERE ${condicoes.join(' AND ')} ORDER BY ${ordenacao}`,
+      `SELECT p.*,
+        (SELECT ROUND(AVG(a.nota), 1) FROM avaliacoes a WHERE a.produto_id = p.id) AS avaliacao_media,
+        (SELECT COUNT(*) FROM avaliacoes a WHERE a.produto_id = p.id) AS avaliacoes_total
+       FROM produtos p WHERE ${condicoes.join(' AND ')} ORDER BY ${ordenacao}`,
       parametros
     );
 
@@ -53,7 +57,13 @@ async function listarTodos(){
 };
 
 async function buscarPorId(id){
-    const [produtos] = await pool.query('SELECT * FROM produtos WHERE id = ?', [id]);
+    const [produtos] = await pool.query(
+      `SELECT p.*,
+        (SELECT ROUND(AVG(a.nota), 1) FROM avaliacoes a WHERE a.produto_id = p.id) AS avaliacao_media,
+        (SELECT COUNT(*) FROM avaliacoes a WHERE a.produto_id = p.id) AS avaliacoes_total
+       FROM produtos p WHERE p.id = ?`,
+      [id]
+    );
     return produtos[0];
 };
 

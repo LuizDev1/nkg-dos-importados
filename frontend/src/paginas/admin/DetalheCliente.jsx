@@ -48,7 +48,7 @@ export default function DetalheCliente() {
     <div className="max-w-5xl mx-auto px-4 py-8">
       <Link
         to="/admin/clientes"
-        className="text-blue-600 hover:underline text-sm"
+        className="botao-voltar"
       >
         &larr; Voltar para clientes
       </Link>

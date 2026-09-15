@@ -58,7 +58,7 @@ export default function DetalhePedido() {
     <div className="max-w-5xl mx-auto px-4 py-8">
       <Link
         to={`/admin/clientes/${pedido.usuario_id}`}
-        className="text-blue-600 hover:underline text-sm"
+        className="botao-voltar"
       >
         &larr; Voltar para o cliente
       </Link>

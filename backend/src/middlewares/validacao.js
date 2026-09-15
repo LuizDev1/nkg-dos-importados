@@ -28,6 +28,7 @@ const schemas = {
     largura_cm: z.coerce.number().finite().positive().max(200).default(20),
     altura_cm: z.coerce.number().finite().positive().max(200).default(10),
     comprimento_cm: z.coerce.number().finite().positive().max(300).default(30),
+    imagens: z.array(z.string().trim().url().max(500)).max(8).optional().default([]),
   }).strict(),
   autenticacao: z.object({
     nome: z.string().trim().min(2).max(150),
@@ -48,6 +49,7 @@ const schemas = {
     codigo_promocao: z.string().trim().max(50).optional(),
     itens: z.array(z.object({
       produto_id: z.number().int().positive(),
+      variacao_id: z.number().int().positive().optional(),
       quantidade: z.number().int().positive().max(1000),
       preco_unitario: z.number().finite().nonnegative().optional(),
     }).strict()).min(1).max(100),
@@ -93,6 +95,16 @@ const schemas = {
     link_url: z.union([z.string().trim().url().max(500), z.literal('')]).optional().default(''),
     ativo: z.boolean().optional().default(true),
     ordem: z.coerce.number().int().min(0).max(10000).optional().default(0),
+  }).strict(),
+  variacaoProduto: z.object({
+    nome: z.string().trim().min(1).max(120),
+    estoque_qtd: z.coerce.number().int().nonnegative().max(100000),
+    ativo: z.boolean().optional().default(true),
+  }).strict(),
+  avaliacao: z.object({
+    nota: z.coerce.number().int().min(1).max(5),
+    comentario: z.string().trim().max(1000).optional().default(''),
+    foto_url: z.union([z.string().trim().url().max(500), z.literal('')]).optional().default(''),
   }).strict(),
 };
 

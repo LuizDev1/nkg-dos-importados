@@ -5,19 +5,19 @@ import { buscarMeuPedido } from '../../servicos/pedidoService';
 const STATUS = {
   pendente: {
     texto: 'Aguardando pagamento',
-    classe: 'bg-yellow-100 text-yellow-700',
+    classe: 'border border-amber-500/50 bg-amber-500/15 text-amber-200',
   },
   pago: {
     texto: 'Pagamento aprovado',
-    classe: 'bg-green-100 text-green-700',
+    classe: 'border border-emerald-500/50 bg-emerald-500/15 text-emerald-200',
   },
   recusado: {
     texto: 'Pagamento recusado',
-    classe: 'bg-red-100 text-red-700',
+    classe: 'border border-red-500/50 bg-red-500/15 text-red-200',
   },
   cancelado: {
     texto: 'Cancelado',
-    classe: 'bg-gray-200 text-gray-600',
+    classe: 'border border-zinc-500/60 bg-zinc-500/20 text-zinc-200',
   },
 };
 
@@ -67,7 +67,7 @@ export default function DetalheMeuPedido() {
 
         <Link
           to="/minha-conta/pedidos"
-          className="text-blue-600 hover:underline"
+          className="botao-voltar"
         >
           Voltar para meus pedidos
         </Link>
@@ -77,14 +77,14 @@ export default function DetalheMeuPedido() {
 
   const status = STATUS[pedido.payment_status] || {
     texto: pedido.payment_status,
-    classe: 'bg-gray-100 text-gray-700',
+    classe: 'border border-[#8f793d] bg-[#d4af45]/15 text-[#f0d77e]',
   };
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-8">
       <Link
         to="/minha-conta/pedidos"
-        className="text-blue-600 hover:underline text-sm"
+        className="botao-voltar"
       >
         &larr; Voltar para meus pedidos
       </Link>
@@ -166,6 +166,10 @@ export default function DetalheMeuPedido() {
                 <p className="text-sm text-gray-500 mt-1">
                   Quantidade: {item.quantidade}
                 </p>
+
+                {item.variacao_nome && (
+                  <p className="text-sm text-gray-500">Variação: {item.variacao_nome}</p>
+                )}
 
                 <p className="text-sm text-gray-500">
                   Preço unitário: {formatarValor(item.preco_unitario)}

@@ -65,7 +65,7 @@ export default function Pedidos() {
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-8">
-      <Link to="/admin" className="text-blue-600 hover:underline text-sm">
+      <Link to="/admin" className="botao-voltar">
         &larr; Voltar ao painel
       </Link>
 

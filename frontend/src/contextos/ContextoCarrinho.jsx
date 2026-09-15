@@ -1,24 +1,38 @@
 import { createContext, useContext, useState, useEffect } from 'react';
+import { abandonarPedidoPendente } from '../servicos/pedidoService';
 
 const ContextoCarrinho = createContext(null);
 
 export function ProvedorCarrinho({ children }) {
   const [itens, setItens] = useState(() => {
     const salvo = localStorage.getItem('carrinho');
-    return salvo ? JSON.parse(salvo) : [];
+    return salvo
+      ? JSON.parse(salvo).map((item) => ({ ...item, chave: item.chave || String(item.produto_id) }))
+      : [];
   });
 
   useEffect(() => {
     localStorage.setItem('carrinho', JSON.stringify(itens));
   }, [itens]);
 
-  function adicionarItem(produto, quantidade = 1) {
+  function invalidarPedidoPendente() {
+    const pedidoId = localStorage.getItem('pedido_pendente_carrinho');
+    if (!pedidoId) return;
+
+    abandonarPedidoPendente(pedidoId)
+      .then(() => localStorage.removeItem('pedido_pendente_carrinho'))
+      .catch((erro) => console.error('Não foi possível cancelar o pedido pendente:', erro));
+  }
+
+  function adicionarItem(produto, quantidade = 1, variacao = null) {
+    invalidarPedidoPendente();
+    const chave = variacao ? `${produto.id}:${variacao.id}` : String(produto.id);
     setItens((atual) => {
-      const existente = atual.find((item) => item.produto_id === produto.id);
+      const existente = atual.find((item) => item.chave === chave);
 
       if (existente) {
         return atual.map((item) =>
-          item.produto_id === produto.id
+          item.chave === chave
             ? { ...item, quantidade: item.quantidade + quantidade }
             : item
         );
@@ -28,6 +42,9 @@ export function ProvedorCarrinho({ children }) {
         ...atual,
         {
           produto_id: produto.id,
+          variacao_id: variacao?.id || null,
+          variacao_nome: variacao?.nome || null,
+          chave,
           nome: produto.nome,
           preco: Number(produto.preco),
           foto_url: produto.foto_url,
@@ -37,16 +54,18 @@ export function ProvedorCarrinho({ children }) {
     });
   }
 
-  function removerItem(produtoId) {
-    setItens((atual) => atual.filter((item) => item.produto_id !== produtoId));
+  function removerItem(chave) {
+    invalidarPedidoPendente();
+    setItens((atual) => atual.filter((item) => item.chave !== chave));
   }
 
-  function alterarQuantidade(produtoId, quantidade) {
+  function alterarQuantidade(chave, quantidade) {
     if (quantidade < 1) return;
+    invalidarPedidoPendente();
 
     setItens((atual) =>
       atual.map((item) =>
-        item.produto_id === produtoId ? { ...item, quantidade } : item
+        item.chave === chave ? { ...item, quantidade } : item
       )
     );
   }

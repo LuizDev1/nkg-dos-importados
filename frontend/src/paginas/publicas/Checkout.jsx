@@ -159,6 +159,7 @@ export default function Checkout() {
         ...(codigoPromocao.trim() ? { codigo_promocao: codigoPromocao.trim() } : {}),
         itens: itens.map(item => ({
           produto_id: item.produto_id,
+          variacao_id: item.variacao_id || undefined,
           quantidade: item.quantidade,
           preco_unitario: Number(item.preco),
         }))
@@ -166,6 +167,7 @@ export default function Checkout() {
 
       const respostaPedido = await criarPedido(payload, idempotencyKey.current);
       setResumoServidor(respostaPedido);
+      localStorage.setItem('pedido_pendente_carrinho', String(respostaPedido.id));
 
       const token = localStorage.getItem('token');
       const respostaPagamento = await fetch(`${API_URL}/pagamentos/${respostaPedido.id}`, {
@@ -203,7 +205,7 @@ export default function Checkout() {
         <button
           type="button"
           onClick={() => navigate('/carrinho')}
-          className="text-gray-500 hover:text-gray-800 transition"
+          className="botao-voltar"
         >
           ← Voltar ao carrinho
         </button>

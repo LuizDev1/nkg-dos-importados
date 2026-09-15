@@ -12,16 +12,17 @@ export default function ItemCarrinho({ item, onAlterarQuantidade, onRemover }) {
       />
       <div className="flex-1">
         <p className="font-semibold">{item.nome}</p>
+        {item.variacao_nome && <p className="text-sm text-gray-500">{item.variacao_nome}</p>}
         <p className="text-sm text-gray-500">{formatarMoeda(item.preco)}</p>
       </div>
       <input
         type="number"
         min="1"
         value={item.quantidade}
-        onChange={(e) => onAlterarQuantidade(item.produto_id, Number(e.target.value))}
+        onChange={(e) => onAlterarQuantidade(item.chave, Number(e.target.value))}
         className="w-16 border rounded px-2 py-1 text-center"
       />
-      <button onClick={() => onRemover(item.produto_id)} className="text-red-600 hover:underline text-sm">
+      <button onClick={() => onRemover(item.chave)} className="text-red-600 hover:underline text-sm">
         Remover
       </button>
     </div>

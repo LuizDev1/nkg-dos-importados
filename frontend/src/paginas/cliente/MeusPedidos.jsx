@@ -5,19 +5,19 @@ import { listarMeusPedidos } from '../../servicos/pedidoService';
 const STATUS = {
   pendente: {
     texto: 'Aguardando pagamento',
-    classe: 'bg-yellow-100 text-yellow-700',
+    classe: 'border border-amber-500/50 bg-amber-500/15 text-amber-200',
   },
   pago: {
     texto: 'Pagamento aprovado',
-    classe: 'bg-green-100 text-green-700',
+    classe: 'border border-emerald-500/50 bg-emerald-500/15 text-emerald-200',
   },
   recusado: {
     texto: 'Pagamento recusado',
-    classe: 'bg-red-100 text-red-700',
+    classe: 'border border-red-500/50 bg-red-500/15 text-red-200',
   },
   cancelado: {
     texto: 'Cancelado',
-    classe: 'bg-gray-200 text-gray-600',
+    classe: 'border border-zinc-500/60 bg-zinc-500/20 text-zinc-200',
   },
 };
 
@@ -51,7 +51,8 @@ export default function MeusPedidos() {
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold mb-6">Meus pedidos</h1>
+      <Link to="/" className="botao-voltar">&larr; Voltar para a loja</Link>
+      <h1 className="mt-4 text-2xl font-bold mb-6">Meus pedidos</h1>
 
       {erro && (
         <p className="text-red-600 bg-red-50 rounded p-3 mb-4">
@@ -78,7 +79,7 @@ export default function MeusPedidos() {
         {pedidos.map((pedido) => {
           const status = STATUS[pedido.payment_status] || {
             texto: pedido.payment_status,
-            classe: 'bg-gray-100 text-gray-700',
+            classe: 'border border-[#8f793d] bg-[#d4af45]/15 text-[#f0d77e]',
           };
 
           return (

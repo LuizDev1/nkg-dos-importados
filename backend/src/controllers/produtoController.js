@@ -1,5 +1,8 @@
 const Produto = require('../models/Produto');
 const Log = require('../models/Log');
+const VariacaoProduto = require('../models/VariacaoProduto');
+const notificacaoService = require('../services/notificacaoService');
+const ProdutoImagem = require('../models/ProdutoImagem');
 
 async function listarPublico(req, res) {
     try {
@@ -32,6 +35,9 @@ async function listarPublico(req, res) {
 async function listarAdmin(req, res){
     try{
         const produtos = await Produto.listarTodos();
+        await Promise.all(produtos.map(async (produto) => {
+          produto.imagens = await ProdutoImagem.listar(produto.id);
+        }));
         res.json(produtos);
     } catch(erro){
         res.status(500).json({mensagem: erro.message});
@@ -42,6 +48,9 @@ async function listarAdmin(req, res){
 async function buscar(req, res){
     try{
         const produto = await Produto.buscarPorId(req.params.id);
+        if (!produto) return res.status(404).json({ mensagem: 'Produto não encontrado' });
+        produto.variacoes = await VariacaoProduto.listar(produto.id);
+        produto.imagens = await ProdutoImagem.listar(produto.id);
         res.json(produto);
     }catch(erro){
         res.status(500).json({mensagem: 'Erro ao buscar produto'});
@@ -51,6 +60,7 @@ async function buscar(req, res){
 async function criar(req, res){
     try{
         const id = await Produto.criar(req.body);
+        await ProdutoImagem.substituir(id, req.body.imagens);
         await Log.registrar({
           tipo: 'produto',
           acao: 'criado',
@@ -66,7 +76,12 @@ async function criar(req, res){
 
 async function atualizar(req, res){
     try{
+        const produtoAnterior = await Produto.buscarPorId(req.params.id);
         await Produto.atualizar(req.params.id, req.body);
+        await ProdutoImagem.substituir(req.params.id, req.body.imagens);
+        if (produtoAnterior && Number(produtoAnterior.estoque_qtd) === 0 && Number(req.body.estoque_qtd) > 0) {
+          notificacaoService.notificarReposicao(Number(req.params.id)).catch(console.error);
+        }
         await Log.registrar({
           tipo: 'produto',
           acao: 'atualizado',
@@ -112,6 +127,46 @@ async function reativar(req, res){
     }
 };
 
+async function listarVariacoes(req, res) {
+    try {
+        res.json(await VariacaoProduto.listar(req.params.id, false));
+    } catch {
+        res.status(500).json({ mensagem: 'Erro ao listar variações' });
+    }
+}
+
+async function criarVariacao(req, res) {
+    try {
+        res.status(201).json({ id: await VariacaoProduto.criar(req.params.id, req.body) });
+    } catch (erro) {
+        const status = erro.code === 'ER_DUP_ENTRY' ? 409 : 500;
+        res.status(status).json({ mensagem: status === 409 ? 'Esta variação já existe' : 'Erro ao criar variação' });
+    }
+}
+
+async function atualizarVariacao(req, res) {
+    try {
+        const variacaoAnterior = await VariacaoProduto.buscarPorId(req.params.variacaoId);
+        const alterados = await VariacaoProduto.atualizar(req.params.variacaoId, req.body);
+        if (variacaoAnterior && Number(variacaoAnterior.estoque_qtd) === 0 && Number(req.body.estoque_qtd) > 0) {
+          notificacaoService.notificarReposicao(Number(req.params.id), Number(req.params.variacaoId)).catch(console.error);
+        }
+        res.status(alterados ? 200 : 404).json({ mensagem: alterados ? 'Variação atualizada' : 'Variação não encontrada' });
+    } catch (erro) {
+        const status = erro.code === 'ER_DUP_ENTRY' ? 409 : 500;
+        res.status(status).json({ mensagem: status === 409 ? 'Esta variação já existe' : 'Erro ao atualizar variação' });
+    }
+}
+
+async function removerVariacao(req, res) {
+    try {
+        const removidos = await VariacaoProduto.remover(req.params.variacaoId);
+        res.status(removidos ? 200 : 404).json({ mensagem: removidos ? 'Variação excluída' : 'Variação não encontrada' });
+    } catch {
+        res.status(500).json({ mensagem: 'Erro ao excluir variação' });
+    }
+}
+
 async function listarCategorias(req, res) {
     try {
         res.json(await Produto.listarCategorias());
@@ -129,4 +184,8 @@ module.exports = {
   atualizar,
   remover,
   reativar,
+  listarVariacoes,
+  criarVariacao,
+  atualizarVariacao,
+  removerVariacao,
 };
