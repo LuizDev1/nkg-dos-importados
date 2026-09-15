@@ -35,12 +35,6 @@ export default function Checkout() {
     }
   }, [itens.length, navigate]);
 
-  useEffect(() => {
-    if (!usuario) {
-      navigate('/login');
-    }
-  }, [usuario, navigate]);
-
   if (itens.length === 0 || !usuario) return null;
 
   async function buscarCep(cep) {

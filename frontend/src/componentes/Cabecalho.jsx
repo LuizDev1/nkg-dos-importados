@@ -1,4 +1,4 @@
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useCarrinho } from '../contextos/ContextoCarrinho';
 import { useAutenticacao } from '../contextos/ContextoAutenticacao';
 
@@ -23,6 +23,12 @@ export default function Cabecalho() {
   const { quantidadeTotal } = useCarrinho();
   const { usuario, logout } = useAutenticacao();
   const location = useLocation();
+  const navigate = useNavigate();
+
+  function sair() {
+    logout();
+    navigate('/', { replace: true });
+  }
   const isAdmin = usuario?.perfil === 'admin';
   const nomeExibido = isAdmin
   ? usuario?.nome
@@ -70,7 +76,7 @@ export default function Cabecalho() {
               )}
 
               <span className="text-[#c6c0b5]">Olá, {nomeExibido}</span>
-              <button onClick={logout} className="nav-link text-[#d4af45]">
+              <button onClick={sair} className="nav-link text-[#d4af45]">
                 Sair
               </button>
             </>
