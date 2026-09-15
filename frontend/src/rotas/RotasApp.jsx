@@ -28,6 +28,7 @@ export default function RotasApp() {
       <Route path="/" element={<Home />} />
       <Route path="/login" element={<Login />} />
       <Route path="/cadastro" element={<Cadastro />} />
+      <Route path="/minha-conta" element={<RotaPrivada somenteCliente><MinhaConta /></RotaPrivada>} />
       <Route
         path="/carrinho"
         element={

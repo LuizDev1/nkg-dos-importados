@@ -5,6 +5,7 @@ import { registrar } from '../../servicos/autenticacaoService';
 export default function Cadastro() {
   const [nome, setNome] = useState('');
   const [email, setEmail] = useState('');
+  const [cpf, setCpf] = useState('');
   const [senha, setSenha] = useState('');
   const [erro, setErro] = useState('');
   const [sucesso, setSucesso] = useState(false);
@@ -18,7 +19,7 @@ export default function Cadastro() {
     setCarregando(true);
 
     try {
-      await registrar({ nome, email, senha });
+      await registrar({ nome, email, senha, cpf });
       setSucesso(true);
       setTimeout(() => navegar('/login'), 1500);
     } catch (erro) {
@@ -71,6 +72,15 @@ export default function Cadastro() {
             required
             className="w-full bg-zinc-900/90 border border-zinc-800 rounded-lg px-4 py-3 text-zinc-100 text-sm focus:outline-none focus:border-amber-500/80 transition-colors"
           />
+        </div>
+
+        <div className="mb-4">
+          <label htmlFor="cpf" className="block text-[11px] uppercase tracking-[0.2em] text-zinc-400 mb-2 font-medium">CPF</label>
+          <input id="cpf" type="text" inputMode="numeric" value={cpf}
+            onChange={(e) => setCpf(e.target.value)} required maxLength={14}
+            placeholder="000.000.000-00"
+            className="w-full bg-zinc-900/90 border border-zinc-800 rounded-lg px-4 py-3 text-zinc-100 text-sm focus:outline-none focus:border-amber-500/80 transition-colors" />
+          <p className="text-xs text-zinc-400 mt-2">Usado para identificar o comprador no pagamento.</p>
         </div>
 
         <div className="mb-6">

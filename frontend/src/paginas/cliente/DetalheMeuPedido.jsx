@@ -21,6 +21,17 @@ const STATUS = {
   },
 };
 
+const STATUS_PEDIDO = {
+  aguardando_pagamento: 'Aguardando pagamento',
+  pago: 'Pagamento aprovado',
+  em_preparacao: 'Em preparação',
+  enviado: 'Enviado',
+  entregue: 'Entregue',
+  cancelado: 'Cancelado',
+  reembolso_pendente: 'Reembolso pendente',
+  reembolsado: 'Reembolsado',
+};
+
 function formatarValor(valor) {
   return Number(valor).toLocaleString('pt-BR', {
     style: 'currency',
@@ -115,10 +126,14 @@ export default function DetalheMeuPedido() {
 
         <div className="space-y-2 text-sm">
           <p>
+            <strong>Status do pedido:</strong>{' '}
+            {STATUS_PEDIDO[pedido.status_pedido] || pedido.status_pedido || 'Ainda não disponível'}
+          </p>
+          <p>
             <strong>Tipo de entrega:</strong>{' '}
             {pedido.tipo_entrega === 'envio'
               ? 'Envio'
-              : 'Entrega local'}
+              : 'Entrega própria'}
           </p>
 
           <p>
@@ -197,7 +212,7 @@ export default function DetalheMeuPedido() {
           <span>Subtotal dos produtos</span>
           <span>
             {formatarValor(
-              pedido.subtotal ?? Number(pedido.total) - Number(pedido.frete || 0)
+              pedido.subtotal ?? Number(pedido.total) - Number(pedido.frete || 0) + Number(pedido.desconto || 0)
             )}
           </span>
         </div>
@@ -205,6 +220,11 @@ export default function DetalheMeuPedido() {
         <div className="flex justify-between">
           <span>Frete</span>
           <span>{formatarValor(pedido.frete || 0)}</span>
+        </div>
+
+        <div className="flex justify-between">
+          <span>Desconto</span>
+          <span>{Number(pedido.desconto || 0) > 0 ? '- ' : ''}{formatarValor(pedido.desconto || 0)}</span>
         </div>
 
         <div className="border-t pt-3 flex justify-between">

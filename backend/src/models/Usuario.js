@@ -71,6 +71,11 @@ async function atualizarCpf(id, cpf) {
   await pool.query('UPDATE usuarios SET cpf = ? WHERE id = ?', [cpf, id]);
 }
 
+async function atualizarDados(id, { nome, email, cpf }) {
+  await pool.query('UPDATE usuarios SET nome = ?, email = ?, cpf = ? WHERE id = ?',
+    [nome, email, cpf, id]);
+}
+
 async function exportarDados(id) {
   const [usuarios] = await pool.query(
     `SELECT id, nome, email, cpf, perfil, status, criado_em, anonimizado_em
@@ -134,6 +139,7 @@ module.exports = {
   listarClientes,
   atualizarStatus,
   atualizarCpf,
+  atualizarDados,
   exportarDados,
   anonimizar,
 };

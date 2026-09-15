@@ -269,7 +269,9 @@ async function criar(req, res) {
     const pedidoId = await Pedido.criar(
       {
         usuario_id: req.usuario.id,
-        tipo_entrega,
+        tipo_entrega: cotacaoFrete.servico_id === 'gratis-mesmo-cep'
+          ? 'entrega_local'
+          : 'envio',
         endereco_entrega,
         telefone_contato,
         cep_entrega: cep_entrega ? cep_entrega.replace(/\D/g, '') : null,

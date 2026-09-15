@@ -4,6 +4,9 @@ const router = express.Router();
 const usuarioController = require('../controllers/usuarioController');
 const verificarAutenticacao = require('../middlewares/autenticacaoMiddleware');
 const verificarAdmin = require('../middlewares/adminMiddleware');
+router.get('/usuarios/me', verificarAutenticacao, usuarioController.buscarConta);
+router.patch('/usuarios/me', verificarAutenticacao, usuarioController.editarConta);
+router.patch('/usuarios/:id/dados', verificarAutenticacao, verificarAdmin, usuarioController.editarConta);
 
 router.get(
   '/usuarios/clientes',

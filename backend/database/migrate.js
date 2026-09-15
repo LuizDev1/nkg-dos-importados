@@ -5,9 +5,14 @@ const pool = require('../src/config/banco');
 
 async function executar() {
   const pasta = path.join(__dirname, 'migrations');
-  const arquivos = fs.readdirSync(pasta).filter((nome) => nome.endsWith('.sql')).sort();
+  const arquivos = fs.readdirSync(pasta).filter((nome) => /\.(sql|js)$/.test(nome)).sort();
 
   for (const arquivo of arquivos) {
+    if (arquivo.endsWith('.js')) {
+      await require(path.join(pasta, arquivo))(pool);
+      console.log(`Migração aplicada: ${arquivo}`);
+      continue;
+    }
     const comandos = fs.readFileSync(path.join(pasta, arquivo), 'utf8')
       .split(';')
       .map((comando) => comando.trim())

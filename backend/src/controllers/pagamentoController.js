@@ -80,7 +80,7 @@ async function criarPagamento(req, res) {
 } catch (erro) {
   console.error('Erro completo:', JSON.stringify(erro, null, 2));
   console.error('apiResponse:', erro.apiResponse);
-  const status = erro.message.startsWith('Mercado Pago') ? 502 : 500;
+  const status = erro.status === 400 ? 400 : erro.message.startsWith('Mercado Pago') ? 502 : 500;
   res.status(status).json({ mensagem: erro.message });
 }
 }
