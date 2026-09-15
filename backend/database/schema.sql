@@ -36,6 +36,7 @@ CREATE TABLE pedidos (
   endereco_entrega TEXT NOT NULL,
   telefone_contato VARCHAR(20) NOT NULL,
   codigo_rastreio VARCHAR(100),
+  valor_frete DECIMAL(10,2) NOT NULL DEFAULT 0,
   total DECIMAL(10,2) NOT NULL,
   criado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
