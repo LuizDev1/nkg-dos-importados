@@ -11,6 +11,9 @@ const usuarioRoutes = require('./routes/usuarioRoutes');
 const promocaoRoutes = require('./routes/promocaoRoutes');
 const freteRoutes = require('./routes/freteRoutes');
 const bannerRoutes = require('./routes/bannerRoutes');
+const favoritoRoutes = require('./routes/favoritoRoutes');
+const avisoEstoqueRoutes = require('./routes/avisoEstoqueRoutes');
+const avaliacaoRoutes = require('./routes/avaliacaoRoutes');
 const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
@@ -75,6 +78,9 @@ app.use('/api', usuarioRoutes);
 app.use('/api', promocaoRoutes);
 app.use('/api', freteRoutes);
 app.use('/api', bannerRoutes);
+app.use('/api', favoritoRoutes);
+app.use('/api', avisoEstoqueRoutes);
+app.use('/api', avaliacaoRoutes);
 
 const PORT = process.env.PORT || 3000;
 

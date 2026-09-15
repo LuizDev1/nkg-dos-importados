@@ -25,8 +25,8 @@ export default function Carrinho() {
     return (
       <div className="max-w-2xl mx-auto px-4 py-16 text-center">
         <p className="text-gray-500 mb-4">Seu carrinho está vazio.</p>
-        <Link to="/" className="text-blue-600 hover:underline">
-          Voltar para a loja
+        <Link to="/" className="botao-voltar">
+          &larr; Voltar para a loja
         </Link>
       </div>
     );
@@ -38,7 +38,7 @@ export default function Carrinho() {
       <div className="space-y-4">
         {itens.map((item) => (
           <ItemCarrinho
-            key={item.produto_id}
+            key={item.chave}
             item={item}
             onAlterarQuantidade={alterarQuantidade}
             onRemover={removerItem}

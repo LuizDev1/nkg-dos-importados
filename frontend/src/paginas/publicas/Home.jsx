@@ -84,20 +84,23 @@ export default function Home() {
   const pesquisaRealizada = busca.trim().length > 0;
 
   return (
-    <div>
-      {Boolean(configuracoes.aviso_ativo) && configuracoes.aviso_texto && (
-        <div className="bg-black text-white text-center px-4 py-2">
+    <div className="min-h-full bg-transparent">
+      {configuracoes.aviso_ativo && configuracoes.aviso_texto && (
+        <div className="bg-transparent px-4 py-2 text-center text-xs uppercase tracking-[0.12em] text-[#d4af45]">
           {configuracoes.aviso_texto}
         </div>
       )}
 
       <CarrosselBanners banners={banners} />
 
-      <div className="max-w-6xl mx-auto px-4 py-8">
-        <h1 className="text-2xl font-bold mb-6">Nossos produtos</h1>
+      <div className="max-w-6xl mx-auto px-4 py-10">
+        <div className="mb-7">
+          <p className="mb-2 text-sm font-semibold uppercase tracking-[0.28em] text-[#b99a42]">Catálogo</p>
+          <h1 className="text-3xl font-bold text-[#f4efe5]">Nossos produtos</h1>
+        </div>
 
         <form
-          className="mb-6 flex"
+          className="mb-8 flex shadow-[0_14px_35px_rgba(0,0,0,0.28)]"
           onSubmit={(evento) => {
             evento.preventDefault();
             setBusca(termoBusca.trim());
@@ -116,12 +119,12 @@ export default function Home() {
               }}
               placeholder="Buscar produtos"
               aria-label="Buscar produtos"
-              className="w-full rounded-l-lg border border-r-0 border-gray-300 bg-white py-3 pl-11 pr-4 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+              className="w-full rounded-l border border-r-0 border-[#3a3526] bg-[#111210] py-3.5 pl-11 pr-4 outline-none transition"
             />
           </div>
           <button
             type="submit"
-            className="rounded-r-lg bg-blue-600 px-6 font-semibold text-white shadow-sm transition hover:bg-blue-700"
+            className="rounded-r bg-[#d4af45] px-7 text-xs font-bold uppercase tracking-[0.12em] text-[#090a09] transition hover:bg-[#e2c25d]"
           >
             Buscar
           </button>
@@ -135,8 +138,8 @@ export default function Home() {
 
         <div className={pesquisaRealizada ? 'grid items-start gap-6 lg:grid-cols-[240px_minmax(0,1fr)]' : ''}>
           {pesquisaRealizada && (
-            <aside className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
-              <h2 className="mb-5 text-lg font-bold">Filtros</h2>
+            <aside className="rounded border border-[#2b2618] bg-[#10110f] p-5 shadow-sm">
+              <h2 className="mb-5 border-b border-[#2b2618] pb-3 text-sm font-bold uppercase tracking-[0.15em] text-[#d4af45]">Filtros</h2>
 
               <label className="mb-2 block text-sm font-semibold" htmlFor="categoria">
                 Categoria
@@ -197,6 +200,7 @@ export default function Home() {
                 className="w-full rounded border border-gray-300 px-3 py-2"
               >
                 <option value="recentes">Mais recentes</option>
+                <option value="melhor_avaliados">Melhor avaliados</option>
                 <option value="menor_preco">Menor preço</option>
                 <option value="maior_preco">Maior preço</option>
                 <option value="nome">Nome</option>

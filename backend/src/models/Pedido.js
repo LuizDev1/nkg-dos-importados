@@ -133,7 +133,7 @@ async function atualizarStatus(id, paymentStatus, paymentId = null) {
 
     if (['recusado', 'cancelado'].includes(paymentStatus) && pedido.estoque_reservado) {
       const [itens] = await conexao.query(
-        'SELECT produto_id, quantidade FROM itens_pedido WHERE pedido_id = ?',
+        'SELECT produto_id, variacao_id, quantidade FROM itens_pedido WHERE pedido_id = ?',
         [id]
       );
       for (const item of itens) {
@@ -141,6 +141,12 @@ async function atualizarStatus(id, paymentStatus, paymentId = null) {
           'UPDATE produtos SET estoque_qtd = estoque_qtd + ? WHERE id = ?',
           [item.quantidade, item.produto_id]
         );
+        if (item.variacao_id) {
+          await conexao.query(
+            'UPDATE produto_variacoes SET estoque_qtd = estoque_qtd + ? WHERE id = ?',
+            [item.quantidade, item.variacao_id]
+          );
+        }
       }
     }
 
@@ -257,7 +263,7 @@ async function atualizarRastreio(id, codigoRastreio) {
   return resultado.affectedRows;
 }
 
-async function cancelarPedido(id) {
+async function cancelarPedido(id, somentePendente = false) {
   const conexao = await pool.getConnection();
 
   try {
@@ -279,8 +285,16 @@ async function cancelarPedido(id) {
       return false;
     }
 
+    if (somentePendente && (
+      pedido.status_pedido !== 'aguardando_pagamento'
+      || pedido.payment_status !== 'pendente'
+    )) {
+      await conexao.rollback();
+      return false;
+    }
+
     const [itens] = await conexao.query(
-      'SELECT produto_id, quantidade FROM itens_pedido WHERE pedido_id = ?',
+      'SELECT produto_id, variacao_id, quantidade FROM itens_pedido WHERE pedido_id = ?',
       [id]
     );
 
@@ -290,6 +304,12 @@ async function cancelarPedido(id) {
         'UPDATE produtos SET estoque_qtd = estoque_qtd + ? WHERE id = ?',
         [item.quantidade, item.produto_id]
       );
+      if (item.variacao_id) {
+        await conexao.query(
+          'UPDATE produto_variacoes SET estoque_qtd = estoque_qtd + ? WHERE id = ?',
+          [item.quantidade, item.variacao_id]
+        );
+      }
       }
     }
 

@@ -14,6 +14,7 @@ router.get('/pedidos/:id', verificarAutenticacao, pedidoController.buscar);
 router.post('/pedidos', verificarAutenticacao, validar(schemas.pedido), pedidoController.criar);
 router.patch('/pedidos/:id/status-operacional', verificarAutenticacao, verificarAdmin, pedidoController.atualizarStatusOperacional);
 router.patch('/pedidos/:id/cancelar', verificarAutenticacao, pedidoController.cancelar);
+router.patch('/pedidos/:id/abandonar', verificarAutenticacao, pedidoController.abandonar);
 router.patch(
   '/pedidos/:id/rastreio',
   verificarAutenticacao,

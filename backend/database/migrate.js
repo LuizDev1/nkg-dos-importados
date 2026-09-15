@@ -18,7 +18,13 @@ async function executar() {
       .map((comando) => comando.trim())
       .filter(Boolean);
 
-    for (const comando of comandos) await pool.query(comando);
+    for (const comando of comandos) {
+      try {
+        await pool.query(comando);
+      } catch (erro) {
+        if (!['ER_DUP_FIELDNAME', 'ER_TABLE_EXISTS_ERROR'].includes(erro.code)) throw erro;
+      }
+    }
     console.log(`Migração aplicada: ${arquivo}`);
   }
 }

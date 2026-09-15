@@ -56,6 +56,9 @@ export default function StatusPedido() {
 
   useEffect(() => {
     if (resultado === 'sucesso') {
+      if (localStorage.getItem('pedido_pendente_carrinho') === String(id)) {
+        localStorage.removeItem('pedido_pendente_carrinho');
+      }
       limparCarrinho();
     }
 
@@ -139,8 +142,8 @@ export default function StatusPedido() {
         </div>
       )}
 
-      <Link to="/" className="text-blue-600 hover:underline">
-        Voltar para a loja
+      <Link to="/" className="botao-voltar">
+        &larr; Voltar para a loja
       </Link>
     </div>
   );

@@ -1,60 +1,32 @@
 import { Link } from 'react-router-dom';
-import { useAutenticacao } from '../../contextos/ContextoAutenticacao';
+
+const SECOES = [
+  ['/admin/produtos', 'Produtos', 'Catálogo, estoque e variações', 'P'],
+  ['/admin/pedidos', 'Pedidos', 'Pagamentos, envio e atendimento', 'V'],
+  ['/admin/relatorios', 'Relatórios', 'Indicadores e desempenho da loja', 'R'],
+  ['/admin/configuracoes', 'Configurações', 'Contato e informações gerais', 'C'],
+  ['/admin/promocoes', 'Promoções', 'Cupons e campanhas comerciais', '%'],
+  ['/admin/banners', 'Banners', 'Destaques visuais da vitrine', 'B'],
+  ['/admin/clientes', 'Clientes', 'Contas e histórico de compras', 'U'],
+];
 
 export default function Painel() {
-  const { usuario, logout } = useAutenticacao();
-
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8">
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-2xl font-bold">Painel administrativo</h1>
-        <div className="flex items-center gap-4">
-        </div>
+    <div className="max-w-6xl mx-auto px-4 py-10">
+      <div className="mb-9">
+        <p className="mb-2 text-xs font-semibold uppercase tracking-[0.28em] text-[#b99a42]">Gestão da loja</p>
+        <h1 className="text-3xl font-bold">Painel administrativo</h1>
+        <p className="mt-2 text-sm text-gray-500">Gerencie as principais áreas da NKG dos Importados.</p>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <Link
-          to="/admin/produtos"
-          className="bg-white rounded-lg shadow hover:shadow-md transition p-6 text-center font-semibold"
-        >
-          Produtos
-        </Link>
-        <Link
-          to="/admin/pedidos"
-          className="bg-white rounded-lg shadow hover:shadow-md transition p-6 text-center font-semibold"
-        >
-          Pedidos
-        </Link>
-        <Link
-          to="/admin/relatorios"
-          className="bg-white rounded-lg shadow hover:shadow-md transition p-6 text-center font-semibold"
-        >
-          Relatórios
-        </Link>
-        <Link
-          to="/admin/configuracoes"
-          className="bg-white rounded-lg shadow hover:shadow-md transition p-6 text-center font-semibold"
-        >
-          Configurações
-        </Link>
-        <Link
-          to="/admin/promocoes"
-          className="bg-white rounded-lg shadow hover:shadow-md transition p-6 text-center font-semibold"
-        >
-          Promoções
-        </Link>
-        <Link
-          to="/admin/banners"
-          className="bg-white rounded-lg shadow hover:shadow-md transition p-6 text-center font-semibold"
-        >
-          Banners
-        </Link>
-        <Link
-        to="/admin/clientes"
-        className="bg-white rounded-lg shadow hover:shadow-md transition p-6 text-center font-semibold"
-        >
-        Clientes
-        </Link>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {SECOES.map(([rota, titulo, descricao, icone]) => (
+          <Link key={rota} to={rota} className="admin-card group rounded border border-[#2b281f] bg-[#111210] p-5">
+            <span className="mb-5 flex h-10 w-10 items-center justify-center rounded border border-[#4a4025] bg-[#1b1810] font-bold text-[#d4af45]">{icone}</span>
+            <h2 className="font-semibold text-[#f4efe5] group-hover:text-[#d4af45]">{titulo}</h2>
+            <p className="mt-2 text-sm leading-6 text-gray-500">{descricao}</p>
+          </Link>
+        ))}
       </div>
     </div>
   );

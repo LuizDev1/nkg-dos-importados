@@ -156,6 +156,7 @@ async function criar(req, res) {
 
     for (const item of itens) {
       const produtoId = Number(item.produto_id);
+      const variacaoId = item.variacao_id ? Number(item.variacao_id) : null;
       const quantidade = Number(item.quantidade);
       const precoInformado = item.preco_unitario != null ? Number(item.preco_unitario) : null;
 
@@ -186,6 +187,22 @@ async function criar(req, res) {
         throw new Error(`Produto ${produtoId} indisponível no momento`);
       }
 
+      const [variacoes] = await conexao.query(
+        'SELECT id, nome, estoque_qtd FROM produto_variacoes WHERE produto_id = ? AND ativo = TRUE FOR UPDATE',
+        [produtoId]
+      );
+      const variacao = variacaoId
+        ? variacoes.find((opcao) => Number(opcao.id) === variacaoId)
+        : null;
+
+      if (variacoes.length && !variacao) {
+        throw new Error(`Selecione uma variação válida para o produto ${produtoId}`);
+      }
+
+      if (variacao && variacao.estoque_qtd < quantidade) {
+        throw new Error(`Estoque insuficiente para a variação ${variacao.nome}`);
+      }
+
       if (produto.estoque_qtd < quantidade) {
         throw new Error(
           `Estoque insuficiente para o produto ${produtoId}`
@@ -209,10 +226,22 @@ async function criar(req, res) {
         throw new Error(`Estoque insuficiente para o produto ${produtoId}`);
       }
 
+      if (variacao) {
+        const [variacaoReservada] = await conexao.query(
+          'UPDATE produto_variacoes SET estoque_qtd = estoque_qtd - ? WHERE id = ? AND estoque_qtd >= ?',
+          [quantidade, variacao.id, quantidade]
+        );
+        if (!variacaoReservada.affectedRows) {
+          throw new Error(`Estoque insuficiente para a variação ${variacao.nome}`);
+        }
+      }
+
       total += precoUnitario * quantidade;
 
       itensPreparados.push({
         produto_id: produtoId,
+        variacao_id: variacao?.id || null,
+        variacao_nome: variacao?.nome || null,
         quantidade,
         preco_unitario: precoUnitario,
       });
@@ -468,6 +497,30 @@ async function cancelar(req, res) {
     return res.status(500).json({ mensagem: erro.message });
   }
 }
+
+async function abandonar(req, res) {
+  try {
+    const pedido = await Pedido.buscarPorId(req.params.id);
+    if (!pedido || String(pedido.usuario_id) !== String(req.usuario.id)) {
+      return res.status(404).json({ mensagem: 'Pedido não encontrado' });
+    }
+
+    const cancelado = await Pedido.cancelarPedido(pedido.id, true);
+    if (!cancelado) {
+      return res.status(409).json({ mensagem: 'O pedido não está mais aguardando pagamento' });
+    }
+
+    await Log.registrar({
+      tipo: 'pedido',
+      acao: 'checkout_abandonado',
+      entidade_id: pedido.id,
+      usuario_id: req.usuario.id,
+    });
+    return res.json({ mensagem: 'Pedido pendente cancelado' });
+  } catch (erro) {
+    return res.status(500).json({ mensagem: erro.message });
+  }
+}
 async function listarMeusPedidos(req, res) {
   try {
     const pedidos = await Pedido.listarPorUsuario(req.usuario.id);
@@ -512,4 +565,5 @@ module.exports = {
   atualizarStatusOperacional,
   atualizarRastreio,
   cancelar,
+  abandonar,
 };
