@@ -1,3 +1,4 @@
+import SeletorFotos from '../../componentes/SeletorFotos';
 import { corStatus } from '../../servicos/statusVisual';
 import CampoRotulado from '../../componentes/CampoRotulado';
 import { useEffect, useState } from 'react';
@@ -7,6 +8,7 @@ import { atualizarBanner, criarBanner, excluirBanner, listarBannersAdmin } from 
 const VAZIO = { titulo: '', imagem_url: '', link_url: '', ativo: true, ordem: 0 };
 
 export default function Banners() {
+  const [enviandoFotos, setEnviandoFotos] = useState(false);
   const [banners, setBanners] = useState([]);
   const [form, setForm] = useState(VAZIO);
   const [editandoId, setEditandoId] = useState(null);
@@ -21,6 +23,8 @@ export default function Banners() {
 
   async function salvar(evento) {
     evento.preventDefault();
+    if (enviandoFotos) return;
+    if (!form.imagem_url) { setErro('Selecione a foto do banner.'); return; }
     setSalvando(true);
     setErro('');
     try {
@@ -34,6 +38,7 @@ export default function Banners() {
   }
 
   function editar(banner) {
+    setEnviandoFotos(false);
     setEditandoId(banner.id);
     setForm({
       titulo: banner.titulo || '', imagem_url: banner.imagem_url,
@@ -56,11 +61,11 @@ export default function Banners() {
       <form onSubmit={salvar} className="mb-8 grid gap-3 rounded-lg bg-white p-5 shadow sm:grid-cols-2">
         <CampoRotulado rotulo="Título" value={form.titulo} onChange={(e) => setForm({ ...form, titulo: e.target.value })} placeholder="Título" maxLength="150" className="rounded border p-2" />
         <CampoRotulado rotulo="Ordem" type="number" min="0" value={form.ordem} onChange={(e) => setForm({ ...form, ordem: e.target.value })} placeholder="Ordem" className="rounded border p-2" />
-        <CampoRotulado rotulo="URL da imagem" containerClassName="sm:col-span-2" type="url" required value={form.imagem_url} onChange={(e) => setForm({ ...form, imagem_url: e.target.value })} placeholder="URL da imagem" className="rounded border p-2" />
+        <div className="sm:col-span-2"><SeletorFotos key={editandoId || 'novo'} rotulo="Foto do banner" maximo={1} fotos={form.imagem_url ? [form.imagem_url] : []} disabled={salvando || enviandoFotos} onCarregando={setEnviandoFotos} onChange={fotos => setForm(atual => ({ ...atual, imagem_url: fotos[0] || '' }))} /></div>
         <CampoRotulado rotulo="Link ao clicar (opcional)" containerClassName="sm:col-span-2" type="url" value={form.link_url} onChange={(e) => setForm({ ...form, link_url: e.target.value })} placeholder="Link ao clicar (opcional)" className="rounded border p-2" />
         <label className="flex items-center gap-2"><input type="checkbox" checked={form.ativo} onChange={(e) => setForm({ ...form, ativo: e.target.checked })} /> Banner ativo</label>
         <div className="flex justify-end gap-2">
-          {Boolean(editandoId) && <button type="button" onClick={() => { setEditandoId(null); setForm(VAZIO); }} className="rounded border px-4 py-2">Cancelar</button>}
+          {Boolean(editandoId) && <button type="button" onClick={() => { setEnviandoFotos(false); setEditandoId(null); setForm(VAZIO); }} className="rounded border px-4 py-2">Cancelar</button>}
           <button disabled={salvando} className="rounded bg-blue-600 px-4 py-2 text-white disabled:opacity-50">{salvando ? 'Salvando...' : editandoId ? 'Salvar alterações' : 'Criar banner'}</button>
         </div>
       </form>

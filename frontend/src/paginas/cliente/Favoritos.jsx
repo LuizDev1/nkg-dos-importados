@@ -7,6 +7,9 @@ export default function Favoritos() {
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-10">
+      <Link to="/" className="botao-voltar mb-6 inline-flex">
+        &larr; Voltar para a loja
+      </Link>
       <p className="mb-2 text-sm font-semibold uppercase tracking-[0.28em] text-[#b99a42]">Sua seleção</p>
       <h1 className="mb-7 text-3xl font-bold">Favoritos</h1>
       {produtos.length ? (

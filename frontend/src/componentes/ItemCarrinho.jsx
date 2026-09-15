@@ -1,4 +1,4 @@
-export default function ItemCarrinho({ item, onAlterarQuantidade, onRemover }) {
+export default function ItemCarrinho({ item, onAlterarQuantidade, onRemover, carregandoEstoque = false }) {
   function formatarMoeda(valor) {
     return valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
   }
@@ -20,6 +20,9 @@ export default function ItemCarrinho({ item, onAlterarQuantidade, onRemover }) {
       <input
         type="number"
         min="1"
+        max={item.estoque_qtd}
+        step="1"
+        disabled={carregandoEstoque || !item.estoque_qtd}
         value={item.quantidade}
         onChange={(e) => onAlterarQuantidade(item.chave, Number(e.target.value))}
         className="mt-2 block w-20 border rounded px-2 py-1 text-center"

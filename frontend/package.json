@@ -4,7 +4,8 @@
   "description": "Frontend da NKG dos Importados (React)",
   "scripts": {
     "dev": "vite",
-    "build": "vite build"
+    "build": "vite build",
+    "test": "node --test test/*.test.mjs"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.3.3",

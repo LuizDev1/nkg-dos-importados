@@ -9,6 +9,11 @@ const jwt = require('jsonwebtoken');
 const melhorEnvioService = require('../src/services/melhorEnvioService');
 const usuariosTeste = [];
 const produtosTeste = [];
+const mercadoPagoService = require('../src/services/mercadoPagoService');
+const notificacaoService = require('../src/services/notificacaoService');
+test.mock.method(mercadoPagoService, 'solicitarReembolso', async () => ({}));
+test.mock.method(mercadoPagoService, 'buscarOrder', async () => { throw new Error('Order de teste inexistente'); });
+test.mock.method(notificacaoService, 'notificarStatusPedido', async () => {});
 
 async function criarUsuarioTeste(email, senha, perfil = 'cliente', status = 'ativo') {
   const id = await Usuario.criar({
@@ -163,7 +168,7 @@ test('cliente pode cancelar pedido e receber estoque de volta', async () => {
   produtosTeste.push(produto.insertId);
 
   const [pedido] = await pool.query(
-    'INSERT INTO pedidos (usuario_id, payment_status, payment_id, tipo_entrega, endereco_entrega, telefone_contato, total) VALUES (?, ?, ?, ?, ?, ?, ?)',
+    'INSERT INTO pedidos (usuario_id, payment_status, payment_id, tipo_entrega, endereco_entrega, telefone_contato, total, estoque_reservado) VALUES (?, ?, ?, ?, ?, ?, ?, TRUE)',
     [usuario.id, 'pago', 'pay_123', 'envio', 'Rua B, 456', '(61)98888-7777', 99.80]
   );
 
@@ -179,11 +184,19 @@ test('cliente pode cancelar pedido e receber estoque de volta', async () => {
   assert.equal(resposta.status, 200);
   assert.match(resposta.body.mensagem, /cancelado/i);
 
-  const [pedidoAtualizado] = await pool.query('SELECT payment_status FROM pedidos WHERE id = ?', [pedido.insertId]);
+  const [pedidoAtualizado] = await pool.query('SELECT payment_status, status_pedido, reembolso_status FROM pedidos WHERE id = ?', [pedido.insertId]);
   const [estoqueAtualizado] = await pool.query('SELECT estoque_qtd FROM produtos WHERE id = ?', [produto.insertId]);
 
   assert.equal(pedidoAtualizado[0].payment_status, 'cancelado');
   assert.equal(Number(estoqueAtualizado[0].estoque_qtd), 5);
+  assert.equal(pedidoAtualizado[0].status_pedido, 'reembolso_pendente');
+  assert.equal(pedidoAtualizado[0].reembolso_status, 'solicitado');
+  const repetida = await request(app)
+    .patch('/api/pedidos/' + pedido.insertId + '/cancelar')
+    .set('Authorization', 'Bearer ' + token);
+  assert.equal(repetida.status, 409);
+  const [estoqueRepetido] = await pool.query('SELECT estoque_qtd FROM produtos WHERE id = ?', [produto.insertId]);
+  assert.equal(Number(estoqueRepetido[0].estoque_qtd), 5);
 });
 
 test('cancelamento de pagamento pendente não cria reembolso', async () => {
@@ -299,4 +312,85 @@ test('status operacional respeita a ordem de expedição', async () => {
 
   await pool.query('DELETE FROM pedidos WHERE id = ?', [pedido.insertId]);
   await pool.query('DELETE FROM usuarios WHERE id IN (?, ?)', [admin.id, cliente.id]);
+});
+test('avaliacao unica por produto e voto util unico por usuario', async () => {
+  const usuario = await criarUsuarioTeste('avaliacao-' + Date.now() + '@teste.com', 'senha123');
+  const token = jwt.sign({ id: usuario.id, perfil: 'cliente' }, process.env.JWT_SECRET, { expiresIn: '1h' });
+  const [produto] = await pool.query('INSERT INTO produtos (nome, categoria, preco, estoque_qtd, ativo) VALUES (?, ?, ?, ?, ?)', ['Produto Avaliacao', 'Teste', 20, 5, true]);
+  produtosTeste.push(produto.insertId);
+  const rota = '/api/produtos/' + produto.insertId + '/avaliacoes';
+  let resposta = await request(app).put(rota + '/minha').set('Authorization', 'Bearer ' + token).send({ nota: 5, comentario: 'Original' });
+  assert.equal(resposta.status, 403);
+  const [pedido] = await pool.query('INSERT INTO pedidos (usuario_id, payment_status, tipo_entrega, endereco_entrega, telefone_contato, total) VALUES (?, ?, ?, ?, ?, ?)', [usuario.id, 'pago', 'envio', 'Rua Teste', '99999999999', 20]);
+  await pool.query('INSERT INTO itens_pedido (pedido_id, produto_id, quantidade, preco_unitario) VALUES (?, ?, ?, ?)', [pedido.insertId, produto.insertId, 1, 20]);
+  resposta = await request(app).get(rota + '/permissao').set('Authorization', 'Bearer ' + token);
+  assert.equal(resposta.body.pode_avaliar, true);
+  const foto = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+a0i8AAAAASUVORK5CYII=';
+  resposta = await request(app).put(rota + '/minha').set('Authorization', 'Bearer ' + token).send({ nota: 5, fotos: Array(6).fill(foto) });
+  assert.equal(resposta.status, 400);
+  resposta = await request(app).put(rota + '/minha').set('Authorization', 'Bearer ' + token).send({ nota: 5, fotos: ['data:video/mp4;base64,AAAA'] });
+  assert.equal(resposta.status, 400);
+  resposta = await request(app).put(rota + '/minha').set('Authorization', 'Bearer ' + token).send({ nota: 5, comentario: 'Original', anonimo: true, fotos: Array(5).fill(foto) });
+  assert.equal(resposta.status, 200);
+  resposta = await request(app).put(rota + '/minha').set('Authorization', 'Bearer ' + token).send({ nota: 1, comentario: 'Sobrescrever' });
+  assert.equal(resposta.status, 409);
+  resposta = await request(app).get(rota + '/permissao').set('Authorization', 'Bearer ' + token);
+  assert.equal(resposta.body.pode_avaliar, false);
+  resposta = await request(app).get(rota);
+  assert.equal(resposta.body.length, 1);
+  assert.equal(resposta.body[0].nota, 5);
+  assert.equal(resposta.body[0].comentario, 'Original');
+  assert.equal(resposta.body[0].usuario_nome, 'Anônimo');
+  assert.equal(resposta.body[0].fotos.length, 5);
+  assert.equal(resposta.body[0].fotos[0], foto);
+  const util = '/api/avaliacoes/' + resposta.body[0].id + '/util';
+  resposta = await request(app).put(util);
+  assert.equal(resposta.status, 401);
+  for (let i = 0; i < 2; i++) {
+    resposta = await request(app).put(util).set('Authorization', 'Bearer ' + token);
+    assert.equal(resposta.status, 200);
+    assert.equal(resposta.body.uteis, 1);
+  }
+  resposta = await request(app).get(rota + '/meus-votos').set('Authorization', 'Bearer ' + token);
+  assert.equal(resposta.body.length, 1);
+  for (let i = 0; i < 2; i++) {
+    resposta = await request(app).delete(util).set('Authorization', 'Bearer ' + token);
+    assert.equal(resposta.status, 200);
+    assert.equal(resposta.body.uteis, 0);
+    assert.equal(resposta.body.votou_util, false);
+  }
+  resposta = await request(app).get(rota + '/meus-votos').set('Authorization', 'Bearer ' + token);
+  assert.deepEqual(resposta.body, []);
+  resposta = await request(app).put(util).set('Authorization', 'Bearer ' + token);
+  assert.equal(resposta.body.uteis, 1);
+  assert.equal(resposta.body.votou_util, true);
+  resposta = await request(app).get(rota);
+  assert.equal(Number(resposta.body[0].uteis), 1);
+});
+
+test('upload de fotos restrito ao admin e arquivo acessivel', async () => {
+  const usuario = await criarUsuarioTeste('upload-admin-' + Date.now() + '@teste.com', 'senha123', 'admin');
+  const token = jwt.sign({ id: usuario.id, perfil: 'admin' }, process.env.JWT_SECRET, { expiresIn: '1h' });
+  const foto = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+a0i8AAAAASUVORK5CYII=', 'base64');
+  let resposta = await request(app).post('/api/imagens').set('Content-Type', 'image/png').send(foto);
+  assert.equal(resposta.status, 401);
+  const cliente = await criarUsuarioTeste('upload-cliente-' + Date.now() + '@teste.com', 'senha123');
+  const tokenCliente = jwt.sign({ id: cliente.id, perfil: 'cliente' }, process.env.JWT_SECRET, { expiresIn: '1h' });
+  resposta = await request(app).post('/api/imagens').set('Authorization', 'Bearer ' + tokenCliente).set('Content-Type', 'image/png').send(foto);
+  assert.equal(resposta.status, 403);
+  resposta = await request(app).post('/api/imagens').set('Authorization', 'Bearer ' + token).set('Content-Type', 'image/png').send(Buffer.from('invalid image'));
+  assert.equal(resposta.status, 400);
+  resposta = await request(app).post('/api/imagens').set('Authorization', 'Bearer ' + token).set('Content-Type', 'image/png').send(foto);
+  assert.equal(resposta.status, 201);
+  const url = resposta.body.imagem_url;
+  assert.match(url, /^\/api\/uploads\/[a-f0-9-]+\.png$/);
+  try {
+    resposta = await request(app).get(url);
+    assert.equal(resposta.status, 200);
+    assert.deepEqual(resposta.body, foto);
+    assert.equal(resposta.headers['cross-origin-resource-policy'], 'cross-origin');
+  } finally {
+    const path = require('path');
+    await require('fs/promises').unlink(path.join(require('../src/routes/imagemRoutes').pasta, path.basename(url)));
+  }
 });

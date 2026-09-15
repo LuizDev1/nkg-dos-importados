@@ -4,7 +4,7 @@ import { useAutenticacao } from '../../contextos/ContextoAutenticacao';
 import ItemCarrinho from '../../componentes/ItemCarrinho';
 
 export default function Carrinho() {
-  const { itens, removerItem, alterarQuantidade, total } = useCarrinho();
+  const { itens, removerItem, alterarQuantidade, total, carregandoEstoque, erroEstoque } = useCarrinho();
   const { usuario } = useAutenticacao();
   const navigate = useNavigate();
 
@@ -35,11 +35,15 @@ export default function Carrinho() {
   return (
     <div className="max-w-2xl mx-auto px-4 py-8">
       <h1 className="text-2xl font-bold mb-6">Meu carrinho</h1>
+      {carregandoEstoque && <p role="status">Atualizando estoque...</p>}
+      {erroEstoque && <p role="alert" className="text-red-600">{erroEstoque}</p>}
+      {itens.some(item => item.estoque_qtd === 0) && <p role="alert">Remova os itens sem estoque para continuar.</p>}
       <div className="space-y-4">
         {itens.map((item) => (
           <ItemCarrinho
             key={item.chave}
             item={item}
+            carregandoEstoque={carregandoEstoque || Boolean(erroEstoque)}
             onAlterarQuantidade={alterarQuantidade}
             onRemover={removerItem}
           />
@@ -49,6 +53,7 @@ export default function Carrinho() {
         <span className="text-lg font-bold">Total: {formatarMoeda(total)}</span>
         <button
           onClick={handleFinalizarCompra}
+          disabled={carregandoEstoque || Boolean(erroEstoque) || itens.some(item => !item.estoque_qtd || item.quantidade < 1)}
           className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700"
         >
           Finalizar compra

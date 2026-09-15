@@ -59,6 +59,10 @@ app.use(cors({
   origin: frontendUrl,
 }));
 app.use('/api/pagamentos/webhook', express.raw({ type: 'application/json' }));
+app.use('/api/produtos/:produtoId/avaliacoes/minha', require('./middlewares/autenticacaoMiddleware'), express.json({ limit: '8mb' }));
+const imagensUpload = require('./routes/imagemRoutes');
+app.use('/api', imagensUpload.router);
+app.use('/api/uploads', express.static(imagensUpload.pasta, { setHeaders: res => res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin') }));
 app.use(express.json({ limit: process.env.JSON_BODY_LIMIT || '100kb' }));
 
 app.get('/health', async (req, res) => {

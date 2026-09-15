@@ -280,7 +280,7 @@ async function cancelarPedido(id, somentePendente = false) {
       return false;
     }
 
-    if (pedido.status_pedido === 'cancelado') {
+    if (['cancelado', 'reembolso_pendente', 'reembolsado'].includes(pedido.status_pedido)) {
       await conexao.commit();
       return false;
     }
@@ -315,8 +315,7 @@ async function cancelarPedido(id, somentePendente = false) {
 
 await conexao.query(
   `UPDATE pedidos
-   SET payment_status = 'cancelado',
-       reembolso_status = CASE
+   SET reembolso_status = CASE
          WHEN payment_status = 'pago' AND payment_id IS NOT NULL THEN 'solicitado'
          ELSE NULL
        END,
@@ -324,6 +323,7 @@ await conexao.query(
          WHEN payment_status = 'pago' AND payment_id IS NOT NULL THEN 'reembolso_pendente'
          ELSE 'cancelado'
        END,
+       payment_status = 'cancelado',
        estoque_reservado = FALSE
    WHERE id = ?`,
   [id]

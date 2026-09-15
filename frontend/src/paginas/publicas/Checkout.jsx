@@ -8,7 +8,7 @@ import { cotarFrete } from '../../servicos/freteService';
 const API_URL = import.meta.env.VITE_API_URL || '/api';
 
 export default function Checkout() {
-  const { itens, total } = useCarrinho();
+  const { itens, total, carregandoEstoque, erroEstoque } = useCarrinho();
   const { usuario } = useAutenticacao();
   const navigate = useNavigate();
 
@@ -25,6 +25,7 @@ export default function Checkout() {
   const [cpf, setCpf] = useState('');
   const [cotacaoFrete, setCotacaoFrete] = useState(null);
   const [freteServicoId, setFreteServicoId] = useState('');
+  const versaoCep = useRef(0);
   const idempotencyKey = useRef(
     `checkout-${Date.now()}-${Math.random().toString(36).slice(2)}`
   );
@@ -109,6 +110,7 @@ export default function Checkout() {
 
   function lidarComCep(e) {
     const { value } = e.target;
+    versaoCep.current += 1;
     setFormulario(atual => ({ ...atual, cep: value }));
     setCotacaoFrete(null);
     setFreteServicoId('');
@@ -123,7 +125,7 @@ export default function Checkout() {
   async function finalizarCompra(e) {
     e.preventDefault();
 
-    if (pedidoEmProcessamento || !validarCampos()) {
+    if (carregandoEstoque || erroEstoque || itens.some(item => !item.estoque_qtd || item.quantidade < 1) || pedidoEmProcessamento || !validarCampos()) {
       return;
     }
 
@@ -137,10 +139,13 @@ export default function Checkout() {
         produto_id: item.produto_id,
         quantidade: item.quantidade,
       }));
+      const precisaConfirmarFrete = !cotacaoFrete;
+      const versao = versaoCep.current;
       const cotacao = await cotarFrete(formulario.cep, itensFrete, freteServicoId);
+      if (versao !== versaoCep.current) return;
       setCotacaoFrete(cotacao);
 
-      if (cotacao.opcoes?.length > 1 && !freteServicoId) {
+      if (precisaConfirmarFrete) {
         setFreteServicoId(cotacao.servico_id);
         return;
       }
@@ -354,16 +359,16 @@ export default function Checkout() {
 
         <button 
           type="submit" 
-          disabled={carregando || buscandoCep}
+          disabled={carregando || buscandoCep || carregandoEstoque || Boolean(erroEstoque) || itens.some(item => !item.estoque_qtd || item.quantidade < 1)}
           className={`w-full py-3 rounded text-white font-bold mt-4 transition ${carregando || buscandoCep ? 'bg-gray-400' : 'bg-green-600 hover:bg-green-700'}`}
         >
           {carregando
             ? 'Processando...'
             : buscandoCep
               ? 'Buscando CEP...'
-              : cotacaoFrete?.opcoes?.length > 1 && freteServicoId
+              : cotacaoFrete && freteServicoId
                 ? 'Ir para o Pagamento'
-                : 'Calcular frete e continuar'}
+                : 'Calcular frete'}
         </button>
       </form>
     </div>

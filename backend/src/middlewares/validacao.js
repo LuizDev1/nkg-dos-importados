@@ -103,6 +103,16 @@ const schemas = {
     ativo: z.boolean().optional().default(true),
   }).strict(),
   avaliacao: z.object({
+    anonimo: z.boolean().optional().default(false),
+    fotos: z.array(z.string().max(1400000).regex(/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/]+={0,2}$/).refine(valor => {
+      const [cabecalho, conteudo] = valor.split(',');
+      if (!conteudo) return false;
+      const bytes = Buffer.from(conteudo, 'base64');
+      if (bytes.length > 1024 * 1024) return false;
+      if (cabecalho === 'data:image/png;base64') return bytes.subarray(0, 8).equals(Buffer.from([137,80,78,71,13,10,26,10]));
+      if (cabecalho === 'data:image/jpeg;base64') return bytes[0] === 255 && bytes[1] === 216 && bytes[2] === 255;
+      return cabecalho === 'data:image/webp;base64' && bytes.toString('ascii', 0, 4) === 'RIFF' && bytes.toString('ascii', 8, 12) === 'WEBP';
+    }, 'Foto inválida')).max(5).optional().default([]),
     nota: z.coerce.number().int().min(1).max(5),
     comentario: z.string().trim().max(1000).optional().default(''),
     foto_url: z.union([z.string().trim().url().max(500), z.literal('')]).optional().default(''),
