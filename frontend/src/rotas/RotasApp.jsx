@@ -20,6 +20,7 @@ import Banners from '../paginas/admin/Banners';
 import MeusPedidosCliente from '../paginas/cliente/MeusPedidos';
 import DetalheMeuPedido from '../paginas/cliente/DetalheMeuPedido';
 import Privacidade from '../paginas/publicas/Privacidade';
+import Favoritos from '../paginas/cliente/Favoritos';
 
 export default function RotasApp() {
   return (
@@ -51,11 +52,7 @@ export default function RotasApp() {
       />
       <Route
         path="/privacidade"
-        element={
-          <RotaPrivada somenteCliente>
-            <Privacidade />
-          </RotaPrivada>
-        }
+        element={<Privacidade />}
       />
 
       <Route
@@ -119,6 +116,14 @@ export default function RotasApp() {
         element={
           <RotaPrivada somenteAdmin>
             <Promocoes />
+          </RotaPrivada>
+        }
+      />
+      <Route
+        path="/favoritos"
+        element={
+          <RotaPrivada somenteCliente>
+            <Favoritos />
           </RotaPrivada>
         }
       />

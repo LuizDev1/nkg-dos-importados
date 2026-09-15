@@ -71,7 +71,7 @@ export default function ConfiguracaoLoja() {
     <div className="max-w-3xl mx-auto px-4 py-8">
       <Link
         to="/admin"
-        className="text-blue-600 hover:underline text-sm"
+        className="botao-voltar"
       >
         &larr; Voltar ao painel
       </Link>

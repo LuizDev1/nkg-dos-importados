@@ -1,46 +1,56 @@
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { useCarrinho } from '../contextos/ContextoCarrinho';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAutenticacao } from '../contextos/ContextoAutenticacao';
+import { useFavoritos } from '../contextos/ContextoFavoritos';
 
 export default function CartaoProduto({ produto }) {
-  const [adicionado, setAdicionado] = useState(false);
-  const { adicionarItem } = useCarrinho();
   const { usuario } = useAutenticacao();
+  const { estaFavorito, alternarFavorito } = useFavoritos();
+  const navigate = useNavigate();
+  const favorito = estaFavorito(produto.id);
 
-  function aoAdicionar() {
-    adicionarItem(produto);
-    setAdicionado(true);
-    setTimeout(() => setAdicionado(false), 1200);
+  async function favoritar() {
+    if (!usuario) {
+      navigate('/login');
+      return;
+    }
+    await alternarFavorito(produto);
   }
 
   return (
-    <div className="bg-white rounded-lg shadow hover:shadow-md transition p-4 flex flex-col">
-      <Link to={`/produto/${produto.id}`}>
+    <article className="group relative flex flex-col overflow-hidden rounded-sm border border-[#2b2618] bg-[#111210] transition duration-300 hover:-translate-y-1 hover:border-[#c9a43b] hover:shadow-[0_16px_40px_rgba(0,0,0,0.45)]">
+      {usuario?.perfil !== 'admin' && <button
+        type="button"
+        onClick={favoritar}
+        aria-label={favorito ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
+        className={`absolute right-3 top-3 z-10 flex h-9 w-9 items-center justify-center rounded-full border backdrop-blur ${favorito ? 'border-[#d4af45] bg-[#d4af45] text-[#090a09]' : 'border-white/15 bg-black/60 text-white hover:border-[#d4af45] hover:text-[#d4af45]'}`}
+      >
+        {favorito ? '♥' : '♡'}
+      </button>}
+      <Link to={`/produto/${produto.id}`} className="flex flex-1 flex-col">
+      <div className="overflow-hidden bg-[#171714]">
         <img
           src={produto.foto_url || 'https://placehold.co/200'}
           alt={produto.nome}
-          className="w-full h-40 object-cover rounded mb-3"
+          className="h-52 w-full object-cover transition duration-500 group-hover:scale-105"
         />
-        <h2 className="font-semibold hover:text-blue-600">{produto.nome}</h2>
-      </Link>
-      <p className="text-sm text-gray-500 mb-2">{produto.categoria}</p>
-      <p className="text-lg font-bold mb-3">
+      </div>
+      <div className="flex flex-1 flex-col p-4">
+        <p className="mb-2 text-[10px] uppercase tracking-[0.22em] text-[#9b823c]">{produto.categoria}</p>
+        <h2 className="mb-4 font-semibold text-[#f4efe5] transition group-hover:text-[#d4af45]">{produto.nome}</h2>
+        {Number(produto.avaliacoes_total) > 0 && (
+          <p className="mb-3 text-xs text-[#aaa399]">
+            <span className="text-[#d4af45]">★ {Number(produto.avaliacao_media).toFixed(1)}</span>
+            {' '}({produto.avaliacoes_total})
+          </p>
+        )}
+        <p className="mt-auto text-lg font-bold text-[#d4af45]">
         {Number(produto.preco).toLocaleString('pt-BR', {
           style: 'currency',
           currency: 'BRL',
         })}
-      </p>
-      {usuario?.perfil !== 'admin' && (
-        <button
-          onClick={aoAdicionar}
-          className={`mt-auto py-2 rounded transition ${
-            adicionado ? 'bg-green-600 text-white' : 'bg-blue-600 text-white hover:bg-blue-700'
-          }`}
-        >
-          {adicionado ? 'Adicionado!' : 'Adicionar ao carrinho'}
-        </button>
-      )}
-    </div>
+        </p>
+      </div>
+      </Link>
+    </article>
   );
 }

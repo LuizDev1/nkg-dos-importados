@@ -28,7 +28,7 @@ export default function Relatorios() {
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
-      <Link to="/admin" className="text-blue-600 hover:underline text-sm">
+      <Link to="/admin" className="botao-voltar">
         &larr; Voltar ao painel
       </Link>
 

@@ -114,3 +114,36 @@ export async function reativarProduto(id) {
 
   return dados;
 }
+
+export async function listarVariacoesAdmin(produtoId) {
+  const resposta = await fetch(`${API_URL}/produtos/${produtoId}/variacoes`, { headers: headersComToken() });
+  if (!resposta.ok) throw new Error('Erro ao carregar variações');
+  return resposta.json();
+}
+
+export async function criarVariacao(produtoId, dados) {
+  const resposta = await fetch(`${API_URL}/produtos/${produtoId}/variacoes`, {
+    method: 'POST', headers: headersComToken(), body: JSON.stringify(dados),
+  });
+  const respostaDados = await resposta.json();
+  if (!resposta.ok) throw new Error(respostaDados.mensagem || 'Erro ao criar variação');
+  return respostaDados;
+}
+
+export async function atualizarVariacao(produtoId, variacaoId, dados) {
+  const resposta = await fetch(`${API_URL}/produtos/${produtoId}/variacoes/${variacaoId}`, {
+    method: 'PUT', headers: headersComToken(), body: JSON.stringify(dados),
+  });
+  const respostaDados = await resposta.json();
+  if (!resposta.ok) throw new Error(respostaDados.mensagem || 'Erro ao atualizar variação');
+  return respostaDados;
+}
+
+export async function excluirVariacao(produtoId, variacaoId) {
+  const resposta = await fetch(`${API_URL}/produtos/${produtoId}/variacoes/${variacaoId}`, {
+    method: 'DELETE', headers: headersComToken(),
+  });
+  const respostaDados = await resposta.json();
+  if (!resposta.ok) throw new Error(respostaDados.mensagem || 'Erro ao excluir variação');
+  return respostaDados;
+}

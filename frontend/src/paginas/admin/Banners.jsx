@@ -47,7 +47,7 @@ export default function Banners() {
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-8">
-      <Link to="/admin" className="text-sm text-blue-600 hover:underline">&larr; Voltar ao painel</Link>
+      <Link to="/admin" className="botao-voltar">&larr; Voltar ao painel</Link>
       <h1 className="mb-6 mt-2 text-2xl font-bold">Banners</h1>
       {erro && <p className="mb-4 rounded bg-red-50 p-3 text-red-600">{erro}</p>}
 

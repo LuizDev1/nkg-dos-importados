@@ -32,6 +32,59 @@ CREATE TABLE produtos (
   criado_em DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE produto_imagens (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  produto_id INT NOT NULL,
+  imagem_url VARCHAR(500) NOT NULL,
+  ordem INT NOT NULL DEFAULT 0,
+  FOREIGN KEY (produto_id) REFERENCES produtos(id) ON DELETE CASCADE,
+  INDEX idx_produto_imagens_ordem (produto_id, ordem)
+);
+
+CREATE TABLE produto_variacoes (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  produto_id INT NOT NULL,
+  nome VARCHAR(120) NOT NULL,
+  estoque_qtd INT NOT NULL DEFAULT 0,
+  ativo BOOLEAN NOT NULL DEFAULT TRUE,
+  criado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (produto_id) REFERENCES produtos(id) ON DELETE CASCADE,
+  UNIQUE KEY uq_variacao_produto_nome (produto_id, nome)
+);
+
+CREATE TABLE favoritos (
+  usuario_id INT NOT NULL,
+  produto_id INT NOT NULL,
+  criado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (usuario_id, produto_id),
+  FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE,
+  FOREIGN KEY (produto_id) REFERENCES produtos(id) ON DELETE CASCADE
+);
+
+CREATE TABLE avisos_estoque (
+  usuario_id INT NOT NULL,
+  produto_id INT NOT NULL,
+  variacao_id INT NOT NULL DEFAULT 0,
+  criado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (usuario_id, produto_id, variacao_id),
+  FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE,
+  FOREIGN KEY (produto_id) REFERENCES produtos(id) ON DELETE CASCADE
+);
+
+CREATE TABLE avaliacoes (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  usuario_id INT NOT NULL,
+  produto_id INT NOT NULL,
+  nota TINYINT NOT NULL,
+  comentario VARCHAR(1000) NOT NULL DEFAULT '',
+  foto_url VARCHAR(500) NULL,
+  criado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
+  atualizado_em DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  UNIQUE KEY uq_avaliacao_usuario_produto (usuario_id, produto_id),
+  FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE,
+  FOREIGN KEY (produto_id) REFERENCES produtos(id) ON DELETE CASCADE
+);
+
 CREATE TABLE pedidos (
   id INT PRIMARY KEY AUTO_INCREMENT,
   usuario_id INT NOT NULL,
@@ -62,6 +115,8 @@ CREATE TABLE itens_pedido (
   id INT PRIMARY KEY AUTO_INCREMENT,
   pedido_id INT NOT NULL,
   produto_id INT NOT NULL,
+  variacao_id INT NULL,
+  variacao_nome VARCHAR(120) NULL,
   quantidade INT NOT NULL,
   preco_unitario DECIMAL(10,2) NOT NULL,
   FOREIGN KEY (pedido_id) REFERENCES pedidos(id),

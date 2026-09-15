@@ -129,3 +129,15 @@ export async function buscarMeuPedido(id) {
 
   return dados;
 }
+
+export async function abandonarPedidoPendente(id) {
+  const resposta = await fetch(`${API_URL}/pedidos/${id}/abandonar`, {
+    method: 'PATCH',
+    headers: headersComToken(),
+  });
+  const dados = await resposta.json();
+  if (!resposta.ok && resposta.status !== 409) {
+    throw new Error(dados.mensagem || 'Erro ao cancelar pedido pendente');
+  }
+  return dados;
+}

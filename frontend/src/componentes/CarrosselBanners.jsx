@@ -15,11 +15,11 @@ export default function CarrosselBanners({ banners }) {
   if (!banners.length) return null;
   const banner = banners[indice];
   const imagem = (
-    <img src={banner.imagem_url} alt={banner.titulo || 'Banner da loja'} className="h-48 w-full object-cover sm:h-72 lg:h-96" />
+    <img key={banner.id} src={banner.imagem_url} alt={banner.titulo || 'Banner da loja'} className="h-48 w-full animate-[page-enter_500ms_ease-out] object-cover sm:h-72 lg:h-96" />
   );
 
   return (
-    <section className="relative overflow-hidden bg-gray-100" aria-label="Destaques da loja">
+    <section className="relative overflow-hidden bg-[#090a09]" aria-label="Destaques da loja">
       {banner.link_url ? <a href={banner.link_url}>{imagem}</a> : imagem}
       {banners.length > 1 && (
         <div className="absolute bottom-3 left-0 right-0 flex justify-center gap-2">

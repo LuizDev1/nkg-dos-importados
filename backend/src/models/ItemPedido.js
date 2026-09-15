@@ -4,6 +4,8 @@ async function criarVarios(pedidoId, itens, conexao = pool) {
   const valores = itens.map((item) => [
     pedidoId,
     item.produto_id,
+    item.variacao_id || null,
+    item.variacao_nome || null,
     item.quantidade,
     item.preco_unitario,
   ]);
@@ -13,6 +15,8 @@ async function criarVarios(pedidoId, itens, conexao = pool) {
       (
         pedido_id,
         produto_id,
+        variacao_id,
+        variacao_nome,
         quantidade,
         preco_unitario
       )
