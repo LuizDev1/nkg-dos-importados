@@ -37,3 +37,20 @@ export async function desativarPromocao(id) {
   });
   return lerResposta(resposta, 'Erro ao desativar promoção');
 }
+
+export async function reativarPromocao(id) {
+  const resposta = await fetch(`${API_URL}/promocoes/${id}/reativar`, {
+    method: 'PATCH',
+    headers: headersComToken(),
+  });
+  return lerResposta(resposta, 'Erro ao reativar promoção');
+}
+
+export async function atualizarPromocao(id, dados) {
+  const resposta = await fetch(`${API_URL}/promocoes/${id}`, {
+    method: 'PUT',
+    headers: headersComToken(),
+    body: JSON.stringify(dados),
+  });
+  return lerResposta(resposta, 'Erro ao atualizar promoção');
+}

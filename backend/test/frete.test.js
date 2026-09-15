@@ -53,6 +53,7 @@ describe('Serviço de Cotação de Frete', () => {
 
     assert.strictEqual(resultado.gratuito, false);
     assert.strictEqual(resultado.opcoes.length, 2);
+    assert.strictEqual(resultado.opcoes[0].transportadora, 'Correios');
     assert.strictEqual(resultado.valor, 25.50);
     assert.strictEqual(resultado.servico_id, "1");
   });

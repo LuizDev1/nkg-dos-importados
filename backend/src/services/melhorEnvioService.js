@@ -8,6 +8,27 @@ function normalizarCep(cep) {
   return String(cep || '').replace(/\D/g, '');
 }
 
+function identificarTransportadora(opcao) {
+  if (opcao.company?.name) return opcao.company.name;
+
+  const servico = String(opcao.name || '').toLowerCase();
+  if (servico.includes('pac') || servico.includes('sedex')) return 'Correios';
+  if (servico.includes('package') || servico.includes('.com')) return 'Jadlog';
+  return 'Transportadora';
+}
+
+function nomeExibicaoServico(opcao) {
+  const transportadora = identificarTransportadora(opcao);
+  const servico = String(opcao.name || 'Entrega');
+
+  if (transportadora === 'Jadlog') {
+    if (servico.toLowerCase().includes('package')) return 'Jadlog - Padrão';
+    if (servico.toLowerCase().includes('.com')) return 'Jadlog - Express';
+  }
+
+  return `${transportadora} - ${servico}`;
+}
+
 async function cotar({ cepDestino, itens, servicoId = null }) {
   const destino = normalizarCep(cepDestino);
   if (!/^\d{8}$/.test(destino)) throw new Error('CEP de destino inválido');
@@ -76,6 +97,8 @@ async function cotar({ cepDestino, itens, servicoId = null }) {
     .map((opcao) => ({
       servico_id: String(opcao.id),
       servico_nome: opcao.name || opcao.company?.name || 'Entrega',
+      transportadora: identificarTransportadora(opcao),
+      nome_exibicao: nomeExibicaoServico(opcao),
       valor: Number(opcao.price),
       prazo_dias: Number(opcao.delivery_time || opcao.delivery_range?.max || 0),
     }))

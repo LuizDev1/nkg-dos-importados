@@ -16,6 +16,7 @@ import Clientes from '../paginas/admin/Clientes';
 import DetalheCliente from '../paginas/admin/DetalheCliente';
 import DetalhePedido from '../paginas/admin/DetalhePedido';
 import Promocoes from '../paginas/admin/Promocoes';
+import Banners from '../paginas/admin/Banners';
 import MeusPedidosCliente from '../paginas/cliente/MeusPedidos';
 import DetalheMeuPedido from '../paginas/cliente/DetalheMeuPedido';
 import Privacidade from '../paginas/publicas/Privacidade';
@@ -118,6 +119,14 @@ export default function RotasApp() {
         element={
           <RotaPrivada somenteAdmin>
             <Promocoes />
+          </RotaPrivada>
+        }
+      />
+      <Route
+        path="/admin/banners"
+        element={
+          <RotaPrivada somenteAdmin>
+            <Banners />
           </RotaPrivada>
         }
       />

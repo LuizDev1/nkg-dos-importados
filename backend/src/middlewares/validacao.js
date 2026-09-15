@@ -87,6 +87,13 @@ const schemas = {
       });
     }
   }),
+  banner: z.object({
+    titulo: z.string().trim().max(150).optional().default(''),
+    imagem_url: z.string().trim().url().max(500),
+    link_url: z.union([z.string().trim().url().max(500), z.literal('')]).optional().default(''),
+    ativo: z.boolean().optional().default(true),
+    ordem: z.coerce.number().int().min(0).max(10000).optional().default(0),
+  }).strict(),
 };
 
 function validar(schema) {

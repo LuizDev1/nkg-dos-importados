@@ -12,14 +12,14 @@ export function ProvedorCarrinho({ children }) {
     localStorage.setItem('carrinho', JSON.stringify(itens));
   }, [itens]);
 
-  function adicionarItem(produto) {
+  function adicionarItem(produto, quantidade = 1) {
     setItens((atual) => {
       const existente = atual.find((item) => item.produto_id === produto.id);
 
       if (existente) {
         return atual.map((item) =>
           item.produto_id === produto.id
-            ? { ...item, quantidade: item.quantidade + 1 }
+            ? { ...item, quantidade: item.quantidade + quantidade }
             : item
         );
       }
@@ -31,7 +31,7 @@ export function ProvedorCarrinho({ children }) {
           nome: produto.nome,
           preco: Number(produto.preco),
           foto_url: produto.foto_url,
-          quantidade: 1,
+          quantidade,
         },
       ];
     });

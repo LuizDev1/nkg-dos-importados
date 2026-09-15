@@ -6,6 +6,7 @@ const verificarAdmin = require('../middlewares/adminMiddleware');
 const { schemas, validar } = require('../middlewares/validacao');
 
 router.get('/produtos', produtoController.listarPublico);
+router.get('/produtos/categorias', produtoController.listarCategorias);
 router.get('/produtos/admin', verificarAutenticacao, verificarAdmin, produtoController.listarAdmin);
 router.get('/produtos/:id', produtoController.buscar);
 router.post('/produtos', verificarAutenticacao, verificarAdmin, validar(schemas.produto), produtoController.criar);

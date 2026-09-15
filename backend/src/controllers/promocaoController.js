@@ -44,4 +44,34 @@ async function desativar(req, res) {
   }
 }
 
-module.exports = { listar, criar, desativar };
+async function reativar(req, res) {
+  try {
+    const alteradas = await Promocao.reativar(req.params.id);
+    return alteradas
+      ? res.json({ mensagem: 'Promoção reativada' })
+      : res.status(404).json({ mensagem: 'Promoção não encontrada' });
+  } catch {
+    return res.status(500).json({ mensagem: 'Erro ao reativar promoção' });
+  }
+}
+
+async function atualizar(req, res) {
+  try {
+    const alteradas = await Promocao.atualizar(req.params.id, {
+      ...req.body,
+      codigo: req.body.codigo.trim().toUpperCase(),
+      inicio_em: formatarDataBanco(req.body.inicio_em),
+      fim_em: formatarDataBanco(req.body.fim_em),
+    });
+    return alteradas
+      ? res.json({ mensagem: 'Promoção atualizada' })
+      : res.status(404).json({ mensagem: 'Promoção não encontrada' });
+  } catch (erro) {
+    if (erro.code === 'ER_DUP_ENTRY') {
+      return res.status(409).json({ mensagem: 'Código de promoção já existe' });
+    }
+    return res.status(500).json({ mensagem: 'Erro ao atualizar promoção' });
+  }
+}
+
+module.exports = { listar, criar, atualizar, desativar, reativar };

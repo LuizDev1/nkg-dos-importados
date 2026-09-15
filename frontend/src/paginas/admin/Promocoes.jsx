@@ -3,7 +3,9 @@ import { Link } from 'react-router-dom';
 import {
   listarPromocoes,
   criarPromocao,
+  atualizarPromocao,
   desativarPromocao,
+  reativarPromocao,
 } from '../../servicos/promocaoService';
 
 const FORM_VAZIO = {
@@ -21,12 +23,20 @@ function montarDataHora(data, hora) {
   return data && hora ? `${data}T${hora}` : '';
 }
 
+function separarDataHora(valor) {
+  if (!valor) return { data: '', hora: '' };
+  const data = new Date(valor);
+  const local = new Date(data.getTime() - data.getTimezoneOffset() * 60000).toISOString();
+  return { data: local.slice(0, 10), hora: local.slice(11, 16) };
+}
+
 export default function Promocoes() {
   const [promocoes, setPromocoes] = useState([]);
   const [form, setForm] = useState(FORM_VAZIO);
   const [carregando, setCarregando] = useState(true);
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState('');
+  const [editandoId, setEditandoId] = useState(null);
 
   async function carregar() {
     try {
@@ -81,21 +91,50 @@ export default function Promocoes() {
     setSalvando(true);
 
     try {
-      await criarPromocao({
+      const dados = {
         codigo: form.codigo,
         tipo: form.tipo,
         valor: Number(form.valor),
         ...(inicio ? { inicio_em: inicio } : {}),
         ...(fim ? { fim_em: fim } : {}),
         ...(form.uso_maximo ? { uso_maximo: Number(form.uso_maximo) } : {}),
-      });
+      };
+      if (editandoId) await atualizarPromocao(editandoId, dados);
+      else await criarPromocao(dados);
       setForm(FORM_VAZIO);
+      setEditandoId(null);
       await carregar();
     } catch (erroSalvamento) {
       setErro(erroSalvamento.message);
     } finally {
       setSalvando(false);
     }
+  }
+
+  async function aoReativar(id) {
+    try {
+      await reativarPromocao(id);
+      await carregar();
+    } catch (erroReativacao) {
+      setErro(erroReativacao.message);
+    }
+  }
+
+  function aoEditar(promocao) {
+    const inicio = separarDataHora(promocao.inicio_em);
+    const fim = separarDataHora(promocao.fim_em);
+    setEditandoId(promocao.id);
+    setForm({
+      codigo: promocao.codigo,
+      tipo: promocao.tipo,
+      valor: promocao.valor,
+      inicio_data: inicio.data,
+      inicio_hora: inicio.hora,
+      fim_data: fim.data,
+      fim_hora: fim.hora,
+      uso_maximo: promocao.uso_maximo || '',
+    });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   async function aoDesativar(id) {
@@ -138,9 +177,16 @@ export default function Promocoes() {
           </div>
         </fieldset>
         <input name="uso_maximo" value={form.uso_maximo} onChange={aoMudarCampo} placeholder="Limite de usos" type="number" min="1" step="1" className="border rounded px-2 py-1" />
-        <button type="submit" disabled={salvando} className="col-span-2 sm:col-span-3 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:bg-gray-400">
-          {salvando ? 'Salvando...' : 'Criar promoção'}
-        </button>
+        <div className="col-span-2 flex justify-end gap-2 sm:col-span-3">
+          {editandoId && (
+            <button type="button" onClick={() => { setEditandoId(null); setForm(FORM_VAZIO); }} className="rounded border px-4 py-2">
+              Cancelar
+            </button>
+          )}
+          <button type="submit" disabled={salvando} className="rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 disabled:bg-gray-400">
+            {salvando ? 'Salvando...' : editandoId ? 'Salvar alterações' : 'Criar promoção'}
+          </button>
+        </div>
       </form>
 
       {carregando ? <p>Carregando promoções...</p> : (
@@ -163,7 +209,14 @@ export default function Promocoes() {
                   <td className="p-3">{promocao.usos}{promocao.uso_maximo ? ` / ${promocao.uso_maximo}` : ''}</td>
                   <td className="p-3">{promocao.ativo ? 'Ativa' : 'Inativa'}</td>
                   <td className="p-3">
-                    {promocao.ativo && <button onClick={() => aoDesativar(promocao.id)} className="text-red-600 hover:underline">Desativar</button>}
+                    <div className="flex gap-3">
+                      <button onClick={() => aoEditar(promocao)} className="text-blue-600 hover:underline">Editar</button>
+                      {promocao.ativo ? (
+                        <button onClick={() => aoDesativar(promocao.id)} className="text-red-600 hover:underline">Desativar</button>
+                      ) : (
+                        <button onClick={() => aoReativar(promocao.id)} className="text-green-600 hover:underline">Reativar</button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}

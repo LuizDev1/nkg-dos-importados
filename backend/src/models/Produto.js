@@ -1,10 +1,50 @@
 const pool = require('../config/banco');
 
-async function listarAtivos(){
-    const [produtos] = await pool.query('SELECT * from produtos where ativo = true');
+async function listarAtivos(filtros = {}){
+    const condicoes = ['ativo = true'];
+    const parametros = [];
+
+    if (filtros.busca) {
+      condicoes.push('(nome LIKE ? OR categoria LIKE ? OR tag LIKE ?)');
+      const termo = `%${filtros.busca}%`;
+      parametros.push(termo, termo, termo);
+    }
+    if (filtros.categoria) {
+      condicoes.push('categoria = ?');
+      parametros.push(filtros.categoria);
+    }
+    if (filtros.precoMinimo != null) {
+      condicoes.push('preco >= ?');
+      parametros.push(filtros.precoMinimo);
+    }
+    if (filtros.precoMaximo != null) {
+      condicoes.push('preco <= ?');
+      parametros.push(filtros.precoMaximo);
+    }
+
+    const ordenacoes = {
+      recentes: 'criado_em DESC',
+      menor_preco: 'preco ASC',
+      maior_preco: 'preco DESC',
+      nome: 'nome ASC',
+    };
+    const ordenacao = ordenacoes[filtros.ordenacao] || ordenacoes.recentes;
+    const [produtos] = await pool.query(
+      `SELECT * FROM produtos WHERE ${condicoes.join(' AND ')} ORDER BY ${ordenacao}`,
+      parametros
+    );
 
     return produtos;
 };
+
+async function listarCategorias() {
+  const [categorias] = await pool.query(
+    `SELECT DISTINCT categoria FROM produtos
+     WHERE ativo = true AND categoria IS NOT NULL AND categoria <> ''
+     ORDER BY categoria ASC`
+  );
+  return categorias.map(({ categoria }) => categoria);
+}
 
 async function listarTodos(){
     const [produtos] = await pool.query ('SELECT * from produtos');
@@ -60,6 +100,7 @@ async function diminuirEstoque(id, quantidade, conexao = pool) {
 }
 module.exports = {
   listarAtivos,
+  listarCategorias,
   listarTodos,
   buscarPorId,
   criar,

@@ -11,9 +11,6 @@ const inicial = {
   aviso_ativo: false,
   aviso_texto: '',
   politica_devolucao: '',
-  banner_url: '',
-  banner_titulo: '',
-  banner_link: '',
 };
 
 export default function ConfiguracaoLoja() {
@@ -119,33 +116,6 @@ export default function ConfiguracaoLoja() {
           value={formulario.aviso_texto}
           onChange={alterar}
           placeholder="Texto do aviso"
-          className="w-full border p-2 rounded"
-        />
-
-        <input
-          type="url"
-          name="banner_url"
-          value={formulario.banner_url}
-          onChange={alterar}
-          placeholder="URL do banner"
-          className="w-full border p-2 rounded"
-        />
-
-        <input
-          type="text"
-          name="banner_titulo"
-          value={formulario.banner_titulo}
-          onChange={alterar}
-          placeholder="Título do banner"
-          className="w-full border p-2 rounded"
-        />
-
-        <input
-          type="url"
-          name="banner_link"
-          value={formulario.banner_link}
-          onChange={alterar}
-          placeholder="Link do banner"
           className="w-full border p-2 rounded"
         />
 

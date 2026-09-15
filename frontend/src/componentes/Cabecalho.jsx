@@ -1,14 +1,11 @@
-import { Link, useLocation } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useCarrinho } from '../contextos/ContextoCarrinho';
 import { useAutenticacao } from '../contextos/ContextoAutenticacao';
 
 export default function Cabecalho() {
   const { quantidadeTotal } = useCarrinho();
   const { usuario, logout } = useAutenticacao();
-  const location = useLocation();
-
   const isAdmin = usuario?.perfil === 'admin';
-  const isHome = location.pathname === '/';
 
   return (
     <header className="bg-white shadow">
@@ -19,8 +16,7 @@ export default function Cabecalho() {
 
         <nav className="flex items-center gap-6 text-sm">
           
-          {/* O carrinho só aparece se estiver na página inicial (Home) e o usuário não for admin */}
-          {isHome && !isAdmin && (
+          {!isAdmin && (
             <Link to="/carrinho" className="relative text-gray-600 hover:text-blue-600">
               Carrinho
               {quantidadeTotal > 0 && (

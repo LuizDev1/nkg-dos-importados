@@ -3,7 +3,26 @@ const Log = require('../models/Log');
 
 async function listarPublico(req, res) {
     try {
-        const produtos = await Produto.listarAtivos();
+        const precoMinimo = req.query.preco_min !== undefined && req.query.preco_min !== ''
+          ? Number(req.query.preco_min) : null;
+        const precoMaximo = req.query.preco_max !== undefined && req.query.preco_max !== ''
+          ? Number(req.query.preco_max) : null;
+
+        if (
+          (precoMinimo != null && (!Number.isFinite(precoMinimo) || precoMinimo < 0)) ||
+          (precoMaximo != null && (!Number.isFinite(precoMaximo) || precoMaximo < 0)) ||
+          (precoMinimo != null && precoMaximo != null && precoMinimo > precoMaximo)
+        ) {
+          return res.status(400).json({ mensagem: 'Faixa de preço inválida' });
+        }
+
+        const produtos = await Produto.listarAtivos({
+          busca: String(req.query.busca || '').trim().slice(0, 100),
+          categoria: String(req.query.categoria || '').trim().slice(0, 100),
+          precoMinimo,
+          precoMaximo,
+          ordenacao: req.query.ordenacao,
+        });
         res.json(produtos);
     } catch (erro) {
         res.status(500).json({ mensagem: erro.message });
@@ -93,8 +112,17 @@ async function reativar(req, res){
     }
 };
 
+async function listarCategorias(req, res) {
+    try {
+        res.json(await Produto.listarCategorias());
+    } catch (erro) {
+        res.status(500).json({ mensagem: erro.message });
+    }
+};
+
 module.exports = {
   listarPublico,
+  listarCategorias,
   listarAdmin,
   buscar,
   criar,
