@@ -6,6 +6,8 @@ const verificarAdmin = require('../middlewares/adminMiddleware');
 const router = express.Router();
 
 router.get('/pedidos', verificarAutenticacao, verificarAdmin, pedidoController.listar);
+router.get('/pedidos/me', verificarAutenticacao, pedidoController.listarMeusPedidos);
+router.get('/pedidos/me/:id', verificarAutenticacao, pedidoController.buscarMeuPedido);
 router.get('/pedidos/usuario/:usuarioId', verificarAutenticacao, pedidoController.listarPorUsuario);
 router.get('/pedidos/:id', verificarAutenticacao, pedidoController.buscar);
 router.post('/pedidos', verificarAutenticacao, pedidoController.criar);
