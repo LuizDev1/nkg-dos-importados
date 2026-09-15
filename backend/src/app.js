@@ -44,7 +44,10 @@ if (process.env.NODE_ENV === 'production') {
 const app = express();
 app.use(helmet());
 app.set('trust proxy', process.env.TRUST_PROXY === 'true' ? 1 : false);
-app.use(rateLimit({
+const limitarApi = process.env.RATE_LIMIT_ENABLED === 'true'
+  || (process.env.RATE_LIMIT_ENABLED !== 'false' && process.env.NODE_ENV === 'production');
+
+if (limitarApi) app.use(rateLimit({
   windowMs: 15 * 60 * 1000,
   limit: Number(process.env.API_RATE_LIMIT || 300),
   standardHeaders: true,
