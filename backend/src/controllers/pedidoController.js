@@ -466,12 +466,46 @@ async function cancelar(req, res) {
     return res.status(500).json({ mensagem: erro.message });
   }
 }
+async function listarMeusPedidos(req, res) {
+  try {
+    const pedidos = await Pedido.listarPorUsuario(req.usuario.id);
+    return res.json(pedidos);
+  } catch (erro) {
+    return res.status(500).json({
+      mensagem: erro.message,
+    });
+  }
+}
+async function buscarMeuPedido(req, res) {
+  try {
+    const pedido = await Pedido.buscarPorId(req.params.id);
+
+    if (
+      !pedido ||
+      String(pedido.usuario_id) !== String(req.usuario.id)
+    ) {
+      return res.status(404).json({
+        mensagem: 'Pedido não encontrado',
+      });
+    }
+
+    pedido.itens = await ItemPedido.listarPorPedido(pedido.id);
+
+    return res.json(pedido);
+  } catch (erro) {
+    return res.status(500).json({
+      mensagem: erro.message,
+    });
+  }
+}
 
 
 module.exports = {
   listar,
   listarPorUsuario,
+  listarMeusPedidos,
   buscar,
+  buscarMeuPedido,
   criar,
   atualizarStatusOperacional,
   atualizarRastreio,

@@ -61,6 +61,22 @@ export default function RotasApp() {
       />
 
       <Route
+        path="/minha-conta/pedidos"
+        element={
+          <RotaPrivada>
+            <MeusPedidos />
+          </RotaPrivada>
+        }
+      />
+      <Route
+        path="/minha-conta/pedidos/:id"
+        element={
+          <RotaPrivada>
+            <DetalheMeuPedido />
+          </RotaPrivada>
+        }
+      />
+      <Route
         path="/admin"
         element={
           <RotaPrivada somenteAdmin>

@@ -11,7 +11,7 @@ export default function Checkout() {
   const { itens, total } = useCarrinho();
   const { usuario } = useAutenticacao();
   const navigate = useNavigate();
-  
+
   const [formulario, setFormulario] = useState({
     cep: '', rua: '', numero: '', bairro: '', cidade: '', estado: '', telefone: ''
   });
@@ -39,6 +39,27 @@ export default function Checkout() {
       navigate('/login');
     }
   }, [usuario, navigate]);
+
+  useEffect(() => {
+    async function carregarFrete() {
+      try {
+        const configuracoes = await buscarConfiguracoes();
+        const frete = Number(configuracoes.frete_fixo || 0);
+
+        if (!Number.isFinite(frete) || frete < 0) {
+          throw new Error('Valor de frete inválido');
+        }
+
+        setValorFrete(frete);
+      } catch (erro) {
+        setErroFrete(erro.message || 'Erro ao carregar o frete');
+      } finally {
+        setCarregandoFrete(false);
+      }
+    }
+
+    carregarFrete();
+  }, []);
 
   if (itens.length === 0 || !usuario) return null;
 
@@ -128,7 +149,9 @@ export default function Checkout() {
   async function finalizarCompra(e) {
     e.preventDefault();
 
-    if (!validarCampos() || pedidoEmProcessamento) return;
+    if (carregandoFrete || erroFrete || pedidoEmProcessamento || !validarCampos()) {
+      return;
+    }
 
     setCarregando(true);
     setPedidoEmProcessamento(true);
@@ -206,7 +229,7 @@ export default function Checkout() {
           ← Voltar ao carrinho
         </button>
       </div>
-      
+
       <div className="bg-white p-6 rounded-lg shadow mb-6">
         <h2 className="text-lg font-semibold mb-4">Resumo do Pedido</h2>
         <p className="text-gray-600 mb-2">Quantidade de itens: {itens.length}</p>
@@ -246,7 +269,7 @@ export default function Checkout() {
 
       <form onSubmit={finalizarCompra} className="bg-white p-6 rounded-lg shadow space-y-4">
         <h2 className="text-lg font-semibold mb-2">Dados de Entrega</h2>
-        
+
         {erro && <p className="text-red-600 bg-red-50 p-3 rounded">{erro}</p>}
 
         <div className="grid grid-cols-2 gap-4">
@@ -316,7 +339,15 @@ export default function Checkout() {
           disabled={carregando || buscandoCep}
           className={`w-full py-3 rounded text-white font-bold mt-4 transition ${carregando || buscandoCep ? 'bg-gray-400' : 'bg-green-600 hover:bg-green-700'}`}
         >
-          {carregando ? 'Processando...' : buscandoCep ? 'Buscando CEP...' : 'Ir para o Pagamento'}
+          {carregando
+            ? 'Processando...'
+            : carregandoFrete
+              ? 'Carregando frete...'
+              : erroFrete
+                ? 'Frete indisponível'
+                : buscandoCep
+                  ? 'Buscando CEP...'
+                  : 'Ir para o Pagamento'}
         </button>
       </form>
     </div>

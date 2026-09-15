@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import {
   buscarConfiguracoes,
   atualizarConfiguracoes,
@@ -71,7 +72,14 @@ export default function ConfiguracaoLoja() {
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold mb-6">Configurações da loja</h1>
+      <Link
+        to="/admin"
+        className="text-blue-600 hover:underline text-sm"
+      >
+        &larr; Voltar ao painel
+      </Link>
+
+      <h1 className="text-2xl font-bold mt-2 mb-6">Configurações da loja</h1>
 
       <form
         onSubmit={salvar}
