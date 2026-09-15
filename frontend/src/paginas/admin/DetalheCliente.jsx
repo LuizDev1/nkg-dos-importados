@@ -1,3 +1,4 @@
+import { corStatus } from '../../servicos/statusVisual';
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { listarClientes } from '../../servicos/usuarioService';
@@ -47,7 +48,7 @@ export default function DetalheCliente() {
   }
 
   return (
-    <div className="max-w-5xl mx-auto px-4 py-8">
+    <div className="max-w-5xl mx-auto px-4 py-10 text-[#f4efe5]">
       <Link
         to="/admin/clientes"
         className="botao-voltar"
@@ -59,20 +60,22 @@ export default function DetalheCliente() {
         Detalhes do cliente
       </h1>
 
-      <div className="bg-white rounded-lg shadow p-5 mb-6">
+      <div className="rounded-md border border-[#343024] bg-[#111210] p-6 mb-6 grid gap-3 sm:grid-cols-2 break-words">
         <p><strong>Nome:</strong> {cliente.nome}</p>
         <p><strong>E-mail:</strong> {cliente.email}</p>
         <p><strong>CPF:</strong> {cliente.cpf || 'Não informado'}</p>
         <p>
           <strong>Status:</strong>{' '}
-          {cliente.status === 'bloqueado' ? 'Bloqueado' : 'Ativo'}
+          <span className={corStatus(cliente.status)}>
+            {cliente.status === 'bloqueado' ? 'Bloqueado' : 'Ativo'}
+          </span>
         </p>
       </div>
 
-      <h2 className="text-xl font-semibold mb-3">
-        Editar informações do cliente
-      </h2>
-      <section className="bg-white rounded-lg shadow p-5 mb-6">
+      <section className="rounded-md border border-[#343024] bg-[#111210] p-6 mb-8 sm:p-8">
+        <h2 className="text-lg font-semibold mb-6 border-b border-[#343024] pb-5">
+          Editar informações do cliente
+        </h2>
         <FormularioConta key={id} conta={cliente} salvar={(dados) => salvarContaCliente(id, dados)}
           aoSalvar={(dados) => setCliente((anterior) => ({ ...anterior, ...dados }))} />
       </section>
@@ -86,8 +89,8 @@ export default function DetalheCliente() {
           Este cliente ainda não possui pedidos.
         </p>
       ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full bg-white rounded-lg shadow text-sm">
+        <div className="overflow-x-auto rounded-md border border-[#343024] bg-[#111210]">
+          <table className="w-full text-sm">
             <thead className="bg-gray-100 text-left">
               <tr>
                 <th className="p-3">Pedido</th>
@@ -100,7 +103,7 @@ export default function DetalheCliente() {
 
             <tbody>
               {pedidos.map((pedido) => (
-                <tr key={pedido.id} className="border-t">
+                <tr key={pedido.id} className="border-t border-[#343024]">
                   <td className="p-3">#{pedido.id}</td>
 
                   <td className="p-3">
@@ -110,7 +113,9 @@ export default function DetalheCliente() {
                     })}
                   </td>
 
-                  <td className="p-3">{pedido.payment_status}</td>
+                  <td className={`p-3 ${corStatus(pedido.payment_status)}`}>
+                    {pedido.payment_status}
+                  </td>
 
                   <td className="p-3">
                     {new Date(pedido.criado_em).toLocaleDateString('pt-BR')}

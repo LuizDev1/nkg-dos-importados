@@ -1,3 +1,5 @@
+import { corStatus } from '../../servicos/statusVisual';
+import CampoRotulado from '../../componentes/CampoRotulado';
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Link } from 'react-router-dom';
@@ -153,17 +155,17 @@ export default function Produtos() {
       {erro && <p className="text-red-600 mb-4">{erro}</p>}
 
       <form onSubmit={aoSalvar} className="bg-white rounded-lg shadow p-4 mb-8 grid grid-cols-2 sm:grid-cols-3 gap-3">
-        <input name="nome" value={form.nome} onChange={aoMudarCampo} placeholder="Nome" required className="border rounded px-2 py-1" />
-        <input name="categoria" value={form.categoria} onChange={aoMudarCampo} placeholder="Categoria" className="border rounded px-2 py-1" />
-        <input name="preco" value={form.preco} onChange={aoMudarCampo} placeholder="Preço" type="number" step="0.01" required className="border rounded px-2 py-1" />
-        <input name="tag" value={form.tag} onChange={aoMudarCampo} placeholder="Tag" className="border rounded px-2 py-1" />
-        <input name="foto_url" value={form.foto_url} onChange={aoMudarCampo} placeholder="URL da foto" className="border rounded px-2 py-1" />
-        <textarea name="imagens_urls" value={form.imagens_urls} onChange={aoMudarCampo} placeholder={'Fotos adicionais (uma URL por linha)'} className="col-span-2 rounded border px-2 py-2 sm:col-span-3" rows="3" />
-        <input name="estoque_qtd" value={form.estoque_qtd} onChange={aoMudarCampo} placeholder="Estoque" type="number" required className="border rounded px-2 py-1" />
-        <input name="peso_kg" value={form.peso_kg} onChange={aoMudarCampo} placeholder="Peso (kg)" type="number" min="0.001" step="0.001" required className="border rounded px-2 py-1" />
-        <input name="largura_cm" value={form.largura_cm} onChange={aoMudarCampo} placeholder="Largura (cm)" type="number" min="1" step="0.01" required className="border rounded px-2 py-1" />
-        <input name="altura_cm" value={form.altura_cm} onChange={aoMudarCampo} placeholder="Altura (cm)" type="number" min="1" step="0.01" required className="border rounded px-2 py-1" />
-        <input name="comprimento_cm" value={form.comprimento_cm} onChange={aoMudarCampo} placeholder="Comprimento (cm)" type="number" min="1" step="0.01" required className="border rounded px-2 py-1" />
+        <CampoRotulado rotulo="Nome" name="nome" value={form.nome} onChange={aoMudarCampo} placeholder="Nome" required className="border rounded px-2 py-1" />
+        <CampoRotulado rotulo="Categoria" name="categoria" value={form.categoria} onChange={aoMudarCampo} placeholder="Categoria" className="border rounded px-2 py-1" />
+        <CampoRotulado rotulo="Preço" name="preco" value={form.preco} onChange={aoMudarCampo} placeholder="Preço" type="number" step="0.01" required className="border rounded px-2 py-1" />
+        <CampoRotulado rotulo="Tag" name="tag" value={form.tag} onChange={aoMudarCampo} placeholder="Tag" className="border rounded px-2 py-1" />
+        <CampoRotulado rotulo="URL da foto" name="foto_url" value={form.foto_url} onChange={aoMudarCampo} placeholder="URL da foto" className="border rounded px-2 py-1" />
+        <CampoRotulado rotulo={'Fotos adicionais (uma URL por linha)'} as="textarea" containerClassName="col-span-2 sm:col-span-3" name="imagens_urls" value={form.imagens_urls} onChange={aoMudarCampo} placeholder={'Fotos adicionais (uma URL por linha)'} className="rounded border px-2 py-2" rows="3" />
+        <CampoRotulado rotulo="Estoque" name="estoque_qtd" value={form.estoque_qtd} onChange={aoMudarCampo} placeholder="Estoque" type="number" required className="border rounded px-2 py-1" />
+        <CampoRotulado rotulo="Peso (kg)" name="peso_kg" value={form.peso_kg} onChange={aoMudarCampo} placeholder="Peso (kg)" type="number" min="0.001" step="0.001" required className="border rounded px-2 py-1" />
+        <CampoRotulado rotulo="Largura (cm)" name="largura_cm" value={form.largura_cm} onChange={aoMudarCampo} placeholder="Largura (cm)" type="number" min="1" step="0.01" required className="border rounded px-2 py-1" />
+        <CampoRotulado rotulo="Altura (cm)" name="altura_cm" value={form.altura_cm} onChange={aoMudarCampo} placeholder="Altura (cm)" type="number" min="1" step="0.01" required className="border rounded px-2 py-1" />
+        <CampoRotulado rotulo="Comprimento (cm)" name="comprimento_cm" value={form.comprimento_cm} onChange={aoMudarCampo} placeholder="Comprimento (cm)" type="number" min="1" step="0.01" required className="border rounded px-2 py-1" />
 
         <div className="col-span-2 sm:col-span-3 flex gap-2">
           <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
@@ -199,7 +201,7 @@ export default function Produtos() {
                 </td>
                 <td className="p-3">{produto.estoque_qtd}</td>
                 <td className="p-3">
-                  <span className={produto.ativo ? 'text-green-600' : 'text-gray-400'}>
+                  <span className={corStatus(produto.ativo ? 'ativo' : 'inativo')}>
                     {produto.ativo ? 'Ativo' : 'Inativo'}
                   </span>
                 </td>
@@ -242,8 +244,8 @@ export default function Produtos() {
             <button type="button" onClick={() => setProdutoVariacoes(null)} className="flex h-9 w-9 items-center justify-center rounded-full border border-[#343024] text-lg text-gray-500 hover:border-[#d4af45] hover:text-[#d4af45]" aria-label="Fechar modal">×</button>
           </div>
           <form onSubmit={salvarVariacao} className="variacoes-form mb-6 grid gap-3 rounded-lg bg-[#171813] p-4 sm:grid-cols-[minmax(0,1fr)_130px_auto]">
-            <input required value={formVariacao.nome} onChange={(e) => setFormVariacao({ ...formVariacao, nome: e.target.value })} placeholder="Ex.: Azul / Tamanho M" aria-label="Nome da variação" className="rounded border px-3 py-2.5" />
-            <input required type="number" min="0" value={formVariacao.estoque_qtd} onChange={(e) => setFormVariacao({ ...formVariacao, estoque_qtd: e.target.value })} placeholder="Estoque" aria-label="Quantidade em estoque" className="rounded border px-3 py-2.5" />
+            <CampoRotulado rotulo="Nome da variação" required value={formVariacao.nome} onChange={(e) => setFormVariacao({ ...formVariacao, nome: e.target.value })} placeholder="Ex.: Azul / Tamanho M" aria-label="Nome da variação" className="rounded border px-3 py-2.5" />
+            <CampoRotulado rotulo="Quantidade em estoque" required type="number" min="0" value={formVariacao.estoque_qtd} onChange={(e) => setFormVariacao({ ...formVariacao, estoque_qtd: e.target.value })} placeholder="Estoque" aria-label="Quantidade em estoque" className="rounded border px-3 py-2.5" />
             <button className="rounded bg-[#d4af45] px-4 py-2.5 font-semibold text-[#090a09] hover:bg-[#e2c25d]">{variacaoEditandoId ? 'Salvar' : 'Adicionar'}</button>
             {variacaoEditandoId && <button type="button" onClick={() => { setVariacaoEditandoId(null); setFormVariacao({ nome: '', estoque_qtd: '', ativo: true }); }} className="text-left text-xs text-[#aaa399] hover:text-[#d4af45] sm:col-span-3">Cancelar edição</button>}
           </form>
