@@ -15,6 +15,8 @@ import ConfiguracaoLoja from '../paginas/admin/configuracaoLoja';
 import Clientes from '../paginas/admin/Clientes';
 import DetalheCliente from '../paginas/admin/DetalheCliente';
 import DetalhePedido from '../paginas/admin/DetalhePedido';
+import MeusPedidos from '../paginas/cliente/MeusPedidos';
+import DetalheMeuPedido from '../paginas/cliente/DetalheMeuPedido';
 
 export default function RotasApp() {
   return (
@@ -27,6 +29,22 @@ export default function RotasApp() {
       <Route path="/produto/:id" element={<DetalheProduto />} />
       <Route path="/pedido/:id/:resultado" element={<StatusPedido />} />
 
+      <Route
+        path="/minha-conta/pedidos"
+        element={
+          <RotaPrivada>
+            <MeusPedidos />
+          </RotaPrivada>
+        }
+      />
+      <Route
+        path="/minha-conta/pedidos/:id"
+        element={
+          <RotaPrivada>
+            <DetalheMeuPedido />
+          </RotaPrivada>
+        }
+      />
       <Route
         path="/admin"
         element={
