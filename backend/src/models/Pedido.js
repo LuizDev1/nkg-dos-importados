@@ -18,10 +18,17 @@ async function listarTodos() {
 
 async function listarPorUsuario(usuarioId) {
   const [pedidos] = await pool.query(
-    `SELECT *
-    FROM pedidos
-    WHERE usuario_id = ?
-    ORDER BY criado_em DESC`,
+    `SELECT
+      p.*,
+      (
+        SELECT COUNT(*)
+        FROM pedidos p2
+        WHERE p2.usuario_id = p.usuario_id
+          AND p2.id <= p.id
+      ) AS numero_cliente
+    FROM pedidos p
+    WHERE p.usuario_id = ?
+    ORDER BY p.criado_em DESC`,
     [usuarioId]
   );
 
@@ -32,6 +39,12 @@ async function buscarPorId(id) {
   const [pedidos] = await pool.query(
     `SELECT
       p.*,
+      (
+        SELECT COUNT(*)
+        FROM pedidos p2
+        WHERE p2.usuario_id = p.usuario_id
+          AND p2.id <= p.id
+      ) AS numero_cliente,
       u.nome AS usuario_nome,
       u.email AS usuario_email,
       u.cpf AS usuario_cpf
@@ -50,24 +63,27 @@ async function criar(dadosPedido, conexao = pool) {
     tipo_entrega,
     endereco_entrega,
     telefone_contato,
+    valor_frete,
     total,
   } = dadosPedido;
 
   const [resultado] = await conexao.query(
     `INSERT INTO pedidos
-      (
-        usuario_id,
-        tipo_entrega,
-        endereco_entrega,
-        telefone_contato,
-        total
-      )
-    VALUES (?, ?, ?, ?, ?)`,
+    (
+      usuario_id,
+      tipo_entrega,
+      endereco_entrega,
+      telefone_contato,
+      valor_frete,
+      total
+    )
+  VALUES (?, ?, ?, ?, ?, ?)`,
     [
       usuario_id,
       tipo_entrega,
       endereco_entrega,
       telefone_contato,
+      valor_frete,
       total,
     ]
   );
