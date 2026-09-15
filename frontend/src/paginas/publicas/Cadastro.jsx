@@ -35,9 +35,6 @@ export default function Cadastro() {
         className="bg-zinc-950/80 backdrop-blur-md border border-zinc-800/80 p-8 rounded-2xl shadow-2xl w-full max-w-md"
       >
         <div className="text-center mb-8">
-          <span className="text-[10px] tracking-[0.3em] uppercase text-amber-500/90 border-b border-amber-500/30 pb-1">
-            Peças Exclusivas
-          </span>
           <h1 className="text-3xl font-black tracking-[0.2em] text-zinc-100 mt-4">Criar Conta</h1>
           <p className="text-xs tracking-[0.3em] text-amber-500/80 font-medium uppercase mt-1">NKG Dos Importados</p>
         </div>

@@ -40,9 +40,6 @@ export default function Login() {
         className="bg-zinc-950/80 backdrop-blur-md border border-zinc-800/80 p-8 rounded-2xl shadow-2xl w-full max-w-md"
       >
         <div className="text-center mb-8">
-          <span className="text-[10px] tracking-[0.3em] uppercase text-amber-500/90 border-b border-amber-500/30 pb-1">
-            Moda Internacional · Est. 2026
-          </span>
           <h1 className="text-4xl font-black tracking-[0.2em] text-zinc-100 mt-4">NKG</h1>
           <p className="text-xs tracking-[0.3em] text-amber-500/80 font-medium uppercase mt-1">Dos Importados</p>
         </div>
