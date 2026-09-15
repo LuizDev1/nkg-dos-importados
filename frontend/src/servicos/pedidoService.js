@@ -8,10 +8,13 @@ function headersComToken() {
   };
 }
 
-export async function criarPedido(dadosPedido) {
+export async function criarPedido(dadosPedido, idempotencyKey) {
   const resposta = await fetch(`${API_URL}/pedidos`, {
     method: 'POST',
-    headers: headersComToken(),
+    headers: {
+      ...headersComToken(),
+      'Idempotency-Key': idempotencyKey,
+    },
     body: JSON.stringify(dadosPedido),
   });
 
@@ -36,19 +39,15 @@ export async function listarPedidosAdmin() {
   return resposta.json();
 }
 
-export async function atualizarStatusPedido(id, payment_status) {
-  const resposta = await fetch(`${API_URL}/pedidos/${id}/status`, {
+export async function atualizarStatusOperacional(id, status_pedido) {
+  const resposta = await fetch(`${API_URL}/pedidos/${id}/status-operacional`, {
     method: 'PATCH',
     headers: headersComToken(),
-    body: JSON.stringify({ payment_status }),
+    body: JSON.stringify({ status_pedido }),
   });
 
   const dados = await resposta.json();
-
-  if (!resposta.ok) {
-    throw new Error(dados.mensagem || 'Erro ao atualizar status');
-  }
-
+  if (!resposta.ok) throw new Error(dados.mensagem || 'Erro ao atualizar operação');
   return dados;
 }
 

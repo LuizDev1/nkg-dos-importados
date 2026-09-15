@@ -1,9 +1,9 @@
-import { buscarConfiguracoes } from '../../servicos/configuracaoService';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCarrinho } from '../../contextos/ContextoCarrinho';
 import { useAutenticacao } from '../../contextos/ContextoAutenticacao';
 import { criarPedido } from '../../servicos/pedidoService';
+import { cotarFrete } from '../../servicos/freteService';
 
 const API_URL = import.meta.env.VITE_API_URL || '/api';
 
@@ -20,9 +20,13 @@ export default function Checkout() {
   const [buscandoCep, setBuscandoCep] = useState(false);
   const [erro, setErro] = useState('');
   const [pedidoEmProcessamento, setPedidoEmProcessamento] = useState(false);
-  const [valorFrete, setValorFrete] = useState(0);
-  const [carregandoFrete, setCarregandoFrete] = useState(true);
-  const [erroFrete, setErroFrete] = useState('');
+  const [resumoServidor, setResumoServidor] = useState(null);
+  const [codigoPromocao, setCodigoPromocao] = useState('');
+  const [cotacaoFrete, setCotacaoFrete] = useState(null);
+  const [freteServicoId, setFreteServicoId] = useState('');
+  const idempotencyKey = useRef(
+    `checkout-${Date.now()}-${Math.random().toString(36).slice(2)}`
+  );
 
   useEffect(() => {
     if (itens.length === 0) {
@@ -132,6 +136,8 @@ export default function Checkout() {
   function lidarComCep(e) {
     const { value } = e.target;
     setFormulario(atual => ({ ...atual, cep: value }));
+    setCotacaoFrete(null);
+    setFreteServicoId('');
     if (erros.cep) setErros(atual => ({ ...atual, cep: '' }));
 
     const cepLimpo = value.replace(/\D/g, '');
@@ -153,12 +159,25 @@ export default function Checkout() {
 
     try {
       const enderecoCompleto = `${formulario.rua}, ${formulario.numero} - ${formulario.bairro}, ${formulario.cidade} - ${formulario.estado}, CEP: ${formulario.cep}`;
+      const itensFrete = itens.map(item => ({
+        produto_id: item.produto_id,
+        quantidade: item.quantidade,
+      }));
+      const cotacao = await cotarFrete(formulario.cep, itensFrete, freteServicoId);
+      setCotacaoFrete(cotacao);
+
+      if (cotacao.opcoes?.length > 1 && !freteServicoId) {
+        setFreteServicoId(cotacao.servico_id);
+        return;
+      }
 
       const payload = {
-        usuario_id: usuario.id,
         tipo_entrega: 'envio',
+        cep_entrega: formulario.cep,
+        frete_servico_id: cotacao.servico_id,
         endereco_entrega: enderecoCompleto,
         telefone_contato: formulario.telefone,
+        ...(codigoPromocao.trim() ? { codigo_promocao: codigoPromocao.trim() } : {}),
         itens: itens.map(item => ({
           produto_id: item.produto_id,
           quantidade: item.quantidade,
@@ -166,7 +185,8 @@ export default function Checkout() {
         }))
       };
 
-      const respostaPedido = await criarPedido(payload);
+      const respostaPedido = await criarPedido(payload, idempotencyKey.current);
+      setResumoServidor(respostaPedido);
 
       const token = localStorage.getItem('token');
       const respostaPagamento = await fetch(`${API_URL}/pagamentos/${respostaPedido.id}`, {
@@ -213,41 +233,38 @@ export default function Checkout() {
       <div className="bg-white p-6 rounded-lg shadow mb-6">
         <h2 className="text-lg font-semibold mb-4">Resumo do Pedido</h2>
         <p className="text-gray-600 mb-2">Quantidade de itens: {itens.length}</p>
-        <div className="space-y-2">
-          <p>
-            Subtotal:{' '}
-            {total.toLocaleString('pt-BR', {
-              style: 'currency',
-              currency: 'BRL',
-            })}
-          </p>
-
-          <p>
-            Frete:{' '}
-            {carregandoFrete
-              ? 'Carregando...'
-              : erroFrete
-                ? 'Indisponível'
-                : valorFrete.toLocaleString('pt-BR', {
-                  style: 'currency',
-                  currency: 'BRL',
-                })}
-          </p>
-
-          {erroFrete && (
-            <p className="text-red-600 text-sm">{erroFrete}</p>
-          )}
-
-          {!carregandoFrete && !erroFrete && (
-            <p className="border-t pt-2 text-xl font-bold text-blue-600">
-              Total:{' '}
-              {(total + valorFrete).toLocaleString('pt-BR', {
-                style: 'currency',
-                currency: 'BRL',
-              })}
-            </p>
-          )}
-        </div>
+        {resumoServidor ? (
+          <div className="text-gray-700 space-y-1">
+            <p>Subtotal: {Number(resumoServidor.subtotal).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
+            <p>Frete: {Number(resumoServidor.frete).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
+            <p className="text-xl font-bold text-blue-600">Total confirmado: {Number(resumoServidor.total).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
+          </div>
+        ) : (
+          <div className="text-gray-600">
+            {!cotacaoFrete && <p>Frete calculado no servidor ao finalizar</p>}
+            {cotacaoFrete && cotacaoFrete.opcoes?.length > 1 && (
+              <div className="mt-3">
+                <label className="block text-sm text-gray-600">Escolha a entrega</label>
+                <select
+                  value={freteServicoId}
+                  onChange={(e) => {
+                    const opcao = cotacaoFrete.opcoes.find((item) => item.servico_id === e.target.value);
+                    setFreteServicoId(e.target.value);
+                    setCotacaoFrete((atual) => ({ ...atual, ...opcao }));
+                  }}
+                  className="w-full border rounded px-3 py-2 text-gray-900"
+                >
+                  {cotacaoFrete.opcoes.map((opcao) => (
+                    <option key={opcao.servico_id} value={opcao.servico_id}>
+                      {opcao.servico_nome} - {Number(opcao.valor).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} - até {opcao.prazo_dias} dias
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+            {cotacaoFrete && <p className="mt-2">Frete: {Number(cotacaoFrete.valor).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>}
+          </div>
+        )}
       </div>
 
       <form onSubmit={finalizarCompra} className="bg-white p-6 rounded-lg shadow space-y-4">
@@ -305,16 +322,22 @@ export default function Checkout() {
           {erros.estado && <p className="text-red-500 text-xs mt-1">{erros.estado}</p>}
         </div>
 
-        <button
-          type="submit"
-          disabled={
-            carregando ||
-            buscandoCep ||
-            carregandoFrete ||
-            Boolean(erroFrete) ||
-            pedidoEmProcessamento
-          }
-          className="w-full py-3 rounded text-white font-bold mt-4 transition bg-green-600 hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+        <div>
+          <label className="block text-sm text-gray-600">Cupom de desconto</label>
+          <input
+            type="text"
+            value={codigoPromocao}
+            onChange={(e) => setCodigoPromocao(e.target.value.toUpperCase())}
+            className={classeCampo('codigoPromocao')}
+            placeholder="Opcional"
+            maxLength="50"
+          />
+        </div>
+
+        <button 
+          type="submit" 
+          disabled={carregando || buscandoCep}
+          className={`w-full py-3 rounded text-white font-bold mt-4 transition ${carregando || buscandoCep ? 'bg-gray-400' : 'bg-green-600 hover:bg-green-700'}`}
         >
           {carregando
             ? 'Processando...'

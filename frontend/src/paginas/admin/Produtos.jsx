@@ -15,6 +15,10 @@ const FORM_VAZIO = {
   tag: '',
   foto_url: '',
   estoque_qtd: '',
+  peso_kg: '0.300',
+  largura_cm: '20',
+  altura_cm: '10',
+  comprimento_cm: '30',
 };
 
 export default function Produtos() {
@@ -53,6 +57,10 @@ export default function Produtos() {
       tag: produto.tag || '',
       foto_url: produto.foto_url || '',
       estoque_qtd: produto.estoque_qtd,
+      peso_kg: produto.peso_kg || '0.300',
+      largura_cm: produto.largura_cm || '20',
+      altura_cm: produto.altura_cm || '10',
+      comprimento_cm: produto.comprimento_cm || '30',
     });
   }
 
@@ -109,6 +117,10 @@ export default function Produtos() {
         <input name="tag" value={form.tag} onChange={aoMudarCampo} placeholder="Tag" className="border rounded px-2 py-1" />
         <input name="foto_url" value={form.foto_url} onChange={aoMudarCampo} placeholder="URL da foto" className="border rounded px-2 py-1" />
         <input name="estoque_qtd" value={form.estoque_qtd} onChange={aoMudarCampo} placeholder="Estoque" type="number" required className="border rounded px-2 py-1" />
+        <input name="peso_kg" value={form.peso_kg} onChange={aoMudarCampo} placeholder="Peso (kg)" type="number" min="0.001" step="0.001" required className="border rounded px-2 py-1" />
+        <input name="largura_cm" value={form.largura_cm} onChange={aoMudarCampo} placeholder="Largura (cm)" type="number" min="1" step="0.01" required className="border rounded px-2 py-1" />
+        <input name="altura_cm" value={form.altura_cm} onChange={aoMudarCampo} placeholder="Altura (cm)" type="number" min="1" step="0.01" required className="border rounded px-2 py-1" />
+        <input name="comprimento_cm" value={form.comprimento_cm} onChange={aoMudarCampo} placeholder="Comprimento (cm)" type="number" min="1" step="0.01" required className="border rounded px-2 py-1" />
 
         <div className="col-span-2 sm:col-span-3 flex gap-2">
           <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
@@ -152,7 +164,12 @@ export default function Produtos() {
                   <button onClick={() => iniciarEdicao(produto)} className="text-blue-600 hover:underline">
                     Editar
                   </button>
-                  <button onClick={() => aoAlternarAtivo(produto)} className="text-red-600 hover:underline">
+                  <button
+                    onClick={() => aoAlternarAtivo(produto)}
+                    className={produto.ativo
+                      ? 'text-red-600 hover:underline'
+                      : 'text-green-600 hover:underline'}
+                  >
                     {produto.ativo ? 'Remover' : 'Reativar'}
                   </button>
                 </td>

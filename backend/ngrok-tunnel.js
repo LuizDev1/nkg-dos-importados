@@ -4,11 +4,13 @@ require('dotenv').config();
 async function iniciarTunel() {
   try {
     const forwarder = await ngrok.forward({
-      addr: 'localhost:3000',
+      addr: process.env.NGROK_ADDR || `localhost:${process.env.PORT || 3000}`,
       authtoken_from_env: true,
     });
 
-    console.log(`Túnel disponível em: ${forwarder.url()}`);
+    const url = forwarder.url();
+    console.log(`Túnel disponível em: ${url}`);
+    console.log(`Webhook Mercado Pago: ${url}/api/pagamentos/webhook`);
   } catch (erro) {
     if (erro.code === 'ERR_NGROK_4018' || erro.errorCode === 'ERR_NGROK_4018') {
       console.error(

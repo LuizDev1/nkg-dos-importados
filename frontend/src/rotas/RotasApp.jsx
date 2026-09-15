@@ -15,8 +15,9 @@ import ConfiguracaoLoja from '../paginas/admin/configuracaoLoja';
 import Clientes from '../paginas/admin/Clientes';
 import DetalheCliente from '../paginas/admin/DetalheCliente';
 import DetalhePedido from '../paginas/admin/DetalhePedido';
-import MeusPedidos from '../paginas/cliente/MeusPedidos';
-import DetalheMeuPedido from '../paginas/cliente/DetalheMeuPedido';
+import Promocoes from '../paginas/admin/Promocoes';
+import MeusPedidos from '../paginas/publicas/MeusPedidos';
+import Privacidade from '../paginas/publicas/Privacidade';
 
 export default function RotasApp() {
   return (
@@ -24,10 +25,40 @@ export default function RotasApp() {
       <Route path="/" element={<Home />} />
       <Route path="/login" element={<Login />} />
       <Route path="/cadastro" element={<Cadastro />} />
-      <Route path="/carrinho" element={<Carrinho />} />
-      <Route path="/checkout" element={<Checkout />} />
+      <Route
+        path="/carrinho"
+        element={
+          <RotaPrivada somenteCliente>
+            <Carrinho />
+          </RotaPrivada>
+        }
+      />
+      <Route
+        path="/checkout"
+        element={
+          <RotaPrivada somenteCliente>
+            <Checkout />
+          </RotaPrivada>
+        }
+      />
       <Route path="/produto/:id" element={<DetalheProduto />} />
       <Route path="/pedido/:id/:resultado" element={<StatusPedido />} />
+      <Route
+        path="/meus-pedidos"
+        element={
+          <RotaPrivada somenteCliente>
+            <MeusPedidos />
+          </RotaPrivada>
+        }
+      />
+      <Route
+        path="/privacidade"
+        element={
+          <RotaPrivada somenteCliente>
+            <Privacidade />
+          </RotaPrivada>
+        }
+      />
 
       <Route
         path="/minha-conta/pedidos"
@@ -82,6 +113,14 @@ export default function RotasApp() {
         element={
           <RotaPrivada somenteAdmin>
             <ConfiguracaoLoja />
+          </RotaPrivada>
+        }
+      />
+      <Route
+        path="/admin/promocoes"
+        element={
+          <RotaPrivada somenteAdmin>
+            <Promocoes />
           </RotaPrivada>
         }
       />

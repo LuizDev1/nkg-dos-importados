@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAutenticacao } from '../../contextos/ContextoAutenticacao';
 import { listarProdutos } from '../../servicos/produtoService';
 import { buscarConfiguracoes } from '../../servicos/configuracaoService';
 import CartaoProduto from '../../componentes/CartaoProduto';
@@ -8,6 +10,12 @@ export default function Home() {
   const [configuracoes, setConfiguracoes] = useState({});
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState('');
+  const { usuario } = useAutenticacao();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (usuario?.perfil === 'admin') navigate('/admin', { replace: true });
+  }, [usuario, navigate]);
 
   useEffect(() => {
     async function carregar() {

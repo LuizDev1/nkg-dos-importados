@@ -11,7 +11,6 @@ const inicial = {
   aviso_ativo: false,
   aviso_texto: '',
   politica_devolucao: '',
-  frete_fixo: 0,
   banner_url: '',
   banner_titulo: '',
   banner_link: '',
@@ -120,17 +119,6 @@ export default function ConfiguracaoLoja() {
           value={formulario.aviso_texto}
           onChange={alterar}
           placeholder="Texto do aviso"
-          className="w-full border p-2 rounded"
-        />
-
-        <input
-          type="number"
-          min="0"
-          step="0.01"
-          name="frete_fixo"
-          value={formulario.frete_fixo}
-          onChange={alterar}
-          placeholder="Frete fixo"
           className="w-full border p-2 rounded"
         />
 
