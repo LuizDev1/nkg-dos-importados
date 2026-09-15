@@ -1,3 +1,4 @@
+import SeletorFotos from '../../componentes/SeletorFotos';
 import { corStatus } from '../../servicos/statusVisual';
 import CampoRotulado from '../../componentes/CampoRotulado';
 import { useEffect, useState } from 'react';
@@ -30,6 +31,7 @@ const FORM_VAZIO = {
 };
 
 export default function Produtos() {
+  const [enviandoFotos, setEnviandoFotos] = useState(false);
   const [produtos, setProdutos] = useState([]);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState('');
@@ -61,6 +63,7 @@ export default function Produtos() {
   }
 
   function iniciarEdicao(produto) {
+    setEnviandoFotos(false);
     setEditandoId(produto.id);
     setForm({
       nome: produto.nome,
@@ -78,12 +81,14 @@ export default function Produtos() {
   }
 
   function cancelarEdicao() {
+    setEnviandoFotos(false);
     setEditandoId(null);
     setForm(FORM_VAZIO);
   }
 
   async function aoSalvar(e) {
     e.preventDefault();
+    if (enviandoFotos) return;
     setErro('');
 
     try {
@@ -159,8 +164,7 @@ export default function Produtos() {
         <CampoRotulado rotulo="Categoria" name="categoria" value={form.categoria} onChange={aoMudarCampo} placeholder="Categoria" className="border rounded px-2 py-1" />
         <CampoRotulado rotulo="Preço" name="preco" value={form.preco} onChange={aoMudarCampo} placeholder="Preço" type="number" step="0.01" required className="border rounded px-2 py-1" />
         <CampoRotulado rotulo="Tag" name="tag" value={form.tag} onChange={aoMudarCampo} placeholder="Tag" className="border rounded px-2 py-1" />
-        <CampoRotulado rotulo="URL da foto" name="foto_url" value={form.foto_url} onChange={aoMudarCampo} placeholder="URL da foto" className="border rounded px-2 py-1" />
-        <CampoRotulado rotulo={'Fotos adicionais (uma URL por linha)'} as="textarea" containerClassName="col-span-2 sm:col-span-3" name="imagens_urls" value={form.imagens_urls} onChange={aoMudarCampo} placeholder={'Fotos adicionais (uma URL por linha)'} className="rounded border px-2 py-2" rows="3" />
+        <SeletorFotos key={editandoId || 'novo'} rotulo="Fotos do produto" fotos={[form.foto_url, ...form.imagens_urls.split(/\r?\n/)].filter(Boolean)} onCarregando={setEnviandoFotos} onChange={fotos => setForm(atual => ({ ...atual, foto_url: fotos[0] || '', imagens_urls: fotos.slice(1).join('\n') }))} />
         <CampoRotulado rotulo="Estoque" name="estoque_qtd" value={form.estoque_qtd} onChange={aoMudarCampo} placeholder="Estoque" type="number" required className="border rounded px-2 py-1" />
         <CampoRotulado rotulo="Peso (kg)" name="peso_kg" value={form.peso_kg} onChange={aoMudarCampo} placeholder="Peso (kg)" type="number" min="0.001" step="0.001" required className="border rounded px-2 py-1" />
         <CampoRotulado rotulo="Largura (cm)" name="largura_cm" value={form.largura_cm} onChange={aoMudarCampo} placeholder="Largura (cm)" type="number" min="1" step="0.01" required className="border rounded px-2 py-1" />
@@ -168,7 +172,7 @@ export default function Produtos() {
         <CampoRotulado rotulo="Comprimento (cm)" name="comprimento_cm" value={form.comprimento_cm} onChange={aoMudarCampo} placeholder="Comprimento (cm)" type="number" min="1" step="0.01" required className="border rounded px-2 py-1" />
 
         <div className="col-span-2 sm:col-span-3 flex gap-2">
-          <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+          <button type="submit" disabled={enviandoFotos} className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
             {editandoId ? 'Salvar edição' : 'Adicionar produto'}
           </button>
           {Boolean(editandoId) && (

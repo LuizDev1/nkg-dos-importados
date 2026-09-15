@@ -7,7 +7,7 @@ import { useAutenticacao } from '../../contextos/ContextoAutenticacao';
 import CartaoProduto from '../../componentes/CartaoProduto';
 import { useFavoritos } from '../../contextos/ContextoFavoritos';
 import { cadastrarAvisoEstoque } from '../../servicos/avisoEstoqueService';
-import { listarAvaliacoes, salvarAvaliacao, verificarPermissaoAvaliacao } from '../../servicos/avaliacaoService';
+import { listarAvaliacoes, salvarAvaliacao, verificarPermissaoAvaliacao, marcarAvaliacaoUtil } from '../../servicos/avaliacaoService';
 
 export default function DetalheProduto() {
   const { id } = useParams();
@@ -24,10 +24,13 @@ export default function DetalheProduto() {
   const [variacaoId, setVariacaoId] = useState('');
   const [avisoEstoque, setAvisoEstoque] = useState('');
   const [avaliacoes, setAvaliacoes] = useState([]);
-  const [formAvaliacao, setFormAvaliacao] = useState({ nota: 5, comentario: '', foto_url: '' });
+  const [formAvaliacao, setFormAvaliacao] = useState({ nota: 5, comentario: '', fotos: [], anonimo: false });
   const [mensagemAvaliacao, setMensagemAvaliacao] = useState('');
   const [salvandoAvaliacao, setSalvandoAvaliacao] = useState(false);
   const [podeAvaliar, setPodeAvaliar] = useState(false);
+  const [lendoFotos, setLendoFotos] = useState(false);
+  const [votandoUtil, setVotandoUtil] = useState(null);
+  const [erroUtil, setErroUtil] = useState('');
   const [imagemSelecionada, setImagemSelecionada] = useState('');
 
   const { adicionarItem } = useCarrinho();
@@ -44,12 +47,15 @@ export default function DetalheProduto() {
     paginaVersao.current += 1;
     clearTimeout(timerAdicionado.current);
     setSalvandoAvaliacao(false);
+    setLendoFotos(false);
     freteVersao.current += 1;
     setCalculandoFrete(false);
     setErroFrete('');
     setAvisoEstoque('');
     setMensagemAvaliacao('');
-    setFormAvaliacao({ nota: 5, comentario: '', foto_url: '' });
+    setErroUtil('');
+    setVotandoUtil(null);
+    setFormAvaliacao({ nota: 5, comentario: '', fotos: [], anonimo: false });
     setAdicionado(false);
     setErroCarrinho('');
     async function carregar() {
@@ -176,9 +182,40 @@ export default function DetalheProduto() {
     }
   }
 
+  async function selecionarFotos(evento) {
+    if (lendoFotos || salvandoAvaliacao) return;
+    const arquivos = Array.from(evento.target.files || []);
+    evento.target.value = '';
+    if (arquivos.length + formAvaliacao.fotos.length > 5) {
+      setMensagemAvaliacao('Selecione no máximo 5 fotos.');
+      return;
+    }
+    if (arquivos.some(f => !['image/jpeg', 'image/png', 'image/webp'].includes(f.type) || f.size > 1024 * 1024)) {
+      setMensagemAvaliacao('Use fotos JPG, PNG ou WebP de até 1 MB cada.');
+      return;
+    }
+    const versao = paginaVersao.current;
+    setLendoFotos(true);
+    try {
+      const fotos = await Promise.all(arquivos.map(arquivo => new Promise((resolve, reject) => {
+        const leitor = new FileReader();
+        leitor.onload = () => resolve(leitor.result);
+        leitor.onerror = reject;
+        leitor.readAsDataURL(arquivo);
+      })));
+      if (versao !== paginaVersao.current) return;
+      setFormAvaliacao(atual => ({ ...atual, fotos: [...atual.fotos, ...fotos].slice(0, 5) }));
+      setMensagemAvaliacao('');
+    } catch {
+      if (versao === paginaVersao.current) setMensagemAvaliacao('Erro ao ler fotos. Tente novamente.');
+    } finally {
+      if (versao === paginaVersao.current) setLendoFotos(false);
+    }
+  }
+
   async function enviarAvaliacao(evento) {
     evento.preventDefault();
-    if (salvandoAvaliacao) return;
+    if (lendoFotos || salvandoAvaliacao) return;
     const versao = paginaVersao.current;
     setSalvandoAvaliacao(true);
     setMensagemAvaliacao('');
@@ -186,18 +223,40 @@ export default function DetalheProduto() {
       const resposta = await salvarAvaliacao(produto.id, {
         ...formAvaliacao,
         nota: Number(formAvaliacao.nota),
-        foto_url: formAvaliacao.foto_url.trim(),
+        fotos: formAvaliacao.fotos,
       });
       if (versao !== paginaVersao.current) return;
       setMensagemAvaliacao(resposta.mensagem);
+      setPodeAvaliar(false);
       const lista = await listarAvaliacoes(produto.id);
       if (versao !== paginaVersao.current) return;
       setAvaliacoes(lista);
-      setFormAvaliacao({ nota: 5, comentario: '', foto_url: '' });
+      setFormAvaliacao({ nota: 5, comentario: '', fotos: [], anonimo: false });
     } catch (erroAvaliacao) {
       if (versao === paginaVersao.current) setMensagemAvaliacao(erroAvaliacao.message);
     } finally {
       if (versao === paginaVersao.current) setSalvandoAvaliacao(false);
+    }
+  }
+
+  async function votarUtil(avaliacaoId) {
+    if (!usuario) {
+      navigate('/login', { state: { from: '/produto/' + id } });
+      return;
+    }
+    if (votandoUtil !== null) return;
+    const versao = paginaVersao.current;
+    setVotandoUtil(avaliacaoId);
+    setErroUtil('');
+    try {
+      const avaliacao = avaliacoes.find(a => a.id === avaliacaoId);
+      const dados = await marcarAvaliacaoUtil(avaliacaoId, !avaliacao?.votou_util);
+      if (versao !== paginaVersao.current) return;
+      setAvaliacoes(atuais => atuais.map(a => a.id === avaliacaoId ? { ...a, uteis: dados.uteis, votou_util: dados.votou_util } : a));
+    } catch (erro) {
+      if (versao === paginaVersao.current) setErroUtil(erro.message);
+    } finally {
+      if (versao === paginaVersao.current) setVotandoUtil(null);
     }
   }
 
@@ -417,52 +476,26 @@ export default function DetalheProduto() {
       <section className="mt-12 border-t border-[#302b20] pt-8">
         <div className="mb-6 flex flex-wrap items-end justify-between gap-2">
           <h2 className="text-xl font-bold">Avaliações</h2>
-          <p className="text-sm text-[#c9c2b5]">
-            <span className="text-[#d4af45]">★ {mediaAvaliacoes.toFixed(1)}</span> · {avaliacoes.length} avaliação(ões)
-          </p>
-        </div>
-
-        {Boolean(podeAvaliar) && (
-            <form onSubmit={enviarAvaliacao} className="mb-8 grid gap-4 rounded-xl border border-[#302b20] bg-[#11120f] p-5">
-              <p className="font-semibold">Avalie este produto</p>
-              <label className="text-sm">
-                Nota
-                <select
-                  value={formAvaliacao.nota}
-                  onChange={(evento) => setFormAvaliacao({ ...formAvaliacao, nota: evento.target.value })}
-                  className="mt-1 block w-full rounded border border-[#45402f] bg-[#181915] px-3 py-2"
+          <div className="flex items-center gap-3" aria-label={mediaAvaliacoes.toFixed(1) + ' de 5 estrelas'}>
+            <span className="text-4xl font-bold leading-none text-[#d4af45]">
+              {mediaAvaliacoes.toFixed(1)}
+            </span>
+            <div>
+              <div className="relative w-fit text-xl leading-none tracking-[0.12em]" aria-hidden="true">
+                <span className="text-[#45402f]">{'★'.repeat(5)}</span>
+                <span
+                  className="absolute inset-y-0 left-0 overflow-hidden whitespace-nowrap text-[#d4af45]"
+                  style={{ width: (mediaAvaliacoes / 5) * 100 + '%' }}
                 >
-                  {[5, 4, 3, 2, 1].map((nota) => <option key={nota} value={nota}>{'★'.repeat(nota)} ({nota})</option>)}
-                </select>
-              </label>
-              <label className="text-sm">
-                Comentário
-                <textarea
-                  required
-                  maxLength="1000"
-                  value={formAvaliacao.comentario}
-                  onChange={(evento) => setFormAvaliacao({ ...formAvaliacao, comentario: evento.target.value })}
-                  className="mt-1 min-h-24 w-full rounded border border-[#45402f] bg-[#181915] px-3 py-2"
-                  placeholder="Conte como foi sua experiência"
-                />
-              </label>
-              <label className="text-sm">
-                Link da foto (opcional)
-                <input
-                  type="url"
-                  maxLength="500"
-                  value={formAvaliacao.foto_url}
-                  onChange={(evento) => setFormAvaliacao({ ...formAvaliacao, foto_url: evento.target.value })}
-                  className="mt-1 w-full rounded border border-[#45402f] bg-[#181915] px-3 py-2"
-                  placeholder="https://..."
-                />
-              </label>
-              <button disabled={salvandoAvaliacao} className="rounded bg-[#d4af45] px-5 py-3 font-semibold text-black hover:bg-[#e1c15b] disabled:opacity-60">
-                {salvandoAvaliacao ? 'Salvando...' : 'Publicar avaliação'}
-              </button>
-              {mensagemAvaliacao && <p className="text-sm text-[#d8d1c4]">{mensagemAvaliacao}</p>}
-            </form>
-        )}
+                  {'★'.repeat(5)}
+                </span>
+              </div>
+              <p className="mt-1 text-xs text-[#aaa396]">
+                {avaliacoes.length} {avaliacoes.length <= 1 ? 'Avaliação' : 'Avaliações'}
+              </p>
+            </div>
+          </div>
+        </div>
 
         {avaliacoes.length === 0 ? (
           <p className="text-sm text-[#aaa396]">Ainda não há avaliações para este produto.</p>
@@ -475,12 +508,87 @@ export default function DetalheProduto() {
                   <span className="text-[#d4af45]">{'★'.repeat(Number(avaliacao.nota))}</span>
                 </div>
                 {avaliacao.comentario && <p className="mt-3 text-sm text-[#d1cabd]">{avaliacao.comentario}</p>}
-                {avaliacao.foto_url && <img src={avaliacao.foto_url} alt="Foto enviada na avaliação" loading="lazy" className="mt-4 max-h-72 w-full rounded-lg object-cover" />}
+                {avaliacao.fotos?.length > 0 && (
+                  <div className="mt-4 grid grid-cols-2 gap-2">
+                    {avaliacao.fotos.map((foto, indice) => <img key={indice} src={foto} alt={'Foto da avaliação ' + (indice + 1)} loading="lazy" className="max-h-72 w-full rounded-lg object-cover" />)}
+                  </div>
+                )}
                 <time className="mt-3 block text-xs text-[#817b70]">{new Date(avaliacao.criado_em).toLocaleDateString('pt-BR')}</time>
+                <button
+                  type="button"
+                  onClick={() => votarUtil(avaliacao.id)}
+                  aria-pressed={Boolean(avaliacao.votou_util)}
+                  disabled={votandoUtil !== null}
+                  className={`mt-3 inline-flex items-center gap-2 rounded border px-3 py-1.5 text-sm disabled:opacity-50 ${avaliacao.votou_util ? 'border-[#d4af45] bg-[#d4af45] text-[#090a09]' : 'border-[#45402f] text-[#d4af45] hover:border-[#d4af45]'}`}
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">
+                    <path d="M7 10v11H3V10h4ZM7 10l4-7a3 3 0 0 1 3 3v4h5a2 2 0 0 1 2 2l-2 7a2 2 0 0 1-2 2H7" />
+                  </svg>
+                  Útil ({Number(avaliacao.uteis || 0)})
+                </button>
               </article>
             ))}
           </div>
         )}
+        {erroUtil && <p role="alert" className="mt-3 text-sm text-red-600">{erroUtil}</p>}
+        {mensagemAvaliacao && !podeAvaliar && <p role="status" className="mt-3 text-sm">{mensagemAvaliacao}</p>}
+        {Boolean(podeAvaliar) && (
+          <form onSubmit={enviarAvaliacao} className="mt-8 grid gap-4 rounded-xl border border-[#302b20] bg-[#11120f] p-5">
+            <p className="font-semibold">Avalie este produto</p>
+            <label className="text-sm">
+              Nota
+              <select
+                value={formAvaliacao.nota}
+                onChange={(evento) => setFormAvaliacao({ ...formAvaliacao, nota: evento.target.value })}
+                className="mt-1 block w-full rounded border border-[#45402f] bg-[#181915] px-3 py-2"
+              >
+                {[5, 4, 3, 2, 1].map((nota) => <option key={nota} value={nota}>{'★'.repeat(nota)} ({nota})</option>)}
+              </select>
+            </label>
+            <label className="text-sm">
+              Comentário
+              <textarea
+                required
+                maxLength="1000"
+                value={formAvaliacao.comentario}
+                onChange={(evento) => setFormAvaliacao({ ...formAvaliacao, comentario: evento.target.value })}
+                className="mt-1 min-h-24 w-full rounded border border-[#45402f] bg-[#181915] px-3 py-2"
+                placeholder="Conte como foi sua experiência"
+              />
+            </label>
+            <div>
+              <label htmlFor="fotos-avaliacao" className="block text-sm font-semibold">
+                Compartilhe suas fotos (opcional)
+              </label>
+              <label htmlFor="fotos-avaliacao" className="mt-3 flex h-20 cursor-pointer items-center justify-center rounded border border-dashed border-[#45402f] bg-[#181915] text-[#d4af45] hover:border-[#d4af45]">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M14 20H4a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h3l2-3h6l2 3h3a2 2 0 0 1 2 2v5" />
+                  <circle cx="12" cy="12" r="4" /><path d="M19 16v6M16 19h6" />
+                </svg>
+                <span className="sr-only">Adicionar fotos</span>
+              </label>
+              <input id="fotos-avaliacao" type="file" accept="image/jpeg,image/png,image/webp" multiple onChange={selecionarFotos} disabled={lendoFotos || salvandoAvaliacao || formAvaliacao.fotos.length >= 5} className="sr-only" />
+              <p className="mt-2 text-xs text-[#aaa396]">{formAvaliacao.fotos.length}/5 - JPG, PNG ou WebP</p>
+              <div className="mt-3 flex flex-wrap gap-3">
+                {formAvaliacao.fotos.map((foto, indice) => (
+                  <div key={indice} className="relative">
+                    <img src={foto} alt={'Foto selecionada ' + (indice + 1)} className="h-20 w-20 rounded object-cover" />
+                    <button type="button" disabled={salvandoAvaliacao} onClick={() => setFormAvaliacao(atual => ({ ...atual, fotos: atual.fotos.filter((_, i) => i !== indice) }))} aria-label={'Remover foto ' + (indice + 1)} className="absolute -right-2 -top-2 rounded-full bg-[#11120f] px-2 text-[#d4af45]">×</button>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <label className="flex items-center gap-2 text-sm">
+              <input type="checkbox" checked={formAvaliacao.anonimo} onChange={evento => setFormAvaliacao(atual => ({ ...atual, anonimo: evento.target.checked }))} className="accent-[#d4af45]" />
+              Publicar como Anônimo
+            </label>
+            <button disabled={salvandoAvaliacao || lendoFotos} className="rounded bg-[#d4af45] px-5 py-3 font-semibold text-black hover:bg-[#e1c15b] disabled:opacity-60">
+              {salvandoAvaliacao ? 'Salvando...' : 'Publicar avaliação'}
+            </button>
+            {mensagemAvaliacao && <p className="text-sm text-[#d8d1c4]">{mensagemAvaliacao}</p>}
+          </form>
+        )}
+
       </section>
 
       {relacionados.length > 0 && (
