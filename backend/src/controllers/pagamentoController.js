@@ -85,10 +85,12 @@ async function criarPagamento(req, res) {
 async function receberWebhook(req, res) {
   try {
     const rawBody = Buffer.isBuffer(req.body) ? req.body : Buffer.from(JSON.stringify(req.body || {}));
-    validarAssinaturaWebhook({ headers: req.headers, body: rawBody });
+    validarAssinaturaWebhook({ headers: req.headers, body: rawBody, query: req.query });
 
     const orderId = req.query['data.id'];
-    const eventoId = `${req.headers['x-request-id'] || req.query.type || 'evento'}:${orderId}:${req.headers['x-signature'] || 'sem-assinatura'}`;
+    const requestId = String(req.headers['x-request-id'] || '').trim();
+    // Usar requestId + orderId + timestamp como ID único do evento
+    const eventoId = `${requestId}:${orderId}:${Date.now()}`;
 
     console.log('Webhook Mercado Pago recebido:', {
       tipo: req.query.type,
@@ -112,7 +114,9 @@ async function receberWebhook(req, res) {
       return res.status(400).send();
     }
 
+    // Registrar webhook - retorna false se for duplicado
     if (!await Pedido.registrarWebhook(eventoId, req.query.type || 'desconhecido')) {
+      console.log('Webhook duplicado, ignorando:', orderId);
       return res.status(200).send();
     }
 
@@ -134,29 +138,23 @@ async function receberWebhook(req, res) {
           detalhes: { payment_id: order.id, status: order.status },
         });
       }
-    } else {
-      const statusTraduzido = {
-        cancelled: 'cancelado',
-        refused: 'recusado',
-      }[order.status];
+    } else if (order.status === 'cancelled' || order.status === 'refused') {
+      const statusTraduzido = order.status === 'cancelled' ? 'cancelado' : 'recusado';
+      await Pedido.atualizarStatus(pedidoId, statusTraduzido, order.id);
 
-      if (statusTraduzido) {
-        await Pedido.atualizarStatus(pedidoId, statusTraduzido, order.id);
-
-        await Log.registrar({
-          tipo: 'pedido',
-          acao: 'status_atualizado',
-          entidade_id: pedidoId,
-          detalhes: { payment_id: order.id, novo_status: statusTraduzido },
-        });
-      }
+      await Log.registrar({
+        tipo: 'pedido',
+        acao: 'status_atualizado',
+        entidade_id: pedidoId,
+        detalhes: { payment_id: order.id, novo_status: statusTraduzido },
+      });
     }
 
     res.status(200).send();
   } catch (erro) {
     console.error('Erro no webhook:', erro);
     if (erro.message && /assinatura|configurado|ausente/i.test(erro.message)) {
-      return res.status(401).json({ mensagem: erro.message });
+      return res.status(401).send();
     }
     res.status(500).send();
   }

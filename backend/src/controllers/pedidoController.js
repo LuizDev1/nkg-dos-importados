@@ -383,17 +383,38 @@ async function cancelar(req, res) {
 
     const pedidoCancelado = await Pedido.cancelarPedido(pedido.id);
 
+    if (!pedidoCancelado) {
+      return res.status(409).json({ mensagem: 'Pedido já estava cancelado' });
+    }
+
     let reembolsoPendente = false;
+    
+    // ⚠️ NÃO FAZER AWAIT - deixar o reembolso rodando assincronamente
     if (pedidoCancelado && pedido.payment_status === 'pago' && pedido.payment_id) {
-      try {
-        const mercadoPagoService = require('../services/mercadoPagoService');
-        await mercadoPagoService.solicitarReembolso(pedido.payment_id);
-        await Pedido.atualizarStatus(pedido.id, 'cancelado', pedido.payment_id);
-      } catch (erro) {
-        reembolsoPendente = true;
-        await Pedido.marcarReembolsoPendente(pedido.id);
-        console.warn('Reembolso do Mercado Pago pendente:', erro.message);
-      }
+      const mercadoPagoService = require('../services/mercadoPagoService');
+      
+      // Agendar reembolso sem bloquear a resposta
+      mercadoPagoService.solicitarReembolso(pedido.payment_id)
+        .then(async () => {
+          await Log.registrar({
+            tipo: 'pedido',
+            acao: 'reembolso_processado',
+            entidade_id: pedido.id,
+            detalhes: { payment_id: pedido.payment_id },
+          });
+          console.log('Reembolso processado com sucesso:', pedido.payment_id);
+        })
+        .catch(async (erro) => {
+          reembolsoPendente = true;
+          await Pedido.marcarReembolsoPendente(pedido.id);
+          await Log.registrar({
+            tipo: 'pedido',
+            acao: 'reembolso_erro',
+            entidade_id: pedido.id,
+            detalhes: { payment_id: pedido.payment_id, erro: erro.message },
+          });
+          console.warn('Reembolso do Mercado Pago pendente:', erro.message);
+        });
     }
 
     await Log.registrar({
@@ -404,9 +425,10 @@ async function cancelar(req, res) {
       detalhes: { payment_id: pedido.payment_id },
     });
 
-    return res.json({ mensagem: pedidoCancelado
-      ? (reembolsoPendente ? 'Pedido cancelado; reembolso pendente' : 'Pedido cancelado com sucesso')
-      : 'Pedido já estava cancelado' });
+    return res.json({ 
+      mensagem: 'Pedido cancelado com sucesso',
+      reembolso: reembolsoPendente ? 'pendente' : 'processando'
+    });
   } catch (erro) {
     console.error('Erro ao cancelar pedido:', erro);
     return res.status(500).json({ mensagem: erro.message });

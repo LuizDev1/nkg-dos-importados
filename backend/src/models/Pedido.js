@@ -280,17 +280,21 @@ async function cancelarPedido(id) {
       }
     }
 
-    await conexao.query(
-      `UPDATE pedidos
-       SET payment_status = 'cancelado',
-           status_pedido = CASE
-             WHEN payment_status = 'pago' AND payment_id IS NOT NULL THEN 'reembolso_pendente'
-             ELSE 'cancelado'
-           END,
-           estoque_reservado = FALSE
-       WHERE id = ?`,
-      [id]
-    );
+await conexao.query(
+  `UPDATE pedidos
+   SET payment_status = 'cancelado',
+       reembolso_status = CASE
+         WHEN payment_status = 'pago' AND payment_id IS NOT NULL THEN 'solicitado'
+         ELSE NULL
+       END,
+       status_pedido = CASE
+         WHEN payment_status = 'pago' AND payment_id IS NOT NULL THEN 'reembolso_pendente'
+         ELSE 'cancelado'
+       END,
+       estoque_reservado = FALSE
+   WHERE id = ?`,
+  [id]
+);
 
     await conexao.commit();
     return true;

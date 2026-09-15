@@ -2,7 +2,7 @@ const pool = require('../config/banco');
 
 const CEP_ORIGEM = String(process.env.CEP_ORIGEM || '64900000').replace(/\D/g, '');
 const API_URL = process.env.MELHOR_ENVIO_API_URL
-  || 'https://melhorenvio.com.br/api/v2/me/shipment/calculate';
+  || 'https://sandbox.melhorenvio.com.br/api/v2/me/shipment/calculate';
 
 function normalizarCep(cep) {
   return String(cep || '').replace(/\D/g, '');
