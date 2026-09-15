@@ -43,8 +43,14 @@ export function ProvedorAutenticacao({ children }) {
     localStorage.removeItem('usuario');
   }
 
+  function atualizarUsuario(dados) {
+    const atualizado = { ...usuario, nome: dados.nome, email: dados.email };
+    setUsuario(atualizado);
+    localStorage.setItem('usuario', JSON.stringify(atualizado));
+  }
+
   return (
-    <ContextoAutenticacao.Provider value={{ usuario, token, carregando, login, registrar, logout }}>
+    <ContextoAutenticacao.Provider value={{ usuario, token, carregando, login, registrar, logout, atualizarUsuario }}>
       {children}
     </ContextoAutenticacao.Provider>
   );

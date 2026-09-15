@@ -22,6 +22,7 @@ export default function Checkout() {
   const [pedidoEmProcessamento, setPedidoEmProcessamento] = useState(false);
   const [resumoServidor, setResumoServidor] = useState(null);
   const [codigoPromocao, setCodigoPromocao] = useState('');
+  const [cpf, setCpf] = useState('');
   const [cotacaoFrete, setCotacaoFrete] = useState(null);
   const [freteServicoId, setFreteServicoId] = useState('');
   const idempotencyKey = useRef(
@@ -164,6 +165,15 @@ export default function Checkout() {
         }))
       };
 
+      const respostaCpf = await fetch(`${API_URL}/usuarios/${usuario.id}/cpf`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token') || ''}` },
+        body: JSON.stringify({ cpf }),
+      });
+      if (!respostaCpf.ok) {
+        const dadosCpf = await respostaCpf.json();
+        throw new Error(dadosCpf.mensagem || 'Erro ao atualizar CPF');
+      }
       const respostaPedido = await criarPedido(payload, idempotencyKey.current);
       setResumoServidor(respostaPedido);
 
@@ -275,6 +285,14 @@ export default function Checkout() {
         <h2 className="text-lg font-semibold mb-2">Dados de Entrega</h2>
 
         {erro && <p className="text-red-600 bg-red-50 p-3 rounded">{erro}</p>}
+
+        <div>
+          <label htmlFor="cpf-pagamento" className="block text-sm text-gray-600">CPF do comprador</label>
+          <input id="cpf-pagamento" type="text" inputMode="numeric" value={cpf}
+            onChange={(e) => setCpf(e.target.value)} required maxLength={14}
+            placeholder="000.000.000-00" className={classeCampo('cpf')} />
+          <p className="text-xs text-gray-500 mt-1">Necessário para identificar o comprador no pagamento.</p>
+        </div>
 
         <div className="grid grid-cols-2 gap-4">
           <div>

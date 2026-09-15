@@ -1,4 +1,5 @@
 const { z } = require('zod');
+const { normalizarCpf, validarCpf } = require('../utils/cpf');
 
 const dataHoraValida = z.string().refine((valor) => {
   const partes = valor.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/);
@@ -33,7 +34,7 @@ const schemas = {
     nome: z.string().trim().min(2).max(150),
     email: z.string().trim().email().max(150),
     senha: z.string().min(8).max(128),
-    cpf: z.string().trim().min(11).max(14).optional(),
+    cpf: z.string().trim().max(14).refine(validarCpf, 'CPF inválido').transform(normalizarCpf),
   }).strict(),
   login: z.object({
     email: z.string().trim().email().max(150),

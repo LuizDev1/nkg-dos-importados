@@ -20,6 +20,7 @@ import Banners from '../paginas/admin/Banners';
 import MeusPedidosCliente from '../paginas/cliente/MeusPedidos';
 import DetalheMeuPedido from '../paginas/cliente/DetalheMeuPedido';
 import Privacidade from '../paginas/publicas/Privacidade';
+import MinhaConta from '../paginas/cliente/MinhaConta';
 
 export default function RotasApp() {
   return (
@@ -27,6 +28,7 @@ export default function RotasApp() {
       <Route path="/" element={<Home />} />
       <Route path="/login" element={<Login />} />
       <Route path="/cadastro" element={<Cadastro />} />
+      <Route path="/minha-conta" element={<RotaPrivada somenteCliente><MinhaConta /></RotaPrivada>} />
       <Route
         path="/carrinho"
         element={

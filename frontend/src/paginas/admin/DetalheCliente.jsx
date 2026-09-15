@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { listarClientes } from '../../servicos/usuarioService';
+import FormularioConta from '../../componentes/FormularioConta';
+import { salvarContaCliente } from '../../servicos/contaService';
 import { listarPedidosPorUsuario } from '../../servicos/pedidoService';
 
 export default function DetalheCliente() {
@@ -66,6 +68,14 @@ export default function DetalheCliente() {
           {cliente.status === 'bloqueado' ? 'Bloqueado' : 'Ativo'}
         </p>
       </div>
+
+      <h2 className="text-xl font-semibold mb-3">
+        Editar informações do cliente
+      </h2>
+      <section className="bg-white rounded-lg shadow p-5 mb-6">
+        <FormularioConta key={id} conta={cliente} salvar={(dados) => salvarContaCliente(id, dados)}
+          aoSalvar={(dados) => setCliente((anterior) => ({ ...anterior, ...dados }))} />
+      </section>
 
       <h2 className="text-xl font-semibold mb-3">
         Histórico de pedidos

@@ -44,6 +44,11 @@ export default function Cabecalho() {
                 </Link>
               )}
 
+              {!isAdmin && (
+                <Link to="/minha-conta" className="text-gray-600 hover:text-blue-600">
+                  Minha conta
+                </Link>
+              )}
               <span className="text-gray-500">Olá, {usuario.nome}</span>
               <button onClick={logout} className="text-red-600 hover:underline">
                 Sair

@@ -85,7 +85,7 @@ export default function Home() {
 
   return (
     <div>
-      {configuracoes.aviso_ativo && configuracoes.aviso_texto && (
+      {Boolean(configuracoes.aviso_ativo) && configuracoes.aviso_texto && (
         <div className="bg-black text-white text-center px-4 py-2">
           {configuracoes.aviso_texto}
         </div>

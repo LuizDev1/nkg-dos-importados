@@ -1,4 +1,5 @@
 const { MercadoPagoConfig, Order } = require('mercadopago');
+const { normalizarCpf, validarCpf } = require('../utils/cpf');
 const client = new MercadoPagoConfig({
   accessToken: process.env.MERCADOPAGO_ACCESS_TOKEN,
 });
@@ -63,9 +64,14 @@ function montarItensOrder(pedido, itens) {
 }
 
 async function criarOrder(pedido, itens) {
+  if (!validarCpf(pedido.usuario_cpf)) {
+    const erro = new Error('Informe um CPF válido antes de iniciar o pagamento');
+    erro.status = 400;
+    throw erro;
+  }
   const [primeiroNome, ...resto] = pedido.usuario_nome.split(' ');
   const sobrenome = resto.join(' ') || primeiroNome;
-  const cpfLimpo = pedido.usuario_cpf ? pedido.usuario_cpf.replace(/\D/g, '') : '12345678909';
+  const cpfLimpo = normalizarCpf(pedido.usuario_cpf);
   const cepLimpo = pedido.cep ? pedido.cep.replace(/\D/g, '') : '70000000';
   const estadoUf = pedido.estado ? pedido.estado.trim().substring(0, 2).toUpperCase() : 'DF';
 
