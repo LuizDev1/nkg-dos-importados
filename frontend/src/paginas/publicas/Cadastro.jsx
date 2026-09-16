@@ -1,21 +1,38 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { registrar } from '../../servicos/autenticacaoService';
+import { formatarCpf } from '../../servicos/formatadores';
 
 export default function Cadastro() {
   const [nome, setNome] = useState('');
   const [email, setEmail] = useState('');
   const [cpf, setCpf] = useState('');
   const [senha, setSenha] = useState('');
+  const [mostrarSenha, setMostrarSenha] = useState(false);
   const [erro, setErro] = useState('');
   const [sucesso, setSucesso] = useState(false);
   const [carregando, setCarregando] = useState(false);
 
   const navegar = useNavigate();
 
+  function requisitosSenha(valor) {
+    const faltam = [];
+    if (valor.length < 8) faltam.push('use pelo menos 8 caracteres.');
+    if (!/[a-z]/.test(valor)) faltam.push('adicione uma letra minúscula.');
+    if (!/[A-Z]/.test(valor)) faltam.push('adicione uma letra maiúscula.');
+    if (!/\d/.test(valor)) faltam.push('adicione um número.');
+    if (!/[^A-Za-z0-9]/.test(valor)) faltam.push('adicione um símbolo, como @ ou #.');
+    return faltam;
+  }
+
   async function aoEnviar(evento) {
     evento.preventDefault();
     setErro('');
+    const faltam = requisitosSenha(senha);
+    if (faltam.length) {
+      setErro(`Não foi possível se cadastrar. Para sua senha ficar segura, ${faltam.join(' ')}`);
+      return;
+    }
     setCarregando(true);
 
     try {
@@ -77,7 +94,7 @@ export default function Cadastro() {
         <div className="mb-4">
           <label htmlFor="cpf" className="block text-[11px] uppercase tracking-[0.2em] text-zinc-400 mb-2 font-medium">CPF</label>
           <input id="cpf" type="text" inputMode="numeric" value={cpf}
-            onChange={(e) => setCpf(e.target.value)} required maxLength={14}
+            onChange={(e) => setCpf(formatarCpf(e.target.value))} required maxLength={14}
             placeholder="000.000.000-00"
             className="w-full bg-zinc-900/90 border border-zinc-800 rounded-lg px-4 py-3 text-zinc-100 text-sm focus:outline-none focus:border-amber-500/80 transition-colors" />
           <p className="text-xs text-zinc-400 mt-2">Usado para identificar o comprador no pagamento.</p>
@@ -85,13 +102,9 @@ export default function Cadastro() {
 
         <div className="mb-6">
           <label className="block text-[11px] uppercase tracking-[0.2em] text-zinc-400 mb-2 font-medium">Senha</label>
-          <input
-            type="password"
-            value={senha}
-            onChange={(e) => setSenha(e.target.value)}
-            required
-            className="w-full bg-zinc-900/90 border border-zinc-800 rounded-lg px-4 py-3 text-zinc-100 text-sm focus:outline-none focus:border-amber-500/80 transition-colors"
-          />
+          <div className="relative"><input type={mostrarSenha ? 'text' : 'password'} value={senha} onChange={(e) => setSenha(e.target.value)} required minLength={8} autoComplete="new-password" className="w-full bg-zinc-900/90 border border-zinc-800 rounded-lg px-4 py-3 pr-20 text-zinc-100 text-sm focus:outline-none focus:border-amber-500/80 transition-colors" /><button type="button" onClick={() => setMostrarSenha((valor) => !valor)} aria-pressed={mostrarSenha} className="absolute inset-y-0 right-3 text-xs font-semibold text-[#d4af45] hover:text-[#e2c25d]">{mostrarSenha ? 'Ocultar' : 'Mostrar'}</button></div>
+          <p className="mt-2 text-xs text-zinc-400">Use 8 ou mais caracteres, com letra maiúscula, minúscula, número e símbolo (ex.: @ ou #).</p>
+          {senha && requisitosSenha(senha).length > 0 && <div role="status" className="mt-3 rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs leading-relaxed text-amber-200"><strong className="font-semibold text-amber-300">Senha ainda não atende aos requisitos.</strong><span className="block mt-1">{requisitosSenha(senha).join(' ')}</span></div>}
         </div>
 
         <button

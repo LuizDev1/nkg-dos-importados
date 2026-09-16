@@ -1,0 +1,18 @@
+CREATE TABLE IF NOT EXISTS enderecos_usuarios (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  usuario_id INT NOT NULL,
+  apelido VARCHAR(60) NOT NULL DEFAULT 'Endereço',
+  cep VARCHAR(8) NOT NULL,
+  rua VARCHAR(160) NOT NULL,
+  numero VARCHAR(20) NOT NULL,
+  complemento VARCHAR(100) NOT NULL DEFAULT '',
+  bairro VARCHAR(100) NOT NULL,
+  cidade VARCHAR(100) NOT NULL,
+  estado CHAR(2) NOT NULL,
+  telefone VARCHAR(20) NOT NULL DEFAULT '',
+  principal BOOLEAN NOT NULL DEFAULT FALSE,
+  criado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
+  atualizado_em DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE,
+  INDEX idx_enderecos_usuario (usuario_id, principal)
+);

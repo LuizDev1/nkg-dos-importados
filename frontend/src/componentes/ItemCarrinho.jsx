@@ -5,11 +5,11 @@ export default function ItemCarrinho({ item, onAlterarQuantidade, onRemover, car
 
   return (
     <div className="flex items-center gap-4 bg-white p-4 rounded-lg shadow">
-      <img
-        src={item.foto_url || 'https://placehold.co/80'}
-        alt={item.nome}
-        className="w-16 h-16 object-cover rounded"
-      />
+      {item.foto_url ? (
+        <img src={item.foto_url} alt={item.nome} className="w-16 h-16 object-cover rounded" />
+      ) : (
+        <div role="img" aria-label={`Imagem indisponível de ${item.nome}`} className="flex h-16 w-16 shrink-0 items-center justify-center rounded bg-gray-200 text-[9px] text-gray-500">Sem imagem</div>
+      )}
       <div className="flex-1">
         <p className="font-semibold">{item.nome}</p>
         {item.variacao_nome && <p className="text-sm text-gray-500">{item.variacao_nome}</p>}

@@ -12,13 +12,28 @@ export function ProvedorAutenticacao({ children }) {
   useEffect(() => {
     const tokenSalvo = localStorage.getItem('token');
     const usuarioSalvo = localStorage.getItem('usuario');
+    let ativo = true;
 
     if (tokenSalvo && usuarioSalvo) {
-      setToken(tokenSalvo);
-      setUsuario(JSON.parse(usuarioSalvo));
+      fetch(`${import.meta.env.VITE_API_URL || '/api'}/usuarios/me`, {
+        headers: { Authorization: `Bearer ${tokenSalvo}` },
+      }).then(async (resposta) => {
+        if (!ativo) return;
+        if (!resposta.ok) throw new Error('Sessão inválida');
+        const dados = await resposta.json();
+        setToken(tokenSalvo);
+        setUsuario(dados);
+        localStorage.setItem('usuario', JSON.stringify(dados));
+      }).catch(() => {
+        if (!ativo) return;
+        localStorage.removeItem('token');
+        localStorage.removeItem('usuario');
+        setSessaoEncerrada(true);
+      }).finally(() => { if (ativo) setCarregando(false); });
+    } else {
+      setCarregando(false);
     }
-
-    setCarregando(false);
+    return () => { ativo = false; };
   }, []);
 
   async function login(email, senha) {

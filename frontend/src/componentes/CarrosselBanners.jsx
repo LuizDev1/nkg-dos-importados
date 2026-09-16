@@ -14,9 +14,7 @@ export default function CarrosselBanners({ banners }) {
 
   if (!banners.length) return null;
   const banner = banners[indice];
-  const imagem = (
-    <img key={banner.id} src={banner.imagem_url} alt={banner.titulo || 'Banner da loja'} className="h-48 w-full animate-[page-enter_500ms_ease-out] object-cover sm:h-72 lg:h-96" />
-  );
+  const imagem = <div className="mx-auto max-w-6xl px-4 py-4 sm:py-6"><div className="overflow-hidden rounded-xl border border-[#343024] bg-[#111210] shadow-[0_18px_45px_rgba(0,0,0,.35)]"><img key={banner.id} src={banner.imagem_url} alt={banner.titulo || 'Banner da loja'} className="block h-auto w-full animate-[page-enter_500ms_ease-out]" /></div></div>;
 
   return (
     <section className="relative overflow-hidden bg-[#090a09]" aria-label="Destaques da loja">

@@ -1,7 +1,8 @@
 import { useState } from 'react';
+import { formatarCpf } from '../servicos/formatadores';
 
 export default function FormularioConta({ conta, salvar, aoSalvar }) {
-  const [dados, setDados] = useState({ nome: conta.nome, email: conta.email, cpf: conta.cpf || '' });
+  const [dados, setDados] = useState({ nome: conta.nome, email: conta.email, cpf: formatarCpf(conta.cpf) });
   const [carregando, setCarregando] = useState(false);
   const [erro, setErro] = useState('');
   const [sucesso, setSucesso] = useState('');
@@ -13,7 +14,7 @@ export default function FormularioConta({ conta, salvar, aoSalvar }) {
     setSucesso('');
     try {
       const atualizada = await salvar(dados);
-      setDados({ nome: atualizada.nome, email: atualizada.email, cpf: atualizada.cpf || '' });
+      setDados({ nome: atualizada.nome, email: atualizada.email, cpf: formatarCpf(atualizada.cpf) });
       aoSalvar?.(atualizada);
       setSucesso('Informações atualizadas com sucesso.');
     } catch (erro) {
@@ -37,7 +38,7 @@ export default function FormularioConta({ conta, salvar, aoSalvar }) {
           <input id={`conta-${campo}`} type={tipo} maxLength={limite} required
             autoComplete={autocomplete} inputMode={campo === 'cpf' ? 'numeric' : undefined}
             disabled={carregando} value={dados[campo]}
-            onChange={(e) => { setDados({ ...dados, [campo]: e.target.value }); setSucesso(''); }}
+            onChange={(e) => { setDados({ ...dados, [campo]: campo === 'cpf' ? formatarCpf(e.target.value) : e.target.value }); setSucesso(''); }}
             className="w-full rounded-md border border-[#3a3526] bg-[#151613] px-4 py-3 text-[#f4efe5] focus:outline-none disabled:opacity-60" />
         </div>
       ))}

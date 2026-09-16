@@ -62,7 +62,11 @@ app.use('/api/pagamentos/webhook', express.raw({ type: 'application/json' }));
 app.use('/api/produtos/:produtoId/avaliacoes/minha', require('./middlewares/autenticacaoMiddleware'), express.json({ limit: '8mb' }));
 const imagensUpload = require('./routes/imagemRoutes');
 app.use('/api', imagensUpload.router);
-app.use('/api/uploads', express.static(imagensUpload.pasta, { setHeaders: res => res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin') }));
+const opcoesMidia = { setHeaders: res => res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin') };
+// "media" evita nomes frequentemente associados a publicidade por bloqueadores de conteúdo.
+app.use('/api/media', express.static(imagensUpload.pasta, opcoesMidia));
+// Mantém fotos já cadastradas acessíveis durante a transição.
+app.use('/api/uploads', express.static(imagensUpload.pasta, opcoesMidia));
 app.use(express.json({ limit: process.env.JSON_BODY_LIMIT || '100kb' }));
 
 app.get('/health', async (req, res) => {

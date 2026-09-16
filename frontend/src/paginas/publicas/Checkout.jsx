@@ -4,6 +4,8 @@ import { useCarrinho } from '../../contextos/ContextoCarrinho';
 import { useAutenticacao } from '../../contextos/ContextoAutenticacao';
 import { criarPedido } from '../../servicos/pedidoService';
 import { cotarFrete } from '../../servicos/freteService';
+import { listarEnderecos } from '../../servicos/enderecoService';
+import { formatarCep, formatarCpf, formatarTelefone } from '../../servicos/formatadores';
 
 const API_URL = import.meta.env.VITE_API_URL || '/api';
 
@@ -13,8 +15,13 @@ export default function Checkout() {
   const navigate = useNavigate();
 
   const [formulario, setFormulario] = useState({
-    cep: '', rua: '', numero: '', bairro: '', cidade: '', estado: '', telefone: ''
+    cep: '', rua: '', numero: '', complemento: '', bairro: '', cidade: '', estado: '', telefone: ''
   });
+  const [enderecosSalvos, setEnderecosSalvos] = useState([]);
+  const [enderecoSelecionadoId, setEnderecoSelecionadoId] = useState('');
+  const [carregandoEnderecos, setCarregandoEnderecos] = useState(true);
+  const [erroEnderecos, setErroEnderecos] = useState('');
+  const [mostrarEnderecos, setMostrarEnderecos] = useState(false);
   const [erros, setErros] = useState({});
   const [carregando, setCarregando] = useState(false);
   const [buscandoCep, setBuscandoCep] = useState(false);
@@ -35,6 +42,31 @@ export default function Checkout() {
       navigate('/');
     }
   }, [itens.length, navigate]);
+
+  useEffect(() => { if (usuario?.cpf) setCpf(formatarCpf(usuario.cpf)); }, [usuario]);
+
+  useEffect(() => {
+    let ativo = true;
+    listarEnderecos().then((enderecos) => {
+      if (!ativo) return;
+      setEnderecosSalvos(enderecos);
+      const principal = enderecos.find((endereco) => endereco.principal);
+      if (principal) usarEndereco(principal);
+    }).catch(() => { if (ativo) setErroEnderecos('Não foi possível carregar seus endereços salvos. Atualize a página para tentar novamente.'); })
+      .finally(() => { if (ativo) setCarregandoEnderecos(false); });
+    return () => { ativo = false; };
+  }, []);
+
+  function usarEndereco(endereco) {
+    setEnderecoSelecionadoId(String(endereco.id));
+    setFormulario((atual) => ({
+      ...atual, cep: formatarCep(endereco.cep), rua: endereco.rua || '', numero: endereco.numero || '',
+      complemento: endereco.complemento || '', bairro: endereco.bairro || '', cidade: endereco.cidade || '',
+      estado: endereco.estado || '', telefone: endereco.telefone ? formatarTelefone(endereco.telefone) : atual.telefone,
+    }));
+    setCotacaoFrete(null);
+    setFreteServicoId('');
+  }
 
   if (itens.length === 0 || !usuario) return null;
 
@@ -102,7 +134,8 @@ export default function Checkout() {
 
   function lidarComMudanca(e) {
     const { name, value } = e.target;
-    setFormulario(atual => ({ ...atual, [name]: value }));
+    const formatado = name === 'telefone' ? formatarTelefone(value) : name === 'estado' ? value.replace(/[^a-z]/gi, '').slice(0, 2).toUpperCase() : value;
+    setFormulario(atual => ({ ...atual, [name]: formatado }));
     if (erros[name]) {
       setErros(atual => ({ ...atual, [name]: '' }));
     }
@@ -111,7 +144,7 @@ export default function Checkout() {
   function lidarComCep(e) {
     const { value } = e.target;
     versaoCep.current += 1;
-    setFormulario(atual => ({ ...atual, cep: value }));
+    setFormulario(atual => ({ ...atual, cep: formatarCep(value) }));
     setCotacaoFrete(null);
     setFreteServicoId('');
     if (erros.cep) setErros(atual => ({ ...atual, cep: '' }));
@@ -134,7 +167,7 @@ export default function Checkout() {
     setErro('');
 
     try {
-      const enderecoCompleto = `${formulario.rua}, ${formulario.numero} - ${formulario.bairro}, ${formulario.cidade} - ${formulario.estado}, CEP: ${formulario.cep}`;
+      const enderecoCompleto = `${formulario.rua}, ${formulario.numero}${formulario.complemento ? ` - ${formulario.complemento}` : ''} - ${formulario.bairro}, ${formulario.cidade} - ${formulario.estado}, CEP: ${formulario.cep}`;
       const itensFrete = itens.map(item => ({
         produto_id: item.produto_id,
         quantidade: item.quantidade,
@@ -287,10 +320,13 @@ export default function Checkout() {
 
         {erro && <p className="text-red-600 bg-red-50 p-3 rounded">{erro}</p>}
 
+        {carregandoEnderecos && <p className="text-sm text-gray-500">Carregando endereço principal...</p>}
+        {erroEnderecos && <p role="alert" className="rounded bg-amber-50 p-3 text-sm text-amber-800">{erroEnderecos}</p>}
+
         <div>
           <label htmlFor="cpf-pagamento" className="block text-sm text-gray-600">CPF do comprador</label>
           <input id="cpf-pagamento" type="text" inputMode="numeric" value={cpf}
-            onChange={(e) => setCpf(e.target.value)} required maxLength={14}
+            onChange={(e) => setCpf(formatarCpf(e.target.value))} required maxLength={14}
             placeholder="000.000.000-00" className={classeCampo('cpf')} />
           <p className="text-xs text-gray-500 mt-1">Necessário para identificar o comprador no pagamento.</p>
         </div>
@@ -326,6 +362,11 @@ export default function Checkout() {
           </div>
         </div>
 
+        <div>
+          <label className="block text-sm text-gray-600">Complemento</label>
+          <input type="text" name="complemento" value={formulario.complemento} onChange={lidarComMudanca} className={classeCampo('complemento')} placeholder="Apartamento, bloco, referência..." />
+        </div>
+
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block text-sm text-gray-600">Bairro</label>
@@ -344,6 +385,20 @@ export default function Checkout() {
           <input type="text" name="estado" value={formulario.estado} onChange={lidarComMudanca} className={classeCampo('estado')} placeholder="Ex: DF" maxLength="2" />
           {erros.estado && <p className="text-red-500 text-xs mt-1">{erros.estado}</p>}
         </div>
+
+        {enderecosSalvos.length > 0 && (
+          <div className="rounded border border-gray-200 bg-gray-50 p-4">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div><p className="font-semibold text-gray-800">Endereço salvo aplicado</p><p className="text-xs text-gray-600">Você pode revisar os campos acima antes de finalizar.</p></div>
+              {enderecosSalvos.length > 1 && <button type="button" onClick={() => setMostrarEnderecos((aberto) => !aberto)} className="text-sm font-semibold text-blue-700 underline">{mostrarEnderecos ? 'Fechar opções' : 'Trocar endereço salvo'}</button>}
+            </div>
+            {(mostrarEnderecos || enderecosSalvos.length === 1) && (
+              <div className="mt-3 grid gap-2">
+                {enderecosSalvos.map((endereco) => <button key={endereco.id} type="button" onClick={() => { usarEndereco(endereco); setMostrarEnderecos(false); }} className={`rounded border p-3 text-left text-sm ${String(endereco.id) === enderecoSelecionadoId ? 'border-blue-600 bg-blue-50' : 'border-gray-200 bg-white hover:border-blue-300'}`}><strong>{endereco.apelido}{endereco.principal ? ' · Principal' : ''}</strong><span className="mt-1 block text-gray-600">{endereco.rua}, {endereco.numero}{endereco.complemento ? ` — ${endereco.complemento}` : ''} · {endereco.cidade}/{endereco.estado}</span></button>)}
+              </div>
+            )}
+          </div>
+        )}
 
         <div>
           <label className="block text-sm text-gray-600">Cupom de desconto</label>

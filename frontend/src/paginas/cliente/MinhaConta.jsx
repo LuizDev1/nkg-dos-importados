@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import FormularioConta from '../../componentes/FormularioConta';
 import { buscarMinhaConta, salvarMinhaConta } from '../../servicos/contaService';
 import { useAutenticacao } from '../../contextos/ContextoAutenticacao';
+import EnderecosConta from '../../componentes/EnderecosConta';
 
 export default function MinhaConta() {
   const [conta, setConta] = useState(null);
@@ -36,6 +37,7 @@ export default function MinhaConta() {
           <FormularioConta conta={conta} salvar={salvarMinhaConta} aoSalvar={(dados) => {
             setConta(dados); atualizarUsuario(dados);
           }} />
+          <EnderecosConta />
           <div className="mt-7 flex flex-wrap gap-5 border-t border-[#343024] pt-5 text-sm text-[#d4af45]">
             <Link to="/minha-conta/pedidos" className="hover:underline">Meus pedidos</Link>
             <Link to="/privacidade" className="hover:underline">Privacidade e dados</Link>

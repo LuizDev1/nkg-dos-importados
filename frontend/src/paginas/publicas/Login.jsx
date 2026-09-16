@@ -5,6 +5,7 @@ import { useAutenticacao } from '../../contextos/ContextoAutenticacao';
 export default function Login() {
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
+  const [mostrarSenha, setMostrarSenha] = useState(false);
   const [erro, setErro] = useState('');
   const [carregando, setCarregando] = useState(false);
 
@@ -63,13 +64,7 @@ export default function Login() {
 
         <div className="mb-6">
           <label className="block text-[11px] uppercase tracking-[0.2em] text-zinc-400 mb-2 font-medium">Senha</label>
-          <input
-            type="password"
-            value={senha}
-            onChange={(e) => setSenha(e.target.value)}
-            required
-            className="w-full bg-zinc-900/90 border border-zinc-800 rounded-lg px-4 py-3 text-zinc-100 text-sm focus:outline-none focus:border-amber-500/80 transition-colors"
-          />
+          <div className="relative"><input type={mostrarSenha ? 'text' : 'password'} value={senha} onChange={(e) => setSenha(e.target.value)} required autoComplete="current-password" className="w-full bg-zinc-900/90 border border-zinc-800 rounded-lg px-4 py-3 pr-20 text-zinc-100 text-sm focus:outline-none focus:border-amber-500/80 transition-colors" /><button type="button" onClick={() => setMostrarSenha((valor) => !valor)} aria-pressed={mostrarSenha} className="absolute inset-y-0 right-3 text-xs font-semibold text-[#d4af45] hover:text-[#e2c25d]">{mostrarSenha ? 'Ocultar' : 'Mostrar'}</button></div>
         </div>
 
         <button
