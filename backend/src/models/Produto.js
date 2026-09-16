@@ -38,7 +38,7 @@ async function listarAtivos(filtros = {}){
       parametros
     );
 
-    return produtos;
+    return produtos.map(p => ({ ...p, tamanhos: typeof p.tamanhos_json === 'string' ? JSON.parse(p.tamanhos_json) : (p.tamanhos_json || []) }));
 };
 
 async function listarCategorias() {
@@ -53,7 +53,7 @@ async function listarCategorias() {
 async function listarTodos(){
     const [produtos] = await pool.query ('SELECT * from produtos');
 
-    return produtos;
+    return produtos.map(p => ({ ...p, tamanhos: typeof p.tamanhos_json === 'string' ? JSON.parse(p.tamanhos_json) : (p.tamanhos_json || []) }));
 };
 
 async function buscarPorId(id){
@@ -64,7 +64,8 @@ async function buscarPorId(id){
        FROM produtos p WHERE p.id = ?`,
       [id]
     );
-    return produtos[0];
+    const p = produtos[0];
+    return p ? { ...p, tamanhos: typeof p.tamanhos_json === 'string' ? JSON.parse(p.tamanhos_json) : (p.tamanhos_json || []) } : undefined;
 };
 
 async function criar(dadosProdutos){
@@ -72,9 +73,9 @@ async function criar(dadosProdutos){
 
     const [resultado] = await pool.query(
         `INSERT INTO produtos
-          (nome, categoria, preco, tag, foto_url, estoque_qtd, estoque_minimo, peso_kg, largura_cm, altura_cm, comprimento_cm)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [nome, categoria, preco, tag, foto_url, estoque_qtd, dadosProdutos.estoque_minimo, dadosProdutos.peso_kg, dadosProdutos.largura_cm, dadosProdutos.altura_cm, dadosProdutos.comprimento_cm]
+          (nome, categoria, preco, tag, foto_url, estoque_qtd, estoque_minimo, peso_kg, largura_cm, altura_cm, comprimento_cm, tamanhos_json)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [nome, categoria, preco, tag, foto_url, estoque_qtd, dadosProdutos.estoque_minimo, dadosProdutos.peso_kg, dadosProdutos.largura_cm, dadosProdutos.altura_cm, dadosProdutos.comprimento_cm, JSON.stringify(dadosProdutos.tamanhos || [])]
     );
 
     return resultado.insertId;
@@ -87,9 +88,9 @@ async function atualizar(id, dadosProduto) {
   await pool.query(
     `UPDATE produtos
      SET nome = ?, categoria = ?, preco = ?, tag = ?, foto_url = ?, estoque_qtd = ?, estoque_minimo = ?,
-       peso_kg = ?, largura_cm = ?, altura_cm = ?, comprimento_cm = ?
+       peso_kg = ?, largura_cm = ?, altura_cm = ?, comprimento_cm = ?, tamanhos_json = ?
      WHERE id = ?`,
-    [nome, categoria, preco, tag, foto_url, estoque_qtd, estoque_minimo, peso_kg, largura_cm, altura_cm, comprimento_cm, id]
+    [nome, categoria, preco, tag, foto_url, estoque_qtd, estoque_minimo, peso_kg, largura_cm, altura_cm, comprimento_cm, JSON.stringify(dadosProduto.tamanhos || []), id]
   );
 }
 

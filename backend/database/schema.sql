@@ -29,6 +29,8 @@ CREATE TABLE produtos (
   altura_cm DECIMAL(8,2) NOT NULL DEFAULT 10,
   comprimento_cm DECIMAL(8,2) NOT NULL DEFAULT 30,
   ativo BOOLEAN NOT NULL DEFAULT TRUE,
+  estoque_minimo INT NOT NULL DEFAULT 5,
+  tamanhos_json JSON NULL,
   criado_em DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -45,11 +47,29 @@ CREATE TABLE produto_variacoes (
   id INT PRIMARY KEY AUTO_INCREMENT,
   produto_id INT NOT NULL,
   nome VARCHAR(120) NOT NULL,
+  tamanho VARCHAR(20) NULL,
   estoque_qtd INT NOT NULL DEFAULT 0,
   ativo BOOLEAN NOT NULL DEFAULT TRUE,
+  atributos_json JSON NULL,
   criado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (produto_id) REFERENCES produtos(id) ON DELETE CASCADE,
-  UNIQUE KEY uq_variacao_produto_nome (produto_id, nome)
+  UNIQUE KEY uq_variacao_cor_tamanho (produto_id, nome, tamanho)
+);
+
+CREATE TABLE movimentacoes_estoque (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  produto_id INT NOT NULL,
+  variacao_id INT NULL,
+  tipo ENUM('entrada','saida','ajuste') NOT NULL,
+  quantidade INT NOT NULL,
+  saldo_anterior INT NOT NULL,
+  saldo_posterior INT NOT NULL,
+  motivo VARCHAR(255) NOT NULL DEFAULT '',
+  usuario_id INT NULL,
+  criado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (produto_id) REFERENCES produtos(id) ON DELETE CASCADE,
+  FOREIGN KEY (variacao_id) REFERENCES produto_variacoes(id) ON DELETE SET NULL,
+  INDEX idx_movimentacoes_produto (produto_id, criado_em)
 );
 
 CREATE TABLE favoritos (
@@ -165,9 +185,17 @@ CREATE TABLE IF NOT EXISTS banners (
   id INT PRIMARY KEY AUTO_INCREMENT,
   titulo VARCHAR(150) NOT NULL DEFAULT '',
   imagem_url VARCHAR(500) NOT NULL,
+  imagem_url_2 VARCHAR(500) NOT NULL DEFAULT '',
   link_url VARCHAR(500) NOT NULL DEFAULT '',
   ativo BOOLEAN NOT NULL DEFAULT TRUE,
   ordem INT NOT NULL DEFAULT 0,
+  posicao_x TINYINT UNSIGNED NOT NULL DEFAULT 50,
+  posicao_y TINYINT UNSIGNED NOT NULL DEFAULT 50,
+  posicao_x_2 TINYINT UNSIGNED NOT NULL DEFAULT 50,
+  posicao_y_2 TINYINT UNSIGNED NOT NULL DEFAULT 50,
+  zoom TINYINT UNSIGNED NOT NULL DEFAULT 100,
+  zoom_2 TINYINT UNSIGNED NOT NULL DEFAULT 100,
+  principal BOOLEAN NOT NULL DEFAULT FALSE,
   criado_em DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 

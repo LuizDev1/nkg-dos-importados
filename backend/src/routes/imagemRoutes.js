@@ -6,7 +6,7 @@ const autenticar = require('../middlewares/autenticacaoMiddleware');
 const admin = require('../middlewares/adminMiddleware');
 const router = express.Router();
 const pasta = path.join(__dirname, '../../uploads');
-router.post('/imagens', autenticar, admin, express.raw({ type: ['image/jpeg', 'image/png', 'image/webp'], limit: '1mb' }), async (req, res) => {
+async function salvarImagem(req, res) {
   const bytes = req.body;
   if (!Buffer.isBuffer(bytes)) return res.status(400).json({ mensagem: 'Use JPG, PNG ou WebP' });
   const tipo = req.get('Content-Type');
@@ -14,6 +14,7 @@ router.post('/imagens', autenticar, admin, express.raw({ type: ['image/jpeg', 'i
   if (tipo === 'image/png' && bytes.subarray(0, 8).equals(Buffer.from([137,80,78,71,13,10,26,10]))) extensao = 'png';
   if (tipo === 'image/jpeg' && bytes[0] === 255 && bytes[1] === 216 && bytes[2] === 255) extensao = 'jpg';
   if (tipo === 'image/webp' && bytes.toString('ascii', 0, 4) === 'RIFF' && bytes.toString('ascii', 8, 12) === 'WEBP') extensao = 'webp';
+  if (req.path === '/imagens/banner' && tipo === 'image/gif' && ['GIF87a', 'GIF89a'].includes(bytes.toString('ascii', 0, 6))) extensao = 'gif';
   if (!extensao) return res.status(400).json({ mensagem: 'Foto inválida' });
   try {
     await fs.mkdir(pasta, { recursive: true });
@@ -23,5 +24,7 @@ router.post('/imagens', autenticar, admin, express.raw({ type: ['image/jpeg', 'i
   } catch {
     return res.status(500).json({ mensagem: 'Erro ao salvar foto' });
   }
-});
+}
+router.post('/imagens', autenticar, admin, express.raw({ type: ['image/jpeg', 'image/png', 'image/webp'], limit: '1mb' }), salvarImagem);
+router.post('/imagens/banner', autenticar, admin, express.raw({ type: ['image/jpeg', 'image/png', 'image/webp', 'image/gif'], limit: '20mb' }), salvarImagem);
 module.exports = { router, pasta };

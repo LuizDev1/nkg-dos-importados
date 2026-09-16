@@ -32,7 +32,10 @@ export async function listarCategorias() {
 }
 
 export async function buscarProduto(id) {
-  const resposta = await fetch(`${API_URL}/produtos/${id}`);
+  const resposta = await fetch(`${API_URL}/produtos/${id}?atualizacao=${Date.now()}`, {
+    cache: 'no-store',
+    headers: { 'Cache-Control': 'no-cache' },
+  });
 
   if (!resposta.ok) {
     throw new Error('Produto não encontrado');

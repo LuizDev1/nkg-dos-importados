@@ -1,5 +1,6 @@
 import { corStatus } from '../../servicos/statusVisual';
 import { useEffect, useState } from 'react';
+import { avisarAdmin } from '../../utilitarios/avisoAdmin';
 import { Link, useParams } from 'react-router-dom';
 import {
   buscarPedido,
@@ -39,7 +40,7 @@ export default function DetalhePedido() {
         codigo_rastreio: codigoRastreio,
       }));
 
-      setMensagem('Código de rastreio salvo com sucesso.');
+      avisarAdmin('Código de rastreio salvo com sucesso.');
     } catch (erro) {
       setErro(erro.message);
     } finally {

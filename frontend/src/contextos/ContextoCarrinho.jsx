@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { abandonarPedidoPendente } from '../servicos/pedidoService';
 
 import { buscarProduto } from '../servicos/produtoService';
@@ -7,6 +8,7 @@ import { limitarQuantidade, atualizarEstoqueCarrinho } from '../utilitarios/esto
 const ContextoCarrinho = createContext(null);
 
 export function ProvedorCarrinho({ children }) {
+  const { pathname } = useLocation();
   const [itens, setItens] = useState(() => {
     const salvo = localStorage.getItem('carrinho');
     return salvo
@@ -24,19 +26,35 @@ export function ProvedorCarrinho({ children }) {
 
   useEffect(() => {
     let ativo = true;
-    setCarregandoEstoque(true);
-    setErroEstoque('');
-    const ids = produtosCarrinho ? produtosCarrinho.split(',') : [];
-    Promise.all(ids.map(async id => [id, await buscarProduto(id)]))
-      .then(resultados => {
+    async function revalidarCarrinho() {
+      setCarregandoEstoque(true);
+      setErroEstoque('');
+      const ids = produtosCarrinho ? produtosCarrinho.split(',') : [];
+      try {
+        const resultados = await Promise.all(ids.map(async id => [id, await buscarProduto(id)]));
         if (!ativo) return;
         const produtos = new Map(resultados);
         setItens(atuais => atualizarEstoqueCarrinho(atuais, produtos));
-      })
-      .catch(() => { if (ativo) setErroEstoque('Erro ao atualizar estoque. Recarregue a página para tentar novamente.'); })
-      .finally(() => { if (ativo) setCarregandoEstoque(false); });
-    return () => { ativo = false; };
-  }, [produtosCarrinho]);
+      } catch {
+        if (ativo) setErroEstoque('Erro ao atualizar estoque. Recarregue a página para tentar novamente.');
+      } finally {
+        if (ativo) setCarregandoEstoque(false);
+      }
+    }
+
+    function aoRetornarParaAba() {
+      if (document.visibilityState === 'visible') revalidarCarrinho();
+    }
+
+    revalidarCarrinho();
+    window.addEventListener('focus', revalidarCarrinho);
+    document.addEventListener('visibilitychange', aoRetornarParaAba);
+    return () => {
+      ativo = false;
+      window.removeEventListener('focus', revalidarCarrinho);
+      document.removeEventListener('visibilitychange', aoRetornarParaAba);
+    };
+  }, [produtosCarrinho, pathname]);
 
   function invalidarPedidoPendente() {
     const pedidoId = localStorage.getItem('pedido_pendente_carrinho');
@@ -48,11 +66,14 @@ export function ProvedorCarrinho({ children }) {
   }
 
   function adicionarItem(produto, quantidade = 1, variacao = null) {
+    if (produto.ativo === false || Number(produto.ativo) === 0) return;
+
     const estoque = Number(variacao ? variacao.estoque_qtd : produto.estoque_qtd);
     if (!Number.isInteger(quantidade) || quantidade < 1 || !Number.isFinite(estoque) || estoque < 1) return;
     quantidade = Math.min(quantidade, estoque);
     invalidarPedidoPendente();
-    const chave = variacao ? `${produto.id}:${variacao.id}` : String(produto.id);
+    const chaveVariacao = variacao?.id || (variacao?.tamanho ? `tamanho-${variacao.tamanho}` : '');
+    const chave = variacao ? `${produto.id}:${chaveVariacao}` : String(produto.id);
     setItens((atual) => {
       const existente = atual.find((item) => item.chave === chave);
 
@@ -70,7 +91,8 @@ export function ProvedorCarrinho({ children }) {
           estoque_qtd: estoque,
           produto_id: produto.id,
           variacao_id: variacao?.id || null,
-          variacao_nome: variacao?.nome || null,
+          tamanho: variacao?.tamanho || null,
+          variacao_nome: variacao ? [variacao.nome, variacao.tamanho].filter(Boolean).join(' / ') : null,
           chave,
           nome: produto.nome,
           preco: Number(produto.preco),

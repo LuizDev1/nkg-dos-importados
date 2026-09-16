@@ -1,6 +1,7 @@
 import { corStatus } from '../../servicos/statusVisual';
 import CampoRotulado from '../../componentes/CampoRotulado';
 import { useEffect, useState } from 'react';
+import { avisarAdmin } from '../../utilitarios/avisoAdmin';
 import { Link } from 'react-router-dom';
 import {
   listarPromocoes,
@@ -106,6 +107,7 @@ export default function Promocoes() {
       setForm(FORM_VAZIO);
       setEditandoId(null);
       await carregar();
+      avisarAdmin(editandoId ? 'Promoção atualizada com sucesso.' : 'Promoção criada com sucesso.');
     } catch (erroSalvamento) {
       setErro(erroSalvamento.message);
     } finally {
@@ -117,6 +119,7 @@ export default function Promocoes() {
     try {
       await reativarPromocao(id);
       await carregar();
+      avisarAdmin('Promoção reativada com sucesso.');
     } catch (erroReativacao) {
       setErro(erroReativacao.message);
     }
@@ -143,6 +146,7 @@ export default function Promocoes() {
     try {
       await desativarPromocao(id);
       await carregar();
+      avisarAdmin('Promoção desativada com sucesso.');
     } catch (erroDesativacao) {
       setErro(erroDesativacao.message);
     }

@@ -30,8 +30,26 @@ async function criar(usuarioId, dados) {
 }
 
 async function remover(usuarioId, id) {
-  const [resultado] = await pool.query('DELETE FROM enderecos_usuarios WHERE id = ? AND usuario_id = ?', [id, usuarioId]);
-  return resultado.affectedRows;
+  const conexao = await pool.getConnection();
+  try {
+    await conexao.beginTransaction();
+    await conexao.query('SELECT id FROM usuarios WHERE id = ? FOR UPDATE', [usuarioId]);
+    const [enderecos] = await conexao.query('SELECT id, principal FROM enderecos_usuarios WHERE usuario_id = ? ORDER BY principal DESC, atualizado_em DESC, id DESC FOR UPDATE', [usuarioId]);
+    if (!enderecos.some(endereco => String(endereco.id) === String(id))) {
+      await conexao.rollback();
+      return 0;
+    }
+    const [resultado] = await conexao.query('DELETE FROM enderecos_usuarios WHERE id = ? AND usuario_id = ?', [id, usuarioId]);
+    const restantes = enderecos.filter(endereco => String(endereco.id) !== String(id));
+    if (restantes.length && !restantes.some(endereco => endereco.principal)) {
+      await conexao.query('UPDATE enderecos_usuarios SET principal = TRUE WHERE id = ? AND usuario_id = ?', [restantes[0].id, usuarioId]);
+    }
+    await conexao.commit();
+    return resultado.affectedRows;
+  } catch (erro) {
+    await conexao.rollback();
+    throw erro;
+  } finally { conexao.release(); }
 }
 
 async function definirPrincipal(usuarioId, id) {

@@ -93,7 +93,7 @@ export default function Home() {
 
       <CarrosselBanners banners={banners} />
 
-      <div className="max-w-6xl mx-auto px-4 py-10">
+      <div className="mx-auto w-full max-w-[1760px] px-4 py-10 sm:px-6 lg:px-8">
         <div className="mb-7">
           <p className="mb-2 text-sm font-semibold uppercase tracking-[0.28em] text-[#b99a42]">Catálogo</p>
           <h1 className="text-3xl font-bold text-[#f4efe5]">Nossos produtos</h1>

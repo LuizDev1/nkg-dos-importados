@@ -22,6 +22,8 @@ export default function DetalheProduto() {
   const [cotacao, setCotacao] = useState(null);
   const [calculandoFrete, setCalculandoFrete] = useState(false);
   const [erroFrete, setErroFrete] = useState('');
+  const [corSelecionada, setCorSelecionada] = useState('');
+  const [tamanhoSelecionado, setTamanhoSelecionado] = useState('');
   const [variacaoId, setVariacaoId] = useState('');
   const [avisoEstoque, setAvisoEstoque] = useState('');
   const [avaliacoes, setAvaliacoes] = useState([]);
@@ -33,6 +35,7 @@ export default function DetalheProduto() {
   const [votandoUtil, setVotandoUtil] = useState(null);
   const [erroUtil, setErroUtil] = useState('');
   const [imagemSelecionada, setImagemSelecionada] = useState('');
+  const [avaliacoesAbertas, setAvaliacoesAbertas] = useState(true);
 
   const { adicionarItem } = useCarrinho();
   const { usuario } = useAutenticacao();
@@ -59,6 +62,7 @@ export default function DetalheProduto() {
     setFormAvaliacao({ nota: 5, comentario: '', fotos: [], anonimo: false });
     setAdicionado(false);
     setErroCarrinho('');
+    setAvaliacoesAbertas(true);
     async function carregar() {
       setCarregando(true);
       setErro('');
@@ -71,6 +75,8 @@ export default function DetalheProduto() {
         setImagemSelecionada(dados.foto_url || dados.imagens?.[0]?.imagem_url || '');
         setQuantidade(1);
         setVariacaoId('');
+        setCorSelecionada('');
+        setTamanhoSelecionado('');
         setCotacao(null);
 
         try {
@@ -120,14 +126,45 @@ export default function DetalheProduto() {
     return () => { ativo = false; freteVersao.current += 1; paginaVersao.current += 1; clearTimeout(timerAdicionado.current); };
   }, [id, usuario]);
 
+  function escolherOpcao(cor, tamanho) {
+    setCorSelecionada(cor);
+    setTamanhoSelecionado(tamanho);
+    const tamanhoValido = !produto.tamanhos?.length || produto.tamanhos.includes(tamanho);
+    const variacao = tamanhoValido ? (produto.variacoes || []).find(v => v.nome === cor && (v.tamanho || '') === tamanho) : null;
+    const somenteTamanhos = !produto.variacoes?.length && produto.tamanhos?.length;
+    setVariacaoId(variacao ? String(variacao.id) : (somenteTamanhos && tamanho ? `tamanho:${tamanho}` : ''));
+    freteVersao.current += 1;
+    setCalculandoFrete(false);
+    setQuantidade(1);
+    setCotacao(null);
+    setAvisoEstoque('');
+    setErroCarrinho('');
+  }
+
+  function alternarCor(cor) {
+    escolherOpcao(corSelecionada === cor ? '' : cor, tamanhoSelecionado);
+  }
+
+  function alternarTamanho(tamanho) {
+    escolherOpcao(corSelecionada, tamanhoSelecionado === tamanho ? '' : tamanho);
+  }
+
   function aoAdicionar() {
-    const variacao = (produto.variacoes || []).find(
+    if (produto.ativo === false || Number(produto.ativo) === 0) {
+      setErroCarrinho('Este produto está inativo e não pode ser comprado.');
+      return;
+    }
+    let variacao = (produto.variacoes || []).find(
       (item) => String(item.id) === variacaoId
     );
+    if (!variacao && variacaoId.startsWith('tamanho:') && !produto.variacoes?.length) {
+      variacao = { nome: '', tamanho: variacaoId.split(':')[1], estoque_qtd: produto.estoque_qtd };
+    }
 
     const estoque = Number(variacao ? variacao.estoque_qtd : produto.estoque_qtd);
     if (!Number.isInteger(quantidade) || quantidade < 1 || quantidade > estoque || !Number.isFinite(estoque)
-      || (produto.variacoes?.length && !variacao)) {
+      || (produto.tamanhos?.length && !produto.tamanhos.includes(variacao?.tamanho))
+      || ((produto.variacoes?.length || produto.tamanhos?.length) && !variacao)) {
       setErroCarrinho('Escolha uma variação e uma quantidade válida dentro do estoque.');
       return;
     }
@@ -264,13 +301,25 @@ export default function DetalheProduto() {
   if (carregando) return <p className="text-center mt-10">Carregando produto...</p>;
   if (erro) return <p className="text-center mt-10 text-red-600">{erro}</p>;
   if (!produto) return null;
-  const variacaoSelecionada = (produto.variacoes || []).find((item) => String(item.id) === variacaoId);
-  const estoqueDisponivel = produto.variacoes?.length ? Number(variacaoSelecionada?.estoque_qtd || 0) : Number(produto.estoque_qtd);
+  const variacaoSelecionada = (produto.variacoes || []).find((item) => String(item.id) === variacaoId)
+    || (variacaoId.startsWith('tamanho:') && !produto.variacoes?.length
+      ? { nome: '', tamanho: variacaoId.split(':')[1], estoque_qtd: produto.estoque_qtd }
+      : null);
+  const estoqueTotalVariacoes = (produto.variacoes || []).reduce((total, variacao) => total + (variacao.ativo === false ? 0 : Number(variacao.estoque_qtd || 0)), 0);
+  const estoqueFiltrado = (produto.variacoes || []).filter(variacao =>
+    (!corSelecionada || variacao.nome === corSelecionada) &&
+    (!tamanhoSelecionado || variacao.tamanho === tamanhoSelecionado)
+  ).reduce((total, variacao) => total + Number(variacao.estoque_qtd || 0), 0);
+  const estoqueSemSelecao = produto.variacoes?.length ? estoqueTotalVariacoes : Number(produto.estoque_qtd);
+  const estoqueDisponivel = variacaoSelecionada ? Number(variacaoSelecionada.estoque_qtd || 0)
+    : (corSelecionada || tamanhoSelecionado ? estoqueFiltrado : estoqueSemSelecao);
   const mediaAvaliacoes = avaliacoes.length
     ? avaliacoes.reduce((total, avaliacao) => total + Number(avaliacao.nota), 0) / avaliacoes.length
     : 0;
   const imagensProduto = [produto.foto_url, ...(produto.imagens || []).map((imagem) => imagem.imagem_url)]
     .filter((url, indice, lista) => url && lista.indexOf(url) === indice);
+  const coresDisponiveis = [...new Set((produto.variacoes || []).map(v => v.nome).filter(Boolean))];
+  const produtoAtivo = produto.ativo !== false && Number(produto.ativo) !== 0;
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
@@ -309,8 +358,10 @@ export default function DetalheProduto() {
               <button
                 type="button"
                 onClick={() => usuario ? alternarFavorito(produto) : navigate('/login')}
-                className={`shrink-0 rounded-full border px-3 py-1.5 text-lg ${estaFavorito(produto.id) ? 'border-[#d4af45] bg-[#d4af45] text-[#090a09]' : 'border-[#3a3526] text-[#d4af45] hover:border-[#d4af45]'}`}
-                aria-label={estaFavorito(produto.id) ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
+                disabled={!produtoAtivo}
+                className={`shrink-0 rounded-full border px-3 py-1.5 text-lg disabled:cursor-not-allowed disabled:opacity-40 ${estaFavorito(produto.id) ? 'border-[#d4af45] bg-[#d4af45] text-[#090a09]' : 'border-[#3a3526] text-[#d4af45] hover:border-[#d4af45]'}`}
+                aria-label={!produtoAtivo ? 'Produto inativo' : estaFavorito(produto.id) ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
+                title={!produtoAtivo ? 'Produto inativo' : undefined}
               >
                 {estaFavorito(produto.id) ? '♥' : '♡'}
               </button>
@@ -324,33 +375,35 @@ export default function DetalheProduto() {
             })}
           </p>
 
-          {produto.estoque_qtd > 0 ? (
+          {!produtoAtivo ? (
+            <p className="mb-4 text-sm font-semibold text-red-500">Produto inativo e indisponível para compra</p>
+          ) : estoqueDisponivel > 0 ? (
             <p className="text-sm text-green-600 mb-4">
-              Em estoque ({produto.estoque_qtd} disponíveis)
+              Em estoque ({estoqueDisponivel} disponíveis)
             </p>
           ) : (
             <p className="text-sm text-red-600 mb-4">Fora de estoque</p>
           )}
 
-          {produto.variacoes?.length > 0 && (
+          {coresDisponiveis.length > 0 && (
             <div className="mb-4">
-              <p id="variacoes-label" className="mb-2 text-sm font-medium">Escolha uma variação:</p>
-              <div className="flex flex-wrap gap-2" role="group" aria-labelledby="variacoes-label">
-                {produto.variacoes.map((variacao) => {
-                  const selecionada = String(variacao.id) === variacaoId;
-                  const indisponivel = Number(variacao.estoque_qtd) <= 0;
-                  return (
-                    <button
-                      key={variacao.id}
-                      type="button"
-                      disabled={indisponivel}
-                      aria-pressed={selecionada}
-                      onClick={() => { freteVersao.current += 1; setCalculandoFrete(false); setVariacaoId(String(variacao.id)); setQuantidade(1); setCotacao(null); setAvisoEstoque(''); setErroCarrinho(''); }}
-                      className={`rounded border px-3 py-2 text-sm font-semibold transition focus:outline-none focus:ring-2 focus:ring-[#d4af45] focus:ring-offset-2 ${selecionada ? 'border-[#d4af45] bg-[#d4af45] text-[#090a09]' : indisponivel ? 'cursor-not-allowed border-gray-200 bg-gray-100 text-gray-400 line-through' : 'border-[#49422f] text-[#d4af45] hover:border-[#d4af45] hover:bg-[#d4af45]/10'}`}
-                    >
-                      {variacao.nome}{indisponivel ? ' · indisponível' : ` · ${variacao.estoque_qtd} disponíveis`}
-                    </button>
-                  );
+              <p id="cores-label" className="mb-2 text-sm font-medium">Escolha uma cor/variação:</p>
+              <div className="flex flex-wrap gap-2" role="group" aria-labelledby="cores-label">
+                {coresDisponiveis.map(cor => (
+                  <button key={cor} type="button" aria-pressed={corSelecionada === cor} onClick={() => alternarCor(cor)} className={`rounded border px-3 py-2 text-sm font-semibold ${corSelecionada === cor ? 'border-[#d4af45] bg-[#d4af45] text-[#090a09]' : 'border-[#49422f] text-[#d4af45] hover:border-[#d4af45]'}`}>{cor}</button>
+                ))}
+              </div>
+            </div>
+          )}
+          {produto.tamanhos?.length > 0 && (
+            <div className="mb-4">
+              <p id="tamanhos-label" className="mb-2 text-sm font-medium">Escolha um tamanho:</p>
+              <div className="flex flex-wrap gap-2" role="group" aria-labelledby="tamanhos-label">
+                {['PP','P','M','G','GG'].filter(t => produto.tamanhos.includes(t)).map(tamanho => {
+                  const disponivel = produto.variacoes?.length
+                    ? produto.variacoes.some(v => (!corSelecionada || v.nome === corSelecionada) && v.tamanho === tamanho && Number(v.estoque_qtd) > 0)
+                    : Number(produto.estoque_qtd) > 0;
+                  return <button key={tamanho} type="button" disabled={!disponivel && tamanhoSelecionado !== tamanho} aria-pressed={tamanhoSelecionado === tamanho} onClick={() => alternarTamanho(tamanho)} className={`rounded border px-3 py-2 text-sm font-semibold disabled:opacity-40 ${tamanhoSelecionado === tamanho ? 'border-[#d4af45] bg-[#d4af45] text-[#090a09]' : 'border-[#49422f] text-[#d4af45] hover:border-[#d4af45]'}`}>{tamanho}</button>;
                 })}
               </div>
             </div>
@@ -362,7 +415,7 @@ export default function DetalheProduto() {
               type="number"
               min="1"
               max={estoqueDisponivel}
-              disabled={estoqueDisponivel === 0}
+              disabled={!produtoAtivo || estoqueDisponivel === 0}
               value={quantidade}
               onChange={(e) => {
                 const novaQuantidade = Number(e.target.value);
@@ -377,10 +430,10 @@ export default function DetalheProduto() {
 
           <button
             onClick={aoAdicionar}
-            disabled={estoqueDisponivel === 0}
+            disabled={!produtoAtivo || estoqueDisponivel === 0}
             className={`w-full py-3 rounded transition ${adicionado
                 ? 'bg-green-600 text-white'
-                : estoqueDisponivel === 0
+                : !produtoAtivo || estoqueDisponivel === 0
                   ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                   : 'bg-blue-600 text-white hover:bg-blue-700'
               }`}
@@ -390,7 +443,7 @@ export default function DetalheProduto() {
 
           {erroCarrinho && <p role="alert" className="mt-2 text-sm text-red-600">{erroCarrinho}</p>}
 
-          {((produto.variacoes?.length > 0 && variacaoSelecionada && estoqueDisponivel === 0)
+          {produtoAtivo && ((produto.variacoes?.length > 0 && variacaoSelecionada && estoqueDisponivel === 0)
             || (!produto.variacoes?.length && estoqueDisponivel === 0)) && (
               <button
                 type="button"
@@ -479,10 +532,10 @@ export default function DetalheProduto() {
         </div>
       </div>
 
-      <section className="mt-12 border-t border-[#302b20] pt-8">
-        <div className="mb-6 flex flex-wrap items-end justify-between gap-2">
+      <section id="avaliacoes" className="mt-12 scroll-mt-24 border-t border-[#302b20] pt-8">
+        <button type="button" onClick={() => setAvaliacoesAbertas(aberta => !aberta)} aria-expanded={avaliacoesAbertas} aria-controls="conteudo-avaliacoes" className="mb-6 flex w-full flex-wrap items-end justify-between gap-3 rounded-xl bg-[#11120f] px-5 py-4 text-left hover:bg-[#171813]">
           <h2 className="text-xl font-bold">Avaliações</h2>
-          <div className="flex items-center gap-3" aria-label={mediaAvaliacoes.toFixed(1) + ' de 5 estrelas'}>
+          <div className="ml-auto flex items-center gap-3" aria-label={mediaAvaliacoes.toFixed(1) + ' de 5 estrelas'}>
             <span className="text-4xl font-bold leading-none text-[#d4af45]">
               {mediaAvaliacoes.toFixed(1)}
             </span>
@@ -501,8 +554,10 @@ export default function DetalheProduto() {
               </p>
             </div>
           </div>
-        </div>
+          <span className={`text-2xl text-[#d4af45] transition-transform ${avaliacoesAbertas ? 'rotate-180' : ''}`} aria-hidden="true">⌄</span>
+        </button>
 
+        {avaliacoesAbertas && <div id="conteudo-avaliacoes">
         {avaliacoes.length === 0 ? (
           <p className="text-sm text-[#aaa396]">Ainda não há avaliações para este produto.</p>
         ) : (
@@ -594,6 +649,7 @@ export default function DetalheProduto() {
             {mensagemAvaliacao && <p className="text-sm text-[#d8d1c4]">{mensagemAvaliacao}</p>}
           </form>
         )}
+        </div>}
 
       </section>
 

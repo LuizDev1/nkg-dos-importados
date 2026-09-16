@@ -1,5 +1,6 @@
 import { corStatus } from '../../servicos/statusVisual';
 import { useEffect, useState } from 'react';
+import { avisarAdmin } from '../../utilitarios/avisoAdmin';
 import { Link } from 'react-router-dom';
 import { listarPedidosAdmin, atualizarStatusOperacional } from '../../servicos/pedidoService';
 
@@ -59,6 +60,7 @@ export default function Pedidos() {
     try {
       await atualizarStatusOperacional(pedidoId, novoStatus);
       await carregar();
+      avisarAdmin('Status do pedido atualizado com sucesso.');
     } catch (erro) {
       setErro(erro.message);
     }

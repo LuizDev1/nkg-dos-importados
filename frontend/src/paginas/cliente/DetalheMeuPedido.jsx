@@ -188,6 +188,13 @@ export default function DetalheMeuPedido() {
           Produtos comprados
         </h2>
 
+        {pedido.status_pedido === 'entregue' && (
+          <div className="mx-5 mb-5 rounded-lg border border-[#d4af45]/50 bg-[#d4af45]/10 p-4">
+            <p className="font-semibold text-[#d4af45]">Seu pedido foi entregue. Conte como foi sua experiência.</p>
+            <p className="mt-1 text-sm text-[#c7c0b4]">Você pode avaliar cada produto comprado uma vez.</p>
+          </div>
+        )}
+
         <div className="divide-y">
           {(pedido.itens || []).map((item) => (
             <div
@@ -219,6 +226,15 @@ export default function DetalheMeuPedido() {
                 <p className="text-sm text-gray-500">
                   Preço unitário: {formatarValor(item.preco_unitario)}
                 </p>
+
+                {pedido.status_pedido === 'entregue' && (
+                  <Link
+                    to={`/produto/${item.produto_id}#avaliacoes`}
+                    className="mt-3 inline-flex rounded border border-[#d4af45] px-3 py-1.5 text-sm font-semibold text-[#d4af45] hover:bg-[#d4af45] hover:text-[#090a09]"
+                  >
+                    Avaliar produto
+                  </Link>
+                )}
               </div>
 
               <div>
