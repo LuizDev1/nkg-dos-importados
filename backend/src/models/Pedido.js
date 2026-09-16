@@ -1,4 +1,22 @@
 const pool = require('../config/banco');
+const MovimentacaoEstoque = require('./MovimentacaoEstoque');
+
+async function registrarReposicao(conexao, item, pedidoId) {
+  const [produtos] = await conexao.query('SELECT estoque_qtd FROM produtos WHERE id = ?', [item.produto_id]);
+  if (produtos[0]) await MovimentacaoEstoque.registrar({
+    produtoId: item.produto_id, tipo: 'entrada', quantidade: item.quantidade,
+    saldoAnterior: Number(produtos[0].estoque_qtd) - Number(item.quantidade),
+    saldoPosterior: Number(produtos[0].estoque_qtd), motivo: `Reposição do pedido ${pedidoId}`,
+  }, conexao);
+  if (item.variacao_id) {
+    const [variacoes] = await conexao.query('SELECT estoque_qtd FROM produto_variacoes WHERE id = ?', [item.variacao_id]);
+    if (variacoes[0]) await MovimentacaoEstoque.registrar({
+      produtoId: item.produto_id, variacaoId: item.variacao_id, tipo: 'entrada', quantidade: item.quantidade,
+      saldoAnterior: Number(variacoes[0].estoque_qtd) - Number(item.quantidade),
+      saldoPosterior: Number(variacoes[0].estoque_qtd), motivo: `Reposição do pedido ${pedidoId}`,
+    }, conexao);
+  }
+}
 
 async function listarTodos() {
   const [pedidos] = await pool.query(
@@ -147,6 +165,7 @@ async function atualizarStatus(id, paymentStatus, paymentId = null) {
             [item.quantidade, item.variacao_id]
           );
         }
+        await registrarReposicao(conexao, item, id);
       }
     }
 
@@ -310,6 +329,7 @@ async function cancelarPedido(id, somentePendente = false) {
           [item.quantidade, item.variacao_id]
         );
       }
+      await registrarReposicao(conexao, item, id);
       }
     }
 

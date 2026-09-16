@@ -383,7 +383,7 @@ test('upload de fotos restrito ao admin e arquivo acessivel', async () => {
   resposta = await request(app).post('/api/imagens').set('Authorization', 'Bearer ' + token).set('Content-Type', 'image/png').send(foto);
   assert.equal(resposta.status, 201);
   const url = resposta.body.imagem_url;
-  assert.match(url, /^\/api\/uploads\/[a-f0-9-]+\.png$/);
+  assert.match(url, /^\/api\/(?:media|uploads)\/[a-f0-9-]+\.png$/);
   try {
     resposta = await request(app).get(url);
     assert.equal(resposta.status, 200);
@@ -392,5 +392,65 @@ test('upload de fotos restrito ao admin e arquivo acessivel', async () => {
   } finally {
     const path = require('path');
     await require('fs/promises').unlink(path.join(require('../src/routes/imagemRoutes').pasta, path.basename(url)));
+  }
+  const banner = Buffer.alloc(2 * 1024 * 1024, 0);
+  foto.copy(banner);
+  resposta = await request(app).post('/api/imagens/banner').set('Authorization', 'Bearer ' + token).set('Content-Type', 'image/png').send(banner);
+  assert.equal(resposta.status, 201);
+  try {
+    const imagem = await request(app).get(resposta.body.imagem_url);
+    assert.equal(imagem.status, 200);
+    assert.deepEqual(imagem.body, banner);
+  } finally {
+    await require('fs/promises').unlink(require('path').join(require('../src/routes/imagemRoutes').pasta, require('path').basename(resposta.body.imagem_url)));
+  }
+  const gif = await require('fs/promises').readFile(require('path').join(__dirname, '../../frontend/public/banners-exemplo/nkg-dos-importados-animado.gif'));
+  const gifForaDeBanner = await request(app).post('/api/imagens').set('Authorization', 'Bearer ' + token).set('Content-Type', 'image/gif').send(gif.subarray(0, 32));
+  assert.equal(gifForaDeBanner.status, 400);
+  resposta = await request(app).post('/api/imagens/banner').set('Authorization', 'Bearer ' + token).set('Content-Type', 'image/gif').send(gif);
+  assert.equal(resposta.status, 201);
+  assert.match(resposta.body.imagem_url, /\.gif$/);
+  try {
+    const imagem = await request(app).get(resposta.body.imagem_url);
+    assert.equal(imagem.status, 200);
+    assert.deepEqual(imagem.body, gif);
+  } finally {
+    await require('fs/promises').unlink(require('path').join(require('../src/routes/imagemRoutes').pasta, require('path').basename(resposta.body.imagem_url)));
+  }
+});
+
+test('banners agrupam duas imagens e principal vem primeiro', async () => {
+  const usuario = await criarUsuarioTeste('banners-admin-' + Date.now() + '@teste.com', 'senha123', 'admin');
+  const token = jwt.sign({ id: usuario.id, perfil: 'admin' }, process.env.JWT_SECRET, { expiresIn: '1h' });
+  const [principaisAnteriores] = await pool.query('SELECT id FROM banners WHERE principal = TRUE');
+  const criados = [];
+  const base = {
+    titulo: 'Teste banner', imagem_url: 'https://exemplo.com/um.png', imagem_url_2: 'https://exemplo.com/dois.png',
+    link_url: '', ativo: true, ordem: 1, posicao_x: 50, posicao_y: 50,
+    posicao_x_2: 40, posicao_y_2: 60, zoom: 50, zoom_2: 150,
+  };
+  try {
+    let resposta = await request(app).post('/api/banners').set('Authorization', 'Bearer ' + token).send({ ...base, principal: false });
+    assert.equal(resposta.status, 201);
+    criados.push(resposta.body.id);
+    resposta = await request(app).post('/api/banners').set('Authorization', 'Bearer ' + token).send({ ...base, titulo: 'Teste principal', ordem: 9, principal: true });
+    assert.equal(resposta.status, 201);
+    criados.push(resposta.body.id);
+
+    resposta = await request(app).get('/api/banners');
+    assert.equal(resposta.status, 200);
+    assert.equal(resposta.body[0].id, criados[1]);
+    assert.equal(resposta.body[0].imagem_url_2, base.imagem_url_2);
+    assert.equal(Number(resposta.body[0].zoom), 50);
+    assert.equal(Number(resposta.body[0].zoom_2), 150);
+
+    resposta = await request(app).put('/api/banners/' + criados[0]).set('Authorization', 'Bearer ' + token).send({ ...base, principal: true });
+    assert.equal(resposta.status, 200);
+    resposta = await request(app).get('/api/banners');
+    assert.equal(resposta.body[0].id, criados[0]);
+    assert.equal(Number(resposta.body.find((banner) => banner.id === criados[1]).principal), 0);
+  } finally {
+    if (criados.length) await pool.query('DELETE FROM banners WHERE id IN (?)', [criados]);
+    for (const banner of principaisAnteriores) await pool.query('UPDATE banners SET principal = TRUE WHERE id = ?', [banner.id]);
   }
 });

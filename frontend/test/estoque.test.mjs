@@ -32,3 +32,11 @@ test('remove variacao esgotada e corrige quantidade acima do estoque', () => {
   assert.equal(atualizados[0].variacao_id, 3);
   assert.equal(atualizados[0].quantidade, 20);
 });
+
+test('remove produto inativo do carrinho mesmo quando ainda possui estoque', () => {
+  const itens = [{ produto_id: 1, quantidade: 2 }];
+  const produtos = new Map([['1', { ativo: false, estoque_qtd: 50 }]]);
+
+  assert.equal(estoqueDoItem(produtos.get('1'), itens[0]), 0);
+  assert.deepEqual(atualizarEstoqueCarrinho(itens, produtos), []);
+});

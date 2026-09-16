@@ -37,7 +37,7 @@ export default function Cabecalho() {
 
   return (
     <header className="sticky top-0 z-50 bg-[#090a09]/95 shadow-[0_8px_28px_rgba(0,0,0,0.16)] backdrop-blur">
-      <div className="max-w-6xl mx-auto px-4 py-4 flex flex-wrap justify-between items-center gap-4">
+      <div className="mx-auto flex w-full max-w-[1760px] flex-wrap items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
         <Link to={isAdmin ? '/admin' : '/'} className="text-xl font-black uppercase tracking-[0.12em] text-[#d4af45]">
           NKG <span>dos Importados</span>
         </Link>

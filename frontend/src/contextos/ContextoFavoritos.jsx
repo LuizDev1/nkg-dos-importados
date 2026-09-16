@@ -25,6 +25,7 @@ export function ProvedorFavoritos({ children }) {
       await removerFavorito(produto.id);
       setProdutos((atuais) => atuais.filter((item) => String(item.id) !== String(produto.id)));
     } else {
+      if (produto.ativo === false || Number(produto.ativo) === 0) return;
       await adicionarFavorito(produto.id);
       setProdutos((atuais) => [produto, ...atuais]);
     }

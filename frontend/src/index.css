@@ -227,6 +227,16 @@ h1, h2, h3 { letter-spacing: -0.02em; }
   to { opacity: 1; transform: none; }
 }
 
+.banner-slide-in-next { animation: banner-slide-in-next 850ms cubic-bezier(.22,.61,.36,1) both; }
+.banner-slide-out-next { animation: banner-slide-out-next 850ms cubic-bezier(.22,.61,.36,1) both; }
+.banner-slide-in-prev { animation: banner-slide-in-prev 850ms cubic-bezier(.22,.61,.36,1) both; }
+.banner-slide-out-prev { animation: banner-slide-out-prev 850ms cubic-bezier(.22,.61,.36,1) both; }
+
+@keyframes banner-slide-in-next { from { transform: translateX(100%); } to { transform: translateX(0); } }
+@keyframes banner-slide-out-next { from { transform: translateX(0); } to { transform: translateX(-100%); } }
+@keyframes banner-slide-in-prev { from { transform: translateX(-100%); } to { transform: translateX(0); } }
+@keyframes banner-slide-out-prev { from { transform: translateX(0); } to { transform: translateX(100%); } }
+
 @keyframes card-enter {
   from { opacity: 0; transform: translateY(18px) scale(.985); }
   to { opacity: 1; transform: translateY(0) scale(1); }

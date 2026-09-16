@@ -7,7 +7,10 @@ async function listar(req, res) {
 
 async function adicionar(req, res) {
   try {
-    await Favorito.adicionar(req.usuario.id, req.params.produtoId);
+    const adicionado = await Favorito.adicionar(req.usuario.id, req.params.produtoId);
+    if (!adicionado) {
+      return res.status(409).json({ mensagem: 'Produto inativo ou indisponível' });
+    }
     return res.status(201).json({ mensagem: 'Produto adicionado aos favoritos' });
   } catch { return res.status(500).json({ mensagem: 'Erro ao adicionar favorito' }); }
 }

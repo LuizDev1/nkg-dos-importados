@@ -3,6 +3,7 @@ const Pedido = require('../models/Pedido');
 const ItemPedido = require('../models/ItemPedido');
 const Log = require('../models/Log');
 const Promocao = require('../models/Promocao');
+const MovimentacaoEstoque = require('../models/MovimentacaoEstoque');
 const melhorEnvioService = require('../services/melhorEnvioService');
 const notificacaoService = require('../services/notificacaoService'); // 📧 NOVO: Serviço de e-mail
 
@@ -157,6 +158,7 @@ async function criar(req, res) {
     for (const item of itens) {
       const produtoId = Number(item.produto_id);
       const variacaoId = item.variacao_id ? Number(item.variacao_id) : null;
+      const tamanhoInformado = item.tamanho || '';
       const quantidade = Number(item.quantidade);
       const precoInformado = item.preco_unitario != null ? Number(item.preco_unitario) : null;
 
@@ -170,7 +172,7 @@ async function criar(req, res) {
       }
 
       const [produtos] = await conexao.query(
-        `SELECT id, preco, estoque_qtd, ativo
+        `SELECT id, preco, estoque_qtd, ativo, tamanhos_json
         FROM produtos
         WHERE id = ?
         FOR UPDATE`,
@@ -188,14 +190,18 @@ async function criar(req, res) {
       }
 
       const [variacoes] = await conexao.query(
-        'SELECT id, nome, estoque_qtd FROM produto_variacoes WHERE produto_id = ? AND ativo = TRUE FOR UPDATE',
+        'SELECT id, nome, tamanho, estoque_qtd FROM produto_variacoes WHERE produto_id = ? AND ativo = TRUE FOR UPDATE',
         [produtoId]
       );
       const variacao = variacaoId
         ? variacoes.find((opcao) => Number(opcao.id) === variacaoId)
         : null;
 
-      if (variacoes.length && !variacao) {
+      const tamanhos = typeof produto.tamanhos_json === 'string' ? JSON.parse(produto.tamanhos_json) : (produto.tamanhos_json || []);
+      const tamanhoSelecionado = variacao?.tamanho || tamanhoInformado;
+      if ((variacoes.length && !variacao)
+        || (tamanhos.length && !tamanhos.includes(tamanhoSelecionado))
+        || (!tamanhos.length && tamanhoInformado)) {
         throw new Error(`Selecione uma variação válida para o produto ${produtoId}`);
       }
 
@@ -236,12 +242,27 @@ async function criar(req, res) {
         }
       }
 
+      await MovimentacaoEstoque.registrar({
+        produtoId, tipo: 'saida', quantidade,
+        saldoAnterior: Number(produto.estoque_qtd),
+        saldoPosterior: Number(produto.estoque_qtd) - quantidade,
+        motivo: 'Reserva para pedido', usuarioId: req.usuario.id,
+      }, conexao);
+      if (variacao) await MovimentacaoEstoque.registrar({
+        produtoId, variacaoId: variacao.id, tipo: 'saida', quantidade,
+        saldoAnterior: Number(variacao.estoque_qtd),
+        saldoPosterior: Number(variacao.estoque_qtd) - quantidade,
+        motivo: 'Reserva para pedido', usuarioId: req.usuario.id,
+      }, conexao);
+
       total += precoUnitario * quantidade;
 
       itensPreparados.push({
         produto_id: produtoId,
         variacao_id: variacao?.id || null,
-        variacao_nome: variacao?.nome || null,
+        variacao_nome: variacao
+          ? [variacao.nome, variacao.tamanho].filter(Boolean).join(' / ')
+          : (tamanhoInformado || null),
         quantidade,
         preco_unitario: precoUnitario,
       });

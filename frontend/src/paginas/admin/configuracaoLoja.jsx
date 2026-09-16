@@ -1,5 +1,6 @@
 import CampoRotulado from '../../componentes/CampoRotulado';
 import { useEffect, useState } from 'react';
+import { avisarAdmin } from '../../utilitarios/avisoAdmin';
 import { Link } from 'react-router-dom';
 import {
   buscarConfiguracoes,
@@ -56,7 +57,7 @@ export default function ConfiguracaoLoja() {
 
     try {
       await atualizarConfiguracoes(formulario);
-      setMensagem('Configurações salvas com sucesso.');
+      avisarAdmin('Configurações salvas com sucesso.');
     } catch (erro) {
       setMensagem(erro.message);
     } finally {

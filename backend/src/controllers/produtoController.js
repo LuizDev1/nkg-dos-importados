@@ -3,6 +3,17 @@ const Log = require('../models/Log');
 const VariacaoProduto = require('../models/VariacaoProduto');
 const notificacaoService = require('../services/notificacaoService');
 const ProdutoImagem = require('../models/ProdutoImagem');
+const MovimentacaoEstoque = require('../models/MovimentacaoEstoque');
+
+async function registrarAlteracaoEstoque(produtoId, variacaoId, anterior, posterior, usuarioId, motivo) {
+    const diferenca = Number(posterior) - Number(anterior);
+    if (!diferenca) return;
+    await MovimentacaoEstoque.registrar({
+      produtoId, variacaoId, tipo: diferenca > 0 ? 'entrada' : 'saida',
+      quantidade: Math.abs(diferenca), saldoAnterior: Number(anterior),
+      saldoPosterior: Number(posterior), motivo, usuarioId,
+    });
+}
 
 async function listarPublico(req, res) {
     try {
@@ -47,6 +58,7 @@ async function listarAdmin(req, res){
 
 async function buscar(req, res){
     try{
+        res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
         const produto = await Produto.buscarPorId(req.params.id);
         if (!produto) return res.status(404).json({ mensagem: 'Produto não encontrado' });
         produto.variacoes = await VariacaoProduto.listar(produto.id);
@@ -60,6 +72,7 @@ async function buscar(req, res){
 async function criar(req, res){
     try{
         const id = await Produto.criar(req.body);
+        await registrarAlteracaoEstoque(id, null, 0, req.body.estoque_qtd, req.usuario.id, 'Cadastro do produto');
         await ProdutoImagem.substituir(id, req.body.imagens);
         await Log.registrar({
           tipo: 'produto',
@@ -78,6 +91,7 @@ async function atualizar(req, res){
     try{
         const produtoAnterior = await Produto.buscarPorId(req.params.id);
         await Produto.atualizar(req.params.id, req.body);
+        if (produtoAnterior) await registrarAlteracaoEstoque(req.params.id, null, produtoAnterior.estoque_qtd, req.body.estoque_qtd, req.usuario.id, 'Alteração no cadastro do produto');
         await ProdutoImagem.substituir(req.params.id, req.body.imagens);
         if (produtoAnterior && Number(produtoAnterior.estoque_qtd) === 0 && Number(req.body.estoque_qtd) > 0) {
           notificacaoService.notificarReposicao(Number(req.params.id)).catch(console.error);
@@ -137,10 +151,12 @@ async function listarVariacoes(req, res) {
 
 async function criarVariacao(req, res) {
     try {
-        res.status(201).json({ id: await VariacaoProduto.criar(req.params.id, req.body) });
+        const id = await VariacaoProduto.criar(req.params.id, req.body);
+        await registrarAlteracaoEstoque(req.params.id, id, 0, req.body.estoque_qtd, req.usuario.id, 'Cadastro da variação');
+        res.status(201).json({ id });
     } catch (erro) {
-        const status = erro.code === 'ER_DUP_ENTRY' ? 409 : 500;
-        res.status(status).json({ mensagem: status === 409 ? 'Esta variação já existe' : 'Erro ao criar variação' });
+        const status = erro.code === 'TAMANHO_INVALIDO' ? 400 : erro.code === 'ER_DUP_ENTRY' ? 409 : 500;
+        res.status(status).json({ mensagem: status === 400 ? erro.message : status === 409 ? 'Esta variação já existe' : 'Erro ao criar variação' });
     }
 }
 
@@ -148,6 +164,7 @@ async function atualizarVariacao(req, res) {
     try {
         const variacaoAnterior = await VariacaoProduto.buscarPorId(req.params.variacaoId);
         const alterados = await VariacaoProduto.atualizar(req.params.variacaoId, req.body);
+        if (alterados && variacaoAnterior) await registrarAlteracaoEstoque(req.params.id, req.params.variacaoId, variacaoAnterior.estoque_qtd, req.body.estoque_qtd, req.usuario.id, 'Alteração da variação');
         if (variacaoAnterior && Number(variacaoAnterior.estoque_qtd) === 0 && Number(req.body.estoque_qtd) > 0) {
           notificacaoService.notificarReposicao(Number(req.params.id), Number(req.params.variacaoId)).catch(console.error);
         }
@@ -160,7 +177,9 @@ async function atualizarVariacao(req, res) {
 
 async function removerVariacao(req, res) {
     try {
+        const variacaoAnterior = await VariacaoProduto.buscarPorId(req.params.variacaoId);
         const removidos = await VariacaoProduto.remover(req.params.variacaoId);
+        if (removidos && variacaoAnterior) await registrarAlteracaoEstoque(req.params.id, null, variacaoAnterior.estoque_qtd, 0, req.usuario.id, 'Exclusão da variação');
         res.status(removidos ? 200 : 404).json({ mensagem: removidos ? 'Variação excluída' : 'Variação não encontrada' });
     } catch {
         res.status(500).json({ mensagem: 'Erro ao excluir variação' });

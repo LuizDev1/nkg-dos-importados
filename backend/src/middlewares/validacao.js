@@ -19,6 +19,8 @@ const dataHoraValida = z.string().refine((valor) => {
 
 const schemas = {
   produto: z.object({
+    estoque_minimo: z.coerce.number().int().nonnegative().max(100000).optional().default(5),
+    tamanhos: z.array(z.enum(['PP','P','M','G','GG'])).max(5).optional().default([]),
     nome: z.string().trim().min(2).max(150),
     categoria: z.string().trim().max(100).optional().default(''),
     preco: z.coerce.number().finite().positive().max(999999.99),
@@ -29,7 +31,7 @@ const schemas = {
     largura_cm: z.coerce.number().finite().positive().max(200).default(20),
     altura_cm: z.coerce.number().finite().positive().max(200).default(10),
     comprimento_cm: z.coerce.number().finite().positive().max(300).default(30),
-    imagens: z.array(z.string().trim().url().max(500)).max(8).optional().default([]),
+    imagens: z.array(z.string().trim().url().max(500)).max(9).optional().default([]),
   }).strict(),
   autenticacao: z.object({
     nome: z.string().trim().min(2).max(150),
@@ -55,6 +57,7 @@ const schemas = {
     itens: z.array(z.object({
       produto_id: z.number().int().positive(),
       variacao_id: z.number().int().positive().optional(),
+      tamanho: z.enum(['PP', 'P', 'M', 'G', 'GG']).optional(),
       quantidade: z.number().int().positive().max(1000),
       preco_unitario: z.number().finite().nonnegative().optional(),
     }).strict()).min(1).max(100),
@@ -97,12 +100,21 @@ const schemas = {
   banner: z.object({
     titulo: z.string().trim().max(150).optional().default(''),
     imagem_url: z.string().trim().url().max(500),
+    imagem_url_2: z.union([z.string().trim().url().max(500), z.literal('')]).optional().default(''),
     link_url: z.union([z.string().trim().url().max(500), z.literal('')]).optional().default(''),
     ativo: z.boolean().optional().default(true),
     ordem: z.coerce.number().int().min(0).max(10000).optional().default(0),
+    posicao_x: z.coerce.number().int().min(0).max(100).optional().default(50),
+    posicao_y: z.coerce.number().int().min(0).max(100).optional().default(50),
+    posicao_x_2: z.coerce.number().int().min(0).max(100).optional().default(50),
+    posicao_y_2: z.coerce.number().int().min(0).max(100).optional().default(50),
+    zoom: z.coerce.number().int().min(50).max(150).optional().default(100),
+    zoom_2: z.coerce.number().int().min(50).max(150).optional().default(100),
+    principal: z.boolean().optional().default(false),
   }).strict(),
   variacaoProduto: z.object({
-    nome: z.string().trim().min(1).max(120),
+    tamanho: z.enum(['','PP','P','M','G','GG']).optional().default(''),
+    nome: z.string().trim().max(120).optional().default(''),
     estoque_qtd: z.coerce.number().int().nonnegative().max(100000),
     ativo: z.boolean().optional().default(true),
   }).strict(),

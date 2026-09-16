@@ -12,10 +12,17 @@ async function listar(usuarioId) {
 }
 
 async function adicionar(usuarioId, produtoId) {
+  const [produtos] = await pool.query(
+    'SELECT id FROM produtos WHERE id = ? AND ativo = TRUE',
+    [produtoId]
+  );
+  if (!produtos.length) return false;
+
   await pool.query(
     'INSERT IGNORE INTO favoritos (usuario_id, produto_id) SELECT ?, id FROM produtos WHERE id = ? AND ativo = TRUE',
     [usuarioId, produtoId]
   );
+  return true;
 }
 
 async function remover(usuarioId, produtoId) {

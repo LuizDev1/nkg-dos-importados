@@ -1,5 +1,6 @@
 import { corStatus } from '../../servicos/statusVisual';
 import { useEffect, useState } from 'react';
+import { avisarAdmin } from '../../utilitarios/avisoAdmin';
 import { Link } from 'react-router-dom';
 import {
   listarClientes,
@@ -35,6 +36,7 @@ export default function Clientes() {
     try {
       await atualizarStatusCliente(cliente.id, novoStatus);
       await carregar();
+      avisarAdmin(novoStatus === 'ativo' ? 'Cliente reativado com sucesso.' : 'Cliente bloqueado com sucesso.');
     } catch (erro) {
       setErro(erro.message);
     }

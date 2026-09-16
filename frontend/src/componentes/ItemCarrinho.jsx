@@ -1,3 +1,5 @@
+import { Link } from 'react-router-dom';
+
 export default function ItemCarrinho({ item, onAlterarQuantidade, onRemover, carregandoEstoque = false }) {
   function formatarMoeda(valor) {
     return valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -11,7 +13,12 @@ export default function ItemCarrinho({ item, onAlterarQuantidade, onRemover, car
         <div role="img" aria-label={`Imagem indisponível de ${item.nome}`} className="flex h-16 w-16 shrink-0 items-center justify-center rounded bg-gray-200 text-[9px] text-gray-500">Sem imagem</div>
       )}
       <div className="flex-1">
-        <p className="font-semibold">{item.nome}</p>
+        <Link
+          to={`/produto/${item.produto_id}`}
+          className="font-semibold hover:text-[#d4af45] hover:underline"
+        >
+          {item.nome}
+        </Link>
         {item.variacao_nome && <p className="text-sm text-gray-500">{item.variacao_nome}</p>}
         <p className="text-sm text-gray-500">{formatarMoeda(item.preco)}</p>
       </div>

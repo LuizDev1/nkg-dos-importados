@@ -50,7 +50,7 @@ export default function Checkout() {
     listarEnderecos().then((enderecos) => {
       if (!ativo) return;
       setEnderecosSalvos(enderecos);
-      const principal = enderecos.find((endereco) => endereco.principal);
+      const principal = enderecos.find((endereco) => endereco.principal) || enderecos[0];
       if (principal) usarEndereco(principal);
     }).catch(() => { if (ativo) setErroEnderecos('Não foi possível carregar seus endereços salvos. Atualize a página para tentar novamente.'); })
       .finally(() => { if (ativo) setCarregandoEnderecos(false); });
@@ -58,6 +58,7 @@ export default function Checkout() {
   }, []);
 
   function usarEndereco(endereco) {
+    versaoCep.current += 1;
     setEnderecoSelecionadoId(String(endereco.id));
     setFormulario((atual) => ({
       ...atual, cep: formatarCep(endereco.cep), rua: endereco.rua || '', numero: endereco.numero || '',
@@ -134,6 +135,7 @@ export default function Checkout() {
 
   function lidarComMudanca(e) {
     const { name, value } = e.target;
+    setEnderecoSelecionadoId('');
     const formatado = name === 'telefone' ? formatarTelefone(value) : name === 'estado' ? value.replace(/[^a-z]/gi, '').slice(0, 2).toUpperCase() : value;
     setFormulario(atual => ({ ...atual, [name]: formatado }));
     if (erros[name]) {
@@ -144,6 +146,7 @@ export default function Checkout() {
   function lidarComCep(e) {
     const { value } = e.target;
     versaoCep.current += 1;
+    setEnderecoSelecionadoId('');
     setFormulario(atual => ({ ...atual, cep: formatarCep(value) }));
     setCotacaoFrete(null);
     setFreteServicoId('');
@@ -193,6 +196,7 @@ export default function Checkout() {
         itens: itens.map(item => ({
           produto_id: item.produto_id,
           variacao_id: item.variacao_id || undefined,
+          tamanho: item.tamanho || undefined,
           quantidade: item.quantidade,
           preco_unitario: Number(item.preco),
         }))
@@ -389,10 +393,10 @@ export default function Checkout() {
         {enderecosSalvos.length > 0 && (
           <div className="rounded border border-gray-200 bg-gray-50 p-4">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <div><p className="font-semibold text-gray-800">Endereço salvo aplicado</p><p className="text-xs text-gray-600">Você pode revisar os campos acima antes de finalizar.</p></div>
-              {enderecosSalvos.length > 1 && <button type="button" onClick={() => setMostrarEnderecos((aberto) => !aberto)} className="text-sm font-semibold text-blue-700 underline">{mostrarEnderecos ? 'Fechar opções' : 'Trocar endereço salvo'}</button>}
+              <div><p className="font-semibold text-gray-800">{enderecoSelecionadoId ? 'Endereço salvo aplicado' : 'Endereços salvos'}</p><p className="text-xs text-gray-600">{enderecoSelecionadoId ? 'Você pode revisar os campos acima antes de finalizar.' : 'Selecione um endereço para preencher os campos.'}</p></div>
+              {(enderecosSalvos.length > 1 || !enderecoSelecionadoId) && <button type="button" onClick={() => setMostrarEnderecos((aberto) => !aberto)} className="text-sm font-semibold text-blue-700 underline">{mostrarEnderecos ? 'Fechar opções' : 'Trocar endereço salvo'}</button>}
             </div>
-            {(mostrarEnderecos || enderecosSalvos.length === 1) && (
+            {(mostrarEnderecos || enderecosSalvos.length === 1 || !enderecoSelecionadoId) && (
               <div className="mt-3 grid gap-2">
                 {enderecosSalvos.map((endereco) => <button key={endereco.id} type="button" onClick={() => { usarEndereco(endereco); setMostrarEnderecos(false); }} className={`rounded border p-3 text-left text-sm ${String(endereco.id) === enderecoSelecionadoId ? 'border-blue-600 bg-blue-50' : 'border-gray-200 bg-white hover:border-blue-300'}`}><strong>{endereco.apelido}{endereco.principal ? ' · Principal' : ''}</strong><span className="mt-1 block text-gray-600">{endereco.rua}, {endereco.numero}{endereco.complemento ? ` — ${endereco.complemento}` : ''} · {endereco.cidade}/{endereco.estado}</span></button>)}
               </div>
