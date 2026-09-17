@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useAutenticacao } from '../contextos/ContextoAutenticacao';
 
 const API_URL = import.meta.env.VITE_API_URL || '/api';
@@ -11,7 +11,7 @@ export default function PerguntasProduto({ produtoId }) {
   const [enviando, setEnviando] = useState(false);
   const [aberta, setAberta] = useState(true);
 
-  async function carregar() {
+  const carregar = useCallback(async () => {
     try {
       const resposta = await fetch(`${API_URL}/produtos/${produtoId}/perguntas`);
       const dados = await resposta.json();
@@ -20,12 +20,12 @@ export default function PerguntasProduto({ produtoId }) {
     } catch (e) {
       setErro(e.message || 'Erro ao carregar perguntas');
     }
-  }
+  }, [produtoId]);
 
   useEffect(() => {
     setAberta(true);
     carregar();
-  }, [produtoId]);
+  }, [carregar]);
 
   async function enviar(evento) {
     evento.preventDefault(); setEnviando(true); setErro('');

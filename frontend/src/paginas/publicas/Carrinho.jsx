@@ -1,50 +1,13 @@
-import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useCarrinho } from '../../contextos/ContextoCarrinho';
 import { useAutenticacao } from '../../contextos/ContextoAutenticacao';
 import ItemCarrinho from '../../componentes/ItemCarrinho';
-import { buscarProduto } from '../../servicos/produtoService';
 
 export default function Carrinho() {
   const { itens, removerItem, alterarQuantidade, total, carregandoEstoque, erroEstoque } = useCarrinho();
   const { usuario } = useAutenticacao();
   const navigate = useNavigate();
-  const [validandoProdutos, setValidandoProdutos] = useState(true);
-  const [produtosInativos, setProdutosInativos] = useState(new Set());
-  const idsProdutos = useMemo(
-    () => [...new Set(itens.map((item) => String(item.produto_id)))].sort().join(','),
-    [itens]
-  );
-
-  useEffect(() => {
-    let ativo = true;
-    const ids = idsProdutos ? idsProdutos.split(',') : [];
-    setValidandoProdutos(true);
-
-    Promise.all(ids.map(async (id) => ({ id, produto: await buscarProduto(id) })))
-      .then((resultados) => {
-        if (!ativo) return;
-        const inativos = new Set(
-          resultados
-            .filter(({ produto }) => produto.ativo === false || Number(produto.ativo) === 0)
-            .map(({ id }) => id)
-        );
-        setProdutosInativos(inativos);
-        itens.forEach((item) => {
-          if (inativos.has(String(item.produto_id))) removerItem(item.chave);
-        });
-      })
-      .catch(() => {
-        if (ativo) setProdutosInativos(new Set(ids));
-      })
-      .finally(() => {
-        if (ativo) setValidandoProdutos(false);
-      });
-
-    return () => { ativo = false; };
-  }, [idsProdutos]);
-
-  const itensDisponiveis = itens.filter((item) => !produtosInativos.has(String(item.produto_id)));
+  const itensDisponiveis = itens;
 
   function formatarMoeda(valor) {
     return valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -59,7 +22,7 @@ export default function Carrinho() {
     }
   }
 
-  if (validandoProdutos) {
+  if (carregandoEstoque) {
     return <p role="status" className="py-16 text-center text-gray-500">Validando produtos do carrinho...</p>;
   }
 
@@ -95,7 +58,7 @@ export default function Carrinho() {
         <span className="text-lg font-bold">Total: {formatarMoeda(total)}</span>
         <button
           onClick={handleFinalizarCompra}
-          disabled={validandoProdutos || carregandoEstoque || Boolean(erroEstoque) || itensDisponiveis.length === 0 || itensDisponiveis.some(item => !item.estoque_qtd || item.quantidade < 1)}
+          disabled={carregandoEstoque || Boolean(erroEstoque) || itensDisponiveis.length === 0 || itensDisponiveis.some(item => !item.estoque_qtd || item.quantidade < 1)}
           className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700"
         >
           Finalizar compra

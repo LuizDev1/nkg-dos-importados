@@ -11,17 +11,6 @@ const TRANSICOES = {
   reembolso_pendente: ['reembolsado'],
 };
 
-const STATUS_CORES = {
-  aguardando_pagamento: 'text-yellow-600',
-  pago: 'text-green-600',
-  em_preparacao: 'text-blue-600',
-  enviado: 'text-blue-600',
-  entregue: 'text-green-700',
-  cancelado: 'status-cancelado text-red-400',
-  reembolso_pendente: 'text-yellow-600',
-  reembolsado: 'text-gray-500',
-};
-
 const STATUS_LABELS = {
   aguardando_pagamento: 'Aguardando confirmação',
   pendente: 'Pendente',

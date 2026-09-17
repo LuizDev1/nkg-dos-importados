@@ -184,13 +184,18 @@ test('cliente pode cancelar pedido e receber estoque de volta', async () => {
   assert.equal(resposta.status, 200);
   assert.match(resposta.body.mensagem, /cancelado/i);
 
-  const [pedidoAtualizado] = await pool.query('SELECT payment_status, status_pedido, reembolso_status FROM pedidos WHERE id = ?', [pedido.insertId]);
+  let pedidoAtualizado;
+  for (let tentativa = 0; tentativa < 20; tentativa++) {
+    [pedidoAtualizado] = await pool.query('SELECT payment_status, status_pedido, reembolso_status FROM pedidos WHERE id = ?', [pedido.insertId]);
+    if (pedidoAtualizado[0].status_pedido === 'reembolsado') break;
+    await new Promise((resolve) => setTimeout(resolve, 10));
+  }
   const [estoqueAtualizado] = await pool.query('SELECT estoque_qtd FROM produtos WHERE id = ?', [produto.insertId]);
 
   assert.equal(pedidoAtualizado[0].payment_status, 'cancelado');
   assert.equal(Number(estoqueAtualizado[0].estoque_qtd), 5);
-  assert.equal(pedidoAtualizado[0].status_pedido, 'reembolso_pendente');
-  assert.equal(pedidoAtualizado[0].reembolso_status, 'solicitado');
+  assert.equal(pedidoAtualizado[0].status_pedido, 'reembolsado');
+  assert.equal(pedidoAtualizado[0].reembolso_status, 'concluido');
   const repetida = await request(app)
     .patch('/api/pedidos/' + pedido.insertId + '/cancelar')
     .set('Authorization', 'Bearer ' + token);
@@ -404,7 +409,7 @@ test('upload de fotos restrito ao admin e arquivo acessivel', async () => {
   } finally {
     await require('fs/promises').unlink(require('path').join(require('../src/routes/imagemRoutes').pasta, require('path').basename(resposta.body.imagem_url)));
   }
-  const gif = await require('fs/promises').readFile(require('path').join(__dirname, '../../frontend/public/banners-exemplo/nkg-dos-importados-animado.gif'));
+  const gif = Buffer.from('R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=', 'base64');
   const gifForaDeBanner = await request(app).post('/api/imagens').set('Authorization', 'Bearer ' + token).set('Content-Type', 'image/gif').send(gif.subarray(0, 32));
   assert.equal(gifForaDeBanner.status, 400);
   resposta = await request(app).post('/api/imagens/banner').set('Authorization', 'Bearer ' + token).set('Content-Type', 'image/gif').send(gif);

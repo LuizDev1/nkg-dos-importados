@@ -290,7 +290,7 @@ async function criar(req, res) {
     const pedidoId = await Pedido.criar(
       {
         usuario_id: req.usuario.id,
-        tipo_entrega: cotacaoFrete.servico_id === 'gratis-mesmo-cep'
+        tipo_entrega: tipo_entrega === 'entrega_local' || cotacaoFrete.servico_id === 'gratis-mesmo-cep'
           ? 'entrega_local'
           : 'envio',
         endereco_entrega,
@@ -429,7 +429,7 @@ async function atualizarRastreio(req, res) {
 
     res.json({ mensagem: 'Código de rastreio atualizado' });
   } catch (erro) {
-    res.status(500).json({ mensagem: erro.message });
+    return res.status(500).json({ mensagem: erro.message });
   }
   try {
       const [usuarios] = await pool.query(
@@ -462,15 +462,16 @@ async function cancelar(req, res) {
       return res.status(409).json({ mensagem: 'Pedido já estava cancelado' });
     }
 
-    let reembolsoPendente = false;
-    
+    const reembolsoAgendado = Boolean(pedidoCancelado && pedido.payment_status === 'pago' && pedido.payment_id);
+
     // ⚠️ NÃO FAZER AWAIT - deixar o reembolso rodando assincronamente
-    if (pedidoCancelado && pedido.payment_status === 'pago' && pedido.payment_id) {
+    if (reembolsoAgendado) {
       const mercadoPagoService = require('../services/mercadoPagoService');
-      
+
       // Agendar reembolso sem bloquear a resposta
       mercadoPagoService.solicitarReembolso(pedido.payment_id)
         .then(async () => {
+          await Pedido.marcarReembolsoConcluido(pedido.id);
           await Log.registrar({
             tipo: 'pedido',
             acao: 'reembolso_processado',
@@ -480,7 +481,6 @@ async function cancelar(req, res) {
           console.log('Reembolso processado com sucesso:', pedido.payment_id);
         })
         .catch(async (erro) => {
-          reembolsoPendente = true;
           await Pedido.marcarReembolsoPendente(pedido.id);
           await Log.registrar({
             tipo: 'pedido',
@@ -511,7 +511,7 @@ async function cancelar(req, res) {
 
     return res.json({ 
       mensagem: 'Pedido cancelado com sucesso',
-      reembolso: reembolsoPendente ? 'pendente' : 'processando'
+      reembolso: reembolsoAgendado ? 'processando' : 'nao_aplicavel'
     });
   } catch (erro) {
     console.error('Erro ao cancelar pedido:', erro);

@@ -26,7 +26,19 @@ export default function Clientes() {
   }
 
   useEffect(() => {
-    carregar();
+    let ativo = true;
+    listarClientes('').then((lista) => {
+      if (ativo) {
+        setClientes(lista);
+        setCarregando(false);
+      }
+    }).catch((erro) => {
+      if (ativo) {
+        setErro(erro.message);
+        setCarregando(false);
+      }
+    });
+    return () => { ativo = false; };
   }, []);
 
   async function alterarStatus(cliente) {

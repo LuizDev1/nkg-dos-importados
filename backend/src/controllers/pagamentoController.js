@@ -85,13 +85,13 @@ async function criarPagamento(req, res) {
 }
 }
 async function receberWebhook(req, res) {
+  let eventoId;
+  let eventoRegistrado = false;
   try {
     const rawBody = Buffer.isBuffer(req.body) ? req.body : Buffer.from(JSON.stringify(req.body || {}));
     validarAssinaturaWebhook({ headers: req.headers, body: rawBody, query: req.query });
 
     const orderId = req.query['data.id'];
-    const requestId = String(req.headers['x-request-id'] || '').trim();
-    const eventoId = `${requestId}:${orderId}:${Date.now()}`;
 
     console.log('Webhook Mercado Pago recebido:', {
       tipo: req.query.type,
@@ -115,8 +115,9 @@ async function receberWebhook(req, res) {
       return res.status(400).send();
     }
 
-    if (!await Pedido.registrarWebhook(eventoId, req.query.type || 'desconhecido')) {
-      console.log('Webhook duplicado, ignorando:', orderId);
+    eventoId = `${orderId}:${order.status}`;
+    eventoRegistrado = await Pedido.registrarWebhook(eventoId, req.query.type || 'desconhecido');
+    if (!eventoRegistrado) {
       return res.status(200).send();
     }
 
@@ -162,6 +163,13 @@ async function receberWebhook(req, res) {
 
     res.status(200).send();
   } catch (erro) {
+    if (eventoRegistrado) {
+      try {
+        await Pedido.removerWebhook(eventoId);
+      } catch (erroRemocao) {
+        console.error('Erro ao liberar webhook para nova tentativa:', erroRemocao);
+      }
+    }
     console.error('Erro no webhook:', erro);
     if (erro.message && /assinatura|configurado|ausente/i.test(erro.message)) {
       return res.status(401).send();

@@ -50,7 +50,13 @@ export default function CarrosselBanners({ banners }) {
 
   useEffect(() => {
     if (banners.length < 2 || anterior !== null) return undefined;
-    const temporizador = setTimeout(() => mostrar((indice + 1) % banners.length), TEMPO_BANNER);
+    const temporizador = setTimeout(() => {
+      setDirecao(1);
+      setAnterior(indice);
+      setIndice((indice + 1) % banners.length);
+      clearTimeout(transicao.current);
+      transicao.current = setTimeout(() => setAnterior(null), DURACAO_TRANSICAO);
+    }, TEMPO_BANNER);
     return () => clearTimeout(temporizador);
   }, [banners, indice, anterior]);
 

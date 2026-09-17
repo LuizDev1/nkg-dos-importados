@@ -1,7 +1,7 @@
 import SeletorFotos from '../../componentes/SeletorFotos';
 import { corStatus } from '../../servicos/statusVisual';
 import CampoRotulado from '../../componentes/CampoRotulado';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { listarProdutosAdmin, criarProduto, atualizarProduto, removerProduto, reativarProduto, listarVariacoesAdmin, criarVariacao, atualizarVariacao, excluirVariacao } from '../../servicos/produtoService';
 import { avisarAdmin } from '../../utilitarios/avisoAdmin';
@@ -11,36 +11,37 @@ const VARIACAO_VAZIA = { nome: '', tamanhos: [], estoques: {}, estoque_qtd: '' }
 
 export default function Produtos() {
   const [parametros, setParametros] = useSearchParams();
+  const editarId = parametros.get('editar');
+  const variacaoId = parametros.get('variacao');
   const [enviandoFotos, setEnviandoFotos] = useState(false), [produtos, setProdutos] = useState([]), [carregando, setCarregando] = useState(true), [erro, setErro] = useState('');
   const [formularioAberto, setFormularioAberto] = useState(false);
   const [form, setForm] = useState(FORM_VAZIO), [editandoId, setEditandoId] = useState(null), [variacoes, setVariacoes] = useState([]), [novasVariacoes, setNovasVariacoes] = useState([]), [novaVariacao, setNovaVariacao] = useState(VARIACAO_VAZIA);
 
   async function carregar() { try { setCarregando(true); const lista = await listarProdutosAdmin(); setProdutos(lista); return lista; } catch (e) { setErro(e.message); return []; } finally { setCarregando(false); } }
-  useEffect(() => {
-    let ativo = true;
-    carregar().then(lista => {
-      if (!ativo) return;
-      const produto = lista.find(item => String(item.id) === parametros.get('editar'));
-      if (produto) iniciarEdicao(produto);
-    });
-    return () => { ativo = false; };
-  }, []);
   function aoMudarCampo(e) { setForm(atual => ({ ...atual, [e.target.name]: e.target.value })); }
 
-  async function iniciarEdicao(produto) {
+  const iniciarEdicao = useCallback(async (produto) => {
     setFormularioAberto(true);
     setEnviandoFotos(false); setEditandoId(produto.id); setNovasVariacoes([]); setNovaVariacao(VARIACAO_VAZIA);
     setForm({ tamanhos: produto.tamanhos || [], nome: produto.nome, categoria: produto.categoria || '', preco: produto.preco, tag: produto.tag || '', foto_url: produto.foto_url || '', imagens_urls: (produto.imagens || []).map(i => i.imagem_url).join('\n'), estoque_qtd: produto.estoque_qtd, estoque_minimo: produto.estoque_minimo ?? 5, peso_kg: produto.peso_kg || '0.300', largura_cm: produto.largura_cm || '20', altura_cm: produto.altura_cm || '10', comprimento_cm: produto.comprimento_cm || '30' });
     try {
       const lista = await listarVariacoesAdmin(produto.id);
       setVariacoes(lista);
-      const variacaoId = parametros.get('variacao');
       if (variacaoId && lista.some(item => String(item.id) === variacaoId)) {
         window.setTimeout(() => document.getElementById(`variacao-${variacaoId}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
       }
     } catch (e) { setErro(e.message); }
     window.scrollTo({ top: 0, behavior: 'smooth' });
-  }
+  }, [variacaoId]);
+  useEffect(() => {
+    let ativo = true;
+    carregar().then(lista => {
+      if (!ativo) return;
+      const produto = lista.find(item => String(item.id) === editarId);
+      if (produto) iniciarEdicao(produto);
+    });
+    return () => { ativo = false; };
+  }, [editarId, iniciarEdicao]);
   function cancelarEdicao() { setEnviandoFotos(false); setEditandoId(null); setForm(FORM_VAZIO); setVariacoes([]); setNovasVariacoes([]); setNovaVariacao(VARIACAO_VAZIA); setParametros({}); }
 
   function adicionarNovaVariacao() {

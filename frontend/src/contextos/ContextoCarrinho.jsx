@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useCallback, useContext, useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { abandonarPedidoPendente } from '../servicos/pedidoService';
 
@@ -121,9 +121,9 @@ export function ProvedorCarrinho({ children }) {
     );
   }
 
-  function limparCarrinho() {
+  const limparCarrinho = useCallback(() => {
     setItens([]);
-  }
+  }, []);
 
   const total = itens.reduce((soma, item) => soma + item.preco * item.quantidade, 0);
   const quantidadeTotal = itens.reduce((soma, item) => soma + item.quantidade, 0);
