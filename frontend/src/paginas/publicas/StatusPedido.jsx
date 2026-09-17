@@ -100,7 +100,7 @@ export default function StatusPedido() {
     }, 10000);
 
     return () => clearInterval(intervalo);
-  }, [resultado, id, token]);
+  }, [resultado, id, token, limparCarrinho]);
 
   const etapas = [
     ['aguardando_pagamento', 'Aguardando confirmação do pagamento'],

@@ -10,7 +10,7 @@ import { formatarCep, formatarCpf, formatarTelefone } from '../../servicos/forma
 const API_URL = import.meta.env.VITE_API_URL || '/api';
 
 export default function Checkout() {
-  const { itens, total, carregandoEstoque, erroEstoque } = useCarrinho();
+  const { itens, carregandoEstoque, erroEstoque } = useCarrinho();
   const { usuario } = useAutenticacao();
   const navigate = useNavigate();
 

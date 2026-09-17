@@ -387,6 +387,19 @@ async function marcarReembolsoPendente(id) {
   );
 }
 
+async function removerWebhook(eventoId) {
+  await pool.query('DELETE FROM webhook_eventos WHERE evento_id = ?', [eventoId]);
+}
+
+async function marcarReembolsoConcluido(id) {
+  await pool.query(
+    `UPDATE pedidos
+     SET status_pedido = 'reembolsado', reembolso_status = 'concluido'
+     WHERE id = ? AND status_pedido = 'reembolso_pendente' AND payment_status = 'cancelado'`,
+    [id]
+  );
+}
+
 async function relatorioMensal() {
   const [resultado] = await pool.query(
     `SELECT
@@ -413,6 +426,8 @@ module.exports = {
   cancelarPedido,
   buscarPorIdempotency,
   registrarWebhook,
+  removerWebhook,
   marcarReembolsoPendente,
+  marcarReembolsoConcluido,
   relatorioMensal,
 };
