@@ -1,5 +1,6 @@
 const { z } = require('zod');
 const Endereco = require('../models/Endereco');
+const Log = require('../models/Log');
 
 const schema = z.object({
   apelido: z.string().trim().min(1).max(60),
@@ -14,8 +15,24 @@ async function listar(req, res) { try { res.json(await Endereco.listar(req.usuar
 async function criar(req, res) {
   const resultado = schema.safeParse(req.body);
   if (!resultado.success) return res.status(400).json({ mensagem: resultado.error.issues[0].message });
-  try { res.status(201).json({ id: await Endereco.criar(req.usuario.id, resultado.data) }); } catch { res.status(500).json({ mensagem: 'Erro ao salvar endereço' }); }
+  try {
+    const id = await Endereco.criar(req.usuario.id, resultado.data);
+    await Log.registrar({ tipo: 'endereco', acao: 'criado', entidade_id: id, usuario_id: req.usuario.id });
+    res.status(201).json({ id });
+  } catch { res.status(500).json({ mensagem: 'Erro ao salvar endereço' }); }
 }
-async function remover(req, res) { try { res.status(await Endereco.remover(req.usuario.id, req.params.id) ? 200 : 404).json({ mensagem: 'Endereço removido' }); } catch { res.status(500).json({ mensagem: 'Erro ao remover endereço' }); } }
-async function definirPrincipal(req, res) { try { res.status(await Endereco.definirPrincipal(req.usuario.id, req.params.id) ? 200 : 404).json({ mensagem: 'Endereço principal atualizado' }); } catch { res.status(500).json({ mensagem: 'Erro ao atualizar endereço' }); } }
+async function remover(req, res) {
+  try {
+    const removido = await Endereco.remover(req.usuario.id, req.params.id);
+    if (removido) await Log.registrar({ tipo: 'endereco', acao: 'removido', entidade_id: req.params.id, usuario_id: req.usuario.id });
+    res.status(removido ? 200 : 404).json({ mensagem: 'Endereço removido' });
+  } catch { res.status(500).json({ mensagem: 'Erro ao remover endereço' }); }
+}
+async function definirPrincipal(req, res) {
+  try {
+    const atualizado = await Endereco.definirPrincipal(req.usuario.id, req.params.id);
+    if (atualizado) await Log.registrar({ tipo: 'endereco', acao: 'definido_como_principal', entidade_id: req.params.id, usuario_id: req.usuario.id });
+    res.status(atualizado ? 200 : 404).json({ mensagem: 'Endereço principal atualizado' });
+  } catch { res.status(500).json({ mensagem: 'Erro ao atualizar endereço' }); }
+}
 module.exports = { listar, criar, remover, definirPrincipal };

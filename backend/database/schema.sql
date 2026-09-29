@@ -13,7 +13,10 @@ CREATE TABLE usuarios (
   perfil ENUM('admin', 'cliente') NOT NULL DEFAULT 'cliente',
   status ENUM('ativo', 'bloqueado') NOT NULL DEFAULT 'ativo',
   anonimizado_em DATETIME NULL,
-  criado_em DATETIME DEFAULT CURRENT_TIMESTAMP
+  criado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_usuarios_perfil_criado (perfil, criado_em),
+  INDEX idx_usuarios_status (status),
+  CONSTRAINT chk_usuarios_email CHECK (email LIKE '_%@_%._%')
 );
 
 CREATE TABLE produtos (
@@ -29,9 +32,15 @@ CREATE TABLE produtos (
   altura_cm DECIMAL(8,2) NOT NULL DEFAULT 10,
   comprimento_cm DECIMAL(8,2) NOT NULL DEFAULT 30,
   ativo BOOLEAN NOT NULL DEFAULT TRUE,
+  excluido_em DATETIME NULL,
   estoque_minimo INT NOT NULL DEFAULT 5,
   tamanhos_json JSON NULL,
-  criado_em DATETIME DEFAULT CURRENT_TIMESTAMP
+  criado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_produtos_ativos_categoria (ativo, excluido_em, categoria),
+  INDEX idx_produtos_ativos_criado (ativo, excluido_em, criado_em),
+  CONSTRAINT chk_produtos_valores CHECK (preco >= 0 AND estoque_qtd >= 0 AND estoque_minimo >= 0),
+  CONSTRAINT chk_produtos_dimensoes CHECK (peso_kg > 0 AND largura_cm > 0 AND altura_cm > 0 AND comprimento_cm > 0),
+  CONSTRAINT chk_produtos_soft_delete CHECK (excluido_em IS NULL OR ativo = FALSE)
 );
 
 CREATE TABLE produto_imagens (
@@ -50,10 +59,15 @@ CREATE TABLE produto_variacoes (
   tamanho VARCHAR(20) NULL,
   estoque_qtd INT NOT NULL DEFAULT 0,
   ativo BOOLEAN NOT NULL DEFAULT TRUE,
+  excluido_em DATETIME NULL,
   atributos_json JSON NULL,
   criado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (produto_id) REFERENCES produtos(id) ON DELETE CASCADE,
-  UNIQUE KEY uq_variacao_cor_tamanho (produto_id, nome, tamanho)
+  UNIQUE KEY uq_variacao_cor_tamanho (produto_id, nome, tamanho),
+  UNIQUE KEY uq_variacoes_produto_id (produto_id, id),
+  INDEX idx_variacoes_ativas (produto_id, ativo, excluido_em),
+  CONSTRAINT chk_variacoes_estoque CHECK (estoque_qtd >= 0),
+  CONSTRAINT chk_variacoes_soft_delete CHECK (excluido_em IS NULL OR ativo = FALSE)
 );
 
 CREATE TABLE movimentacoes_estoque (
@@ -69,7 +83,9 @@ CREATE TABLE movimentacoes_estoque (
   criado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (produto_id) REFERENCES produtos(id) ON DELETE CASCADE,
   FOREIGN KEY (variacao_id) REFERENCES produto_variacoes(id) ON DELETE SET NULL,
-  INDEX idx_movimentacoes_produto (produto_id, criado_em)
+  FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE SET NULL,
+  INDEX idx_movimentacoes_produto (produto_id, criado_em),
+  CONSTRAINT chk_movimentacoes_quantidade CHECK (quantidade > 0 AND saldo_anterior >= 0 AND saldo_posterior >= 0)
 );
 
 CREATE TABLE favoritos (
@@ -85,10 +101,13 @@ CREATE TABLE avisos_estoque (
   usuario_id INT NOT NULL,
   produto_id INT NOT NULL,
   variacao_id INT NOT NULL DEFAULT 0,
+  variacao_referencia_id INT GENERATED ALWAYS AS (NULLIF(variacao_id, 0)) STORED,
   criado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (usuario_id, produto_id, variacao_id),
   FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE,
-  FOREIGN KEY (produto_id) REFERENCES produtos(id) ON DELETE CASCADE
+  FOREIGN KEY (produto_id) REFERENCES produtos(id) ON DELETE CASCADE,
+  CONSTRAINT fk_avisos_variacao_produto FOREIGN KEY (produto_id, variacao_referencia_id) REFERENCES produto_variacoes(produto_id, id) ON DELETE CASCADE,
+  INDEX idx_avisos_produto_variacao (produto_id, variacao_id)
 );
 
 CREATE TABLE avaliacoes (
@@ -102,7 +121,9 @@ CREATE TABLE avaliacoes (
   atualizado_em DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   UNIQUE KEY uq_avaliacao_usuario_produto (usuario_id, produto_id),
   FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE,
-  FOREIGN KEY (produto_id) REFERENCES produtos(id) ON DELETE CASCADE
+  FOREIGN KEY (produto_id) REFERENCES produtos(id) ON DELETE CASCADE,
+  INDEX idx_avaliacoes_produto_criado (produto_id, criado_em),
+  CONSTRAINT chk_avaliacoes_nota CHECK (nota BETWEEN 1 AND 5)
 );
 
 CREATE TABLE pedidos (
@@ -129,7 +150,11 @@ CREATE TABLE pedidos (
   criado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (usuario_id) REFERENCES usuarios(id),
   UNIQUE KEY uq_pedidos_usuario_idempotencia (usuario_id, idempotency_key),
-  INDEX idx_pedidos_status (status_pedido, payment_status)
+  INDEX idx_pedidos_status (status_pedido, payment_status),
+  INDEX idx_pedidos_usuario_criado (usuario_id, criado_em),
+  INDEX idx_pedidos_payment_id (payment_id),
+  INDEX idx_pedidos_criado (criado_em),
+  CONSTRAINT chk_pedidos_valores CHECK (subtotal >= 0 AND frete >= 0 AND desconto >= 0 AND total >= 0 AND desconto <= subtotal + frete)
 );
 
 CREATE TABLE itens_pedido (
@@ -141,7 +166,10 @@ CREATE TABLE itens_pedido (
   quantidade INT NOT NULL,
   preco_unitario DECIMAL(10,2) NOT NULL,
   FOREIGN KEY (pedido_id) REFERENCES pedidos(id),
-  FOREIGN KEY (produto_id) REFERENCES produtos(id)
+  FOREIGN KEY (produto_id) REFERENCES produtos(id),
+  CONSTRAINT fk_itens_variacao_produto FOREIGN KEY (produto_id, variacao_id) REFERENCES produto_variacoes(produto_id, id),
+  INDEX idx_itens_produto_pedido (produto_id, pedido_id),
+  CONSTRAINT chk_itens_pedido_valores CHECK (quantidade > 0 AND preco_unitario >= 0)
 );
 
 CREATE TABLE IF NOT EXISTS configuracoes_loja (
@@ -164,8 +192,10 @@ CREATE TABLE IF NOT EXISTS logs (
   usuario_id INT,
   detalhes JSON,
   criado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_logs_usuario FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE SET NULL,
   INDEX idx_logs_tipo_entidade (tipo, entidade_id),
-  INDEX idx_logs_criado_em (criado_em)
+  INDEX idx_logs_criado_em (criado_em),
+  INDEX idx_logs_usuario_criado (usuario_id, criado_em)
 );
 
 CREATE TABLE IF NOT EXISTS promocoes (
@@ -178,7 +208,10 @@ CREATE TABLE IF NOT EXISTS promocoes (
   fim_em DATETIME NULL,
   uso_maximo INT NULL,
   usos INT NOT NULL DEFAULT 0,
-  criado_em DATETIME DEFAULT CURRENT_TIMESTAMP
+  criado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_promocoes_validade (ativo, inicio_em, fim_em),
+  CONSTRAINT chk_promocoes_valor CHECK (valor > 0 AND usos >= 0 AND (uso_maximo IS NULL OR (uso_maximo > 0 AND usos <= uso_maximo))),
+  CONSTRAINT chk_promocoes_periodo CHECK (inicio_em IS NULL OR fim_em IS NULL OR fim_em >= inicio_em)
 );
 
 CREATE TABLE IF NOT EXISTS banners (
@@ -188,6 +221,7 @@ CREATE TABLE IF NOT EXISTS banners (
   imagem_url_2 VARCHAR(500) NOT NULL DEFAULT '',
   link_url VARCHAR(500) NOT NULL DEFAULT '',
   ativo BOOLEAN NOT NULL DEFAULT TRUE,
+  excluido_em DATETIME NULL,
   ordem INT NOT NULL DEFAULT 0,
   posicao_x TINYINT UNSIGNED NOT NULL DEFAULT 50,
   posicao_y TINYINT UNSIGNED NOT NULL DEFAULT 50,
@@ -196,7 +230,11 @@ CREATE TABLE IF NOT EXISTS banners (
   zoom TINYINT UNSIGNED NOT NULL DEFAULT 100,
   zoom_2 TINYINT UNSIGNED NOT NULL DEFAULT 100,
   principal BOOLEAN NOT NULL DEFAULT FALSE,
-  criado_em DATETIME DEFAULT CURRENT_TIMESTAMP
+  criado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_banners_listagem (excluido_em, ativo, principal, ordem, criado_em),
+  CONSTRAINT chk_banners_posicao CHECK (posicao_x BETWEEN 0 AND 100 AND posicao_y BETWEEN 0 AND 100 AND posicao_x_2 BETWEEN 0 AND 100 AND posicao_y_2 BETWEEN 0 AND 100),
+  CONSTRAINT chk_banners_zoom CHECK (zoom BETWEEN 50 AND 150 AND zoom_2 BETWEEN 50 AND 150),
+  CONSTRAINT chk_banners_soft_delete CHECK (excluido_em IS NULL OR (ativo = FALSE AND principal = FALSE))
 );
 
 CREATE TABLE IF NOT EXISTS webhook_eventos (

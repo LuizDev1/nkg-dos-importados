@@ -1,4 +1,5 @@
 const pool = require('../config/banco');
+const Log = require('../models/Log');
 
 async function buscar(req, res) {
   try {
@@ -43,6 +44,14 @@ async function atualizar(req, res) {
         String(banner_link).trim(),
       ]
     );
+
+    await Log.registrar({
+      tipo: 'configuracao_loja',
+      acao: 'atualizada',
+      entidade_id: 1,
+      usuario_id: req.usuario.id,
+      detalhes: { campos: Object.keys(req.body).sort() },
+    });
 
     res.json({ mensagem: 'Configurações atualizadas com sucesso' });
   } catch (erro) {

@@ -1,7 +1,7 @@
 const pool = require('../config/banco');
 
 async function listarAtivos(filtros = {}){
-    const condicoes = ['p.ativo = true'];
+    const condicoes = ['p.ativo = true', 'p.excluido_em IS NULL'];
     const parametros = [];
 
     if (filtros.busca) {
@@ -44,7 +44,7 @@ async function listarAtivos(filtros = {}){
 async function listarCategorias() {
   const [categorias] = await pool.query(
     `SELECT DISTINCT categoria FROM produtos
-     WHERE ativo = true AND categoria IS NOT NULL AND categoria <> ''
+     WHERE ativo = true AND excluido_em IS NULL AND categoria IS NOT NULL AND categoria <> ''
      ORDER BY categoria ASC`
   );
   return categorias.map(({ categoria }) => categoria);
@@ -95,11 +95,19 @@ async function atualizar(id, dadosProduto) {
 }
 
 async function remover(id){
-    const [produtos] = await pool.query ('UPDATE produtos SET ativo = false WHERE id = ?',[id]);
+    const [resultado] = await pool.query(
+      'UPDATE produtos SET ativo = FALSE, excluido_em = NOW() WHERE id = ? AND excluido_em IS NULL',
+      [id]
+    );
+    return resultado.affectedRows;
 };
 
 async function reativar(id){
-    const [produtos] = await pool.query ('UPDATE produtos SET ativo = true WHERE id = ?',[id]);
+    const [resultado] = await pool.query(
+      'UPDATE produtos SET ativo = TRUE, excluido_em = NULL WHERE id = ?',
+      [id]
+    );
+    return resultado.affectedRows;
 };
 async function diminuirEstoque(id, quantidade, conexao = pool) {
   const [resultado] = await conexao.query(

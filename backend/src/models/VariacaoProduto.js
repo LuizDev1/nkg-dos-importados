@@ -3,7 +3,7 @@ const pool = require('../config/banco');
 async function listar(produtoId, somenteAtivas = true) {
   const [variacoes] = await pool.query(
     `SELECT * FROM produto_variacoes WHERE produto_id = ?
-     ${somenteAtivas ? 'AND ativo = TRUE' : ''} ORDER BY nome`,
+     ${somenteAtivas ? 'AND ativo = TRUE AND excluido_em IS NULL' : ''} ORDER BY nome`,
     [produtoId]
   );
   return variacoes;
@@ -16,7 +16,7 @@ async function buscarPorId(id) {
 
 async function sincronizarEstoque(produtoId, conexao = pool) {
   const [resultado] = await conexao.query(
-    'SELECT COUNT(*) AS total, COALESCE(SUM(estoque_qtd), 0) AS estoque FROM produto_variacoes WHERE produto_id = ? AND ativo = TRUE',
+    'SELECT COUNT(*) AS total, COALESCE(SUM(estoque_qtd), 0) AS estoque FROM produto_variacoes WHERE produto_id = ? AND ativo = TRUE AND excluido_em IS NULL',
     [produtoId]
   );
   if (Number(resultado[0].total) > 0) {
@@ -50,17 +50,23 @@ async function atualizar(id, dados) {
   if (!existentes[0]) return 0;
   await validarTamanho(existentes[0].produto_id, dados.tamanho || '');
   const [resultado] = await pool.query(
-    'UPDATE produto_variacoes SET nome = ?, estoque_qtd = ?, ativo = ?, tamanho = ? WHERE id = ?',
-    [dados.nome, dados.estoque_qtd, dados.ativo, dados.tamanho || '', id]
+    `UPDATE produto_variacoes
+     SET nome = ?, estoque_qtd = ?, ativo = ?, tamanho = ?,
+         excluido_em = CASE WHEN ? = TRUE THEN NULL ELSE excluido_em END
+     WHERE id = ?`,
+    [dados.nome, dados.estoque_qtd, dados.ativo, dados.tamanho || '', dados.ativo, id]
   );
   await sincronizarEstoque(existentes[0].produto_id);
   return resultado.affectedRows;
 }
 
 async function remover(id) {
-  const [existentes] = await pool.query('SELECT produto_id FROM produto_variacoes WHERE id = ?', [id]);
+  const [existentes] = await pool.query('SELECT produto_id FROM produto_variacoes WHERE id = ? AND excluido_em IS NULL', [id]);
   if (!existentes[0]) return 0;
-  const [resultado] = await pool.query('DELETE FROM produto_variacoes WHERE id = ?', [id]);
+  const [resultado] = await pool.query(
+    'UPDATE produto_variacoes SET ativo = FALSE, excluido_em = NOW() WHERE id = ? AND excluido_em IS NULL',
+    [id]
+  );
   await sincronizarEstoque(existentes[0].produto_id);
   return resultado.affectedRows;
 }

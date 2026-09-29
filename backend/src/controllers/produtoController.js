@@ -153,6 +153,7 @@ async function criarVariacao(req, res) {
     try {
         const id = await VariacaoProduto.criar(req.params.id, req.body);
         await registrarAlteracaoEstoque(req.params.id, id, 0, req.body.estoque_qtd, req.usuario.id, 'Cadastro da variação');
+        await Log.registrar({ tipo: 'variacao_produto', acao: 'criada', entidade_id: id, usuario_id: req.usuario.id, detalhes: { produto_id: req.params.id } });
         res.status(201).json({ id });
     } catch (erro) {
         const status = erro.code === 'TAMANHO_INVALIDO' ? 400 : erro.code === 'ER_DUP_ENTRY' ? 409 : 500;
@@ -168,6 +169,7 @@ async function atualizarVariacao(req, res) {
         if (variacaoAnterior && Number(variacaoAnterior.estoque_qtd) === 0 && Number(req.body.estoque_qtd) > 0) {
           notificacaoService.notificarReposicao(Number(req.params.id), Number(req.params.variacaoId)).catch(console.error);
         }
+        if (alterados) await Log.registrar({ tipo: 'variacao_produto', acao: 'atualizada', entidade_id: req.params.variacaoId, usuario_id: req.usuario.id, detalhes: { produto_id: req.params.id } });
         res.status(alterados ? 200 : 404).json({ mensagem: alterados ? 'Variação atualizada' : 'Variação não encontrada' });
     } catch (erro) {
         const status = erro.code === 'ER_DUP_ENTRY' ? 409 : 500;
@@ -180,6 +182,7 @@ async function removerVariacao(req, res) {
         const variacaoAnterior = await VariacaoProduto.buscarPorId(req.params.variacaoId);
         const removidos = await VariacaoProduto.remover(req.params.variacaoId);
         if (removidos && variacaoAnterior) await registrarAlteracaoEstoque(req.params.id, null, variacaoAnterior.estoque_qtd, 0, req.usuario.id, 'Exclusão da variação');
+        if (removidos) await Log.registrar({ tipo: 'variacao_produto', acao: 'removida', entidade_id: req.params.variacaoId, usuario_id: req.usuario.id, detalhes: { produto_id: req.params.id } });
         res.status(removidos ? 200 : 404).json({ mensagem: removidos ? 'Variação excluída' : 'Variação não encontrada' });
     } catch {
         res.status(500).json({ mensagem: 'Erro ao excluir variação' });
