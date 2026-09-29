@@ -20,6 +20,7 @@ const rateLimit = require('express-rate-limit');
 
 const frontendUrl = (process.env.FRONTEND_URL || 'http://localhost:5173')
   .replace(/\/$/, '');
+const apiPublicaUrl = (process.env.PUBLIC_API_URL || '').replace(/\/$/, '');
 
 if (!process.env.JWT_SECRET || process.env.JWT_SECRET.trim().length < 16) {
   throw new Error('JWT_SECRET deve existir e ter pelo menos 16 caracteres');
@@ -31,19 +32,44 @@ if (process.env.NODE_ENV === 'production') {
     'MERCADOPAGO_WEBHOOK_SECRET',
     'JWT_ISSUER',
     'JWT_AUDIENCE',
+    'DATA_ENCRYPTION_KEY',
+    'PUBLIC_API_URL',
+    'TURNSTILE_SECRET_KEY',
   ];
   const ausentes = obrigatorias.filter((nome) => !process.env[nome]?.trim());
 
-  if (ausentes.length || !frontendUrl.startsWith('https://') || process.env.DB_SSL !== 'true') {
+  if (ausentes.length || !frontendUrl.startsWith('https://') || !apiPublicaUrl.startsWith('https://') || process.env.DB_SSL !== 'true') {
     throw new Error(
       'Configuração de produção inválida: use HTTPS, DB_SSL=true e preencha os segredos obrigatórios'
     );
   }
+  require('./utils/criptografia').validarConfiguracao();
+  if (['root', 'admin'].includes(String(process.env.DB_USER || '').toLowerCase())) {
+    throw new Error('DB_USER deve ser uma conta exclusiva da aplicação, sem privilégios administrativos');
+  }
 }
 
 const app = express();
-app.use(helmet());
 app.set('trust proxy', process.env.TRUST_PROXY === 'true' ? 1 : false);
+if (process.env.NODE_ENV === 'production') {
+  app.use((req, res, next) => {
+    if (req.secure) return next();
+    return res.redirect(308, `${apiPublicaUrl}${req.originalUrl}`);
+  });
+}
+app.use(helmet({
+  strictTransportSecurity: { maxAge: 31536000, includeSubDomains: true, preload: true },
+}));
+app.use((req, res, next) => {
+  const jsonOriginal = res.json.bind(res);
+  res.json = (conteudo) => {
+    if (process.env.NODE_ENV === 'production' && res.statusCode >= 500) {
+      return jsonOriginal({ mensagem: 'Erro interno do servidor' });
+    }
+    return jsonOriginal(conteudo);
+  };
+  next();
+});
 const limitarApi = process.env.RATE_LIMIT_ENABLED === 'true'
   || (process.env.RATE_LIMIT_ENABLED !== 'false' && process.env.NODE_ENV === 'production');
 
@@ -57,6 +83,8 @@ if (limitarApi) app.use(rateLimit({
 }));
 app.use(cors({
   origin: frontendUrl,
+  credentials: true,
+  exposedHeaders: ['X-CSRF-Token'],
 }));
 app.use('/api/pagamentos/webhook', express.raw({ type: 'application/json' }));
 app.use('/api/produtos/:produtoId/avaliacoes/minha', require('./middlewares/autenticacaoMiddleware'), express.json({ limit: '8mb' }));

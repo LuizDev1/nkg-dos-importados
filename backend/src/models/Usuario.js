@@ -1,5 +1,8 @@
 const pool = require('../config/banco');
 const bcrypt = require('bcrypt');
+const { criptografar, descriptografarCampos } = require('../utils/criptografia');
+
+const abrirUsuario = (usuario) => descriptografarCampos(usuario, ['cpf']);
 
 async function criar(dadosUsuarios) {
   const { nome, email, senha, perfil = 'cliente', cpf = null } = dadosUsuarios;
@@ -9,7 +12,7 @@ async function criar(dadosUsuarios) {
     `INSERT INTO usuarios
       (nome, email, senha_hash, perfil, cpf)
      VALUES (?, ?, ?, ?, ?)`,
-    [nome, email, senhaHash, perfil, cpf]
+    [nome, email, senhaHash, perfil, criptografar(cpf)]
   );
 
   return resultado.insertId;
@@ -17,20 +20,20 @@ async function criar(dadosUsuarios) {
 
 async function buscarPorEmail(email) {
   const [usuarios] = await pool.query(
-    'SELECT * FROM usuarios WHERE email = ?',
+    'SELECT id, nome, email, senha_hash, perfil, cpf, status, anonimizado_em, criado_em FROM usuarios WHERE email = ?',
     [email]
   );
 
-  return usuarios[0];
+  return abrirUsuario(usuarios[0]);
 }
 
 async function buscarPorId(id) {
   const [usuarios] = await pool.query(
-    'SELECT * FROM usuarios WHERE id = ?',
+    'SELECT id, nome, email, senha_hash, perfil, cpf, status, anonimizado_em, criado_em FROM usuarios WHERE id = ?',
     [id]
   );
 
-  return usuarios[0];
+  return abrirUsuario(usuarios[0]);
 }
 
 async function listarClientes(busca = '') {
@@ -57,7 +60,7 @@ async function listarClientes(busca = '') {
     [termo, termo]
   );
 
-  return clientes;
+  return clientes.map(abrirUsuario);
 }
 
 async function atualizarStatus(id, status) {
@@ -68,12 +71,12 @@ async function atualizarStatus(id, status) {
 }
 
 async function atualizarCpf(id, cpf) {
-  await pool.query('UPDATE usuarios SET cpf = ? WHERE id = ?', [cpf, id]);
+  await pool.query('UPDATE usuarios SET cpf = ? WHERE id = ?', [criptografar(cpf), id]);
 }
 
 async function atualizarDados(id, { nome, email, cpf }) {
   await pool.query('UPDATE usuarios SET nome = ?, email = ?, cpf = ? WHERE id = ?',
-    [nome, email, cpf, id]);
+    [nome, email, criptografar(cpf), id]);
 }
 
 async function exportarDados(id) {
@@ -89,7 +92,7 @@ async function exportarDados(id) {
     [id]
   );
 
-  return { usuario: usuarios[0] || null, pedidos };
+  return { usuario: abrirUsuario(usuarios[0]) || null, pedidos };
 }
 
 async function anonimizar(id) {

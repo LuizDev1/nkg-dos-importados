@@ -11,9 +11,7 @@ export default function Privacidade() {
 
   async function exportar() {
     setErro('');
-    const resposta = await fetch(`${API_URL}/meus-dados`, {
-      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
-    });
+    const resposta = await fetch(`${API_URL}/meus-dados`);
     if (!resposta.ok) {
       setErro('Não foi possível exportar seus dados.');
       return;
@@ -31,7 +29,6 @@ export default function Privacidade() {
     setErro('');
     const resposta = await fetch(`${API_URL}/meus-dados`, {
       method: 'DELETE',
-      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
     });
     const dados = await resposta.json();
     if (!resposta.ok) {

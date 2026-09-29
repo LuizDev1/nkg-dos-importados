@@ -1,5 +1,21 @@
 const pool = require('../config/banco');
 const MovimentacaoEstoque = require('./MovimentacaoEstoque');
+const { criptografar, descriptografarCampos } = require('../utils/criptografia');
+
+const COLUNAS_PEDIDO = `p.id, p.usuario_id, p.idempotency_key, p.payment_status,
+  p.reembolso_status, p.status_pedido, p.payment_id, p.estoque_reservado,
+  p.tipo_entrega, p.endereco_entrega, p.telefone_contato, p.codigo_rastreio,
+  p.cep_entrega, p.frete_servico_id, p.prazo_entrega_dias, p.subtotal,
+  p.frete, p.desconto, p.codigo_promocao, p.total, p.criado_em`;
+const COLUNAS_PEDIDO_INTERNAS = `id, usuario_id, idempotency_key, payment_status,
+  reembolso_status, status_pedido, payment_id, estoque_reservado, tipo_entrega,
+  endereco_entrega, telefone_contato, codigo_rastreio, cep_entrega,
+  frete_servico_id, prazo_entrega_dias, subtotal, frete, desconto,
+  codigo_promocao, total, criado_em`;
+
+function abrirPedido(pedido) {
+  return descriptografarCampos(pedido, ['endereco_entrega', 'telefone_contato', 'cep_entrega', 'usuario_cpf']);
+}
 
 async function registrarReposicao(conexao, item, pedidoId) {
   const [produtos] = await conexao.query('SELECT estoque_qtd FROM produtos WHERE id = ?', [item.produto_id]);
@@ -21,7 +37,7 @@ async function registrarReposicao(conexao, item, pedidoId) {
 async function listarTodos() {
   const [pedidos] = await pool.query(
     `SELECT
-      p.*,
+      ${COLUNAS_PEDIDO},
       u.nome AS usuario_nome,
       u.email AS usuario_email
     FROM pedidos p
@@ -29,13 +45,13 @@ async function listarTodos() {
     ORDER BY p.criado_em DESC`
   );
 
-  return pedidos;
+  return pedidos.map(abrirPedido);
 }
 
 async function listarPorUsuario(usuarioId) {
   const [pedidos] = await pool.query(
     `SELECT
-      p.*,
+      ${COLUNAS_PEDIDO},
       (
         SELECT COUNT(*)
         FROM pedidos p2
@@ -48,13 +64,13 @@ async function listarPorUsuario(usuarioId) {
     [usuarioId]
   );
 
-  return pedidos;
+  return pedidos.map(abrirPedido);
 }
 
 async function buscarPorId(id) {
   const [pedidos] = await pool.query(
     `SELECT
-      p.*,
+      ${COLUNAS_PEDIDO},
       (
         SELECT COUNT(*)
         FROM pedidos p2
@@ -70,7 +86,26 @@ async function buscarPorId(id) {
     [id]
   );
 
-  return pedidos[0] || null;
+  return abrirPedido(pedidos[0]) || null;
+}
+
+async function buscarPorIdAutorizado(id, usuarioId, administrador = false) {
+  const [pedidos] = await pool.query(
+    `SELECT
+      ${COLUNAS_PEDIDO},
+      (
+        SELECT COUNT(*) FROM pedidos p2
+        WHERE p2.usuario_id = p.usuario_id AND p2.id <= p.id
+      ) AS numero_cliente,
+      u.nome AS usuario_nome,
+      u.email AS usuario_email,
+      u.cpf AS usuario_cpf
+    FROM pedidos p
+    INNER JOIN usuarios u ON u.id = p.usuario_id
+    WHERE p.id = ? AND (p.usuario_id = ? OR ? = TRUE)`,
+    [id, usuarioId, Boolean(administrador)]
+  );
+  return abrirPedido(pedidos[0]) || null;
 }
 
 async function criar(dadosPedido, conexao = pool) {
@@ -112,9 +147,9 @@ async function criar(dadosPedido, conexao = pool) {
       usuario_id,
       idempotency_key,
       tipo_entrega,
-      endereco_entrega,
-      telefone_contato,
-      cep_entrega,
+      criptografar(endereco_entrega),
+      criptografar(telefone_contato),
+      criptografar(cep_entrega),
       frete_servico_id,
       prazo_entrega_dias,
       subtotal,
@@ -134,7 +169,7 @@ async function atualizarStatus(id, paymentStatus, paymentId = null) {
   try {
     await conexao.beginTransaction();
     const [pedidos] = await conexao.query(
-      'SELECT * FROM pedidos WHERE id = ? FOR UPDATE',
+      `SELECT ${COLUNAS_PEDIDO_INTERNAS} FROM pedidos WHERE id = ? FOR UPDATE`,
       [id]
     );
     const pedido = pedidos[0];
@@ -289,7 +324,7 @@ async function cancelarPedido(id, somentePendente = false) {
     await conexao.beginTransaction();
 
     const [pedidos] = await conexao.query(
-      'SELECT * FROM pedidos WHERE id = ? FOR UPDATE',
+      `SELECT ${COLUNAS_PEDIDO_INTERNAS} FROM pedidos WHERE id = ? FOR UPDATE`,
       [id]
     );
 
@@ -361,10 +396,10 @@ await conexao.query(
 
 async function buscarPorIdempotency(usuarioId, idempotencyKey, conexao = pool) {
   const [pedidos] = await conexao.query(
-    'SELECT * FROM pedidos WHERE usuario_id = ? AND idempotency_key = ?',
+    `SELECT ${COLUNAS_PEDIDO_INTERNAS} FROM pedidos WHERE usuario_id = ? AND idempotency_key = ?`,
     [usuarioId, idempotencyKey]
   );
-  return pedidos[0] || null;
+  return abrirPedido(pedidos[0]) || null;
 }
 
 async function registrarWebhook(eventoId, tipo) {
@@ -418,6 +453,7 @@ module.exports = {
   listarTodos,
   listarPorUsuario,
   buscarPorId,
+  buscarPorIdAutorizado,
   criar,
   atualizarStatus,
   atualizarStatusOperacional,

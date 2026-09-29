@@ -18,7 +18,8 @@ async function registrar({ tipo, acao, entidade_id = null, usuario_id = null, de
 
 async function listarPorEntidade(tipo, entidadeId) {
   const [logs] = await pool.query(
-    `SELECT * FROM logs WHERE tipo = ? AND entidade_id = ? ORDER BY criado_em DESC`,
+    `SELECT id, tipo, acao, entidade_id, usuario_id, detalhes, criado_em
+     FROM logs WHERE tipo = ? AND entidade_id = ? ORDER BY criado_em DESC`,
     [tipo, entidadeId]
   );
 

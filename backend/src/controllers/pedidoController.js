@@ -9,12 +9,19 @@ const notificacaoService = require('../services/notificacaoService'); // 📧 NO
 
 const tiposEntregaPermitidos = ['envio', 'entrega_local'];
 
+function pedidoParaApi(pedido) {
+  if (!pedido) return pedido;
+  const { idempotency_key, estoque_reservado, ...dadosPublicos } = pedido;
+  return dadosPublicos;
+}
+
 async function listar(req, res) {
   try {
     const pedidos = await Pedido.listarTodos();
-    res.json(pedidos);
+    res.json(pedidos.map(pedidoParaApi));
   } catch (erro) {
-    res.status(500).json({ mensagem: erro.message });
+    console.error('Erro ao listar pedidos:', erro);
+    res.status(500).json({ mensagem: 'Erro ao listar pedidos' });
   }
 }
 
@@ -28,15 +35,20 @@ async function listarPorUsuario(req, res) {
       usuarioId
     );
 
-    res.json(pedidos);
+    res.json(pedidos.map(pedidoParaApi));
   } catch (erro) {
-    res.status(500).json({ mensagem: erro.message });
+    console.error('Erro ao listar pedidos do usuário:', erro);
+    res.status(500).json({ mensagem: 'Erro ao listar pedidos' });
   }
 }
 
 async function buscar(req, res) {
   try {
-    const pedido = await Pedido.buscarPorId(req.params.id);
+    const pedido = await Pedido.buscarPorIdAutorizado(
+      req.params.id,
+      req.usuario.id,
+      req.usuario.perfil === 'admin'
+    );
 
     if (!pedido) {
       return res.status(404).json({
@@ -44,21 +56,12 @@ async function buscar(req, res) {
       });
     }
 
-    if (
-      req.usuario.perfil !== 'admin'
-      && String(pedido.usuario_id) !== String(req.usuario.id)
-    ) {
-      return res.status(403).json({
-        mensagem: 'Você não tem acesso a este pedido',
-      });
-    }
-
     pedido.itens = await ItemPedido.listarPorPedido(pedido.id);
 
-    return res.json(pedido);
+    return res.json(pedidoParaApi(pedido));
   } catch (erro) {
     return res.status(500).json({
-      mensagem: erro.message,
+      mensagem: 'Erro ao buscar pedido',
     });
   }
 }
@@ -127,7 +130,7 @@ async function criar(req, res) {
         servicoId: frete_servico_id,
       });
     } catch (erro) {
-      return res.status(502).json({ mensagem: erro.message });
+      return res.status(502).json({ mensagem: 'Não foi possível calcular o frete' });
     }
   }
 
@@ -352,7 +355,7 @@ async function criar(req, res) {
     }
 
     return res.status(400).json({
-      mensagem: erro.message,
+      mensagem: 'Não foi possível criar o pedido',
     });
   } finally {
     conexao.release();
@@ -429,7 +432,8 @@ async function atualizarRastreio(req, res) {
 
     res.json({ mensagem: 'Código de rastreio atualizado' });
   } catch (erro) {
-    return res.status(500).json({ mensagem: erro.message });
+    console.error('Erro ao atualizar rastreio:', erro);
+    return res.status(500).json({ mensagem: 'Erro ao atualizar rastreio' });
   }
   try {
       const [usuarios] = await pool.query(
@@ -446,14 +450,14 @@ async function atualizarRastreio(req, res) {
 
 async function cancelar(req, res) {
   try {
-    const pedido = await Pedido.buscarPorId(req.params.id);
+    const pedido = await Pedido.buscarPorIdAutorizado(
+      req.params.id,
+      req.usuario.id,
+      req.usuario.perfil === 'admin'
+    );
 
     if (!pedido) {
       return res.status(404).json({ mensagem: 'Pedido não encontrado' });
-    }
-
-    if (req.usuario.perfil !== 'admin' && String(pedido.usuario_id) !== String(req.usuario.id)) {
-      return res.status(403).json({ mensagem: 'Você não tem acesso a este pedido' });
     }
 
     const pedidoCancelado = await Pedido.cancelarPedido(pedido.id);
@@ -515,14 +519,14 @@ async function cancelar(req, res) {
     });
   } catch (erro) {
     console.error('Erro ao cancelar pedido:', erro);
-    return res.status(500).json({ mensagem: erro.message });
+    return res.status(500).json({ mensagem: 'Erro ao cancelar pedido' });
   }
 }
 
 async function abandonar(req, res) {
   try {
-    const pedido = await Pedido.buscarPorId(req.params.id);
-    if (!pedido || String(pedido.usuario_id) !== String(req.usuario.id)) {
+    const pedido = await Pedido.buscarPorIdAutorizado(req.params.id, req.usuario.id, false);
+    if (!pedido) {
       return res.status(404).json({ mensagem: 'Pedido não encontrado' });
     }
 
@@ -539,26 +543,26 @@ async function abandonar(req, res) {
     });
     return res.json({ mensagem: 'Pedido pendente cancelado' });
   } catch (erro) {
-    return res.status(500).json({ mensagem: erro.message });
+    console.error('Erro ao abandonar pedido:', erro);
+    return res.status(500).json({ mensagem: 'Erro ao cancelar pedido pendente' });
   }
 }
 async function listarMeusPedidos(req, res) {
   try {
     const pedidos = await Pedido.listarPorUsuario(req.usuario.id);
-    return res.json(pedidos);
+    return res.json(pedidos.map(pedidoParaApi));
   } catch (erro) {
     return res.status(500).json({
-      mensagem: erro.message,
+      mensagem: 'Erro ao listar pedidos',
     });
   }
 }
 async function buscarMeuPedido(req, res) {
   try {
-    const pedido = await Pedido.buscarPorId(req.params.id);
+    const pedido = await Pedido.buscarPorIdAutorizado(req.params.id, req.usuario.id, false);
 
     if (
-      !pedido ||
-      String(pedido.usuario_id) !== String(req.usuario.id)
+      !pedido
     ) {
       return res.status(404).json({
         mensagem: 'Pedido não encontrado',
@@ -567,10 +571,10 @@ async function buscarMeuPedido(req, res) {
 
     pedido.itens = await ItemPedido.listarPorPedido(pedido.id);
 
-    return res.json(pedido);
+    return res.json(pedidoParaApi(pedido));
   } catch (erro) {
     return res.status(500).json({
-      mensagem: erro.message,
+      mensagem: 'Erro ao buscar pedido',
     });
   }
 }

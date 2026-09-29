@@ -1,5 +1,9 @@
 const pool = require('../config/banco');
 
+const COLUNAS_PRODUTO = `p.id, p.nome, p.categoria, p.preco, p.tag, p.foto_url,
+  p.estoque_qtd, p.estoque_minimo, p.peso_kg, p.largura_cm, p.altura_cm,
+  p.comprimento_cm, p.tamanhos_json, p.ativo, p.criado_em`;
+
 async function listarAtivos(filtros = {}){
     const condicoes = ['p.ativo = true', 'p.excluido_em IS NULL'];
     const parametros = [];
@@ -31,7 +35,7 @@ async function listarAtivos(filtros = {}){
     };
     const ordenacao = ordenacoes[filtros.ordenacao] || ordenacoes.recentes;
     const [produtos] = await pool.query(
-      `SELECT p.*,
+      `SELECT ${COLUNAS_PRODUTO},
         (SELECT ROUND(AVG(a.nota), 1) FROM avaliacoes a WHERE a.produto_id = p.id) AS avaliacao_media,
         (SELECT COUNT(*) FROM avaliacoes a WHERE a.produto_id = p.id) AS avaliacoes_total
        FROM produtos p WHERE ${condicoes.join(' AND ')} ORDER BY ${ordenacao}`,
@@ -51,14 +55,14 @@ async function listarCategorias() {
 }
 
 async function listarTodos(){
-    const [produtos] = await pool.query ('SELECT * from produtos');
+    const [produtos] = await pool.query (`SELECT ${COLUNAS_PRODUTO} FROM produtos p`);
 
     return produtos.map(p => ({ ...p, tamanhos: typeof p.tamanhos_json === 'string' ? JSON.parse(p.tamanhos_json) : (p.tamanhos_json || []) }));
 };
 
 async function buscarPorId(id){
     const [produtos] = await pool.query(
-      `SELECT p.*,
+      `SELECT ${COLUNAS_PRODUTO},
         (SELECT ROUND(AVG(a.nota), 1) FROM avaliacoes a WHERE a.produto_id = p.id) AS avaliacao_media,
         (SELECT COUNT(*) FROM avaliacoes a WHERE a.produto_id = p.id) AS avaliacoes_total
        FROM produtos p WHERE p.id = ?`,

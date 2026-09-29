@@ -10,7 +10,7 @@ async function listar(produtoId, somenteAtivas = true) {
 }
 
 async function buscarPorId(id) {
-  const [variacoes] = await pool.query('SELECT * FROM produto_variacoes WHERE id = ?', [id]);
+  const [variacoes] = await pool.query('SELECT id, produto_id, nome, estoque_qtd, tamanho, atributos_json, ativo, criado_em FROM produto_variacoes WHERE id = ?', [id]);
   return variacoes[0] || null;
 }
 

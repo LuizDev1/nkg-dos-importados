@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAutenticacao } from '../../contextos/ContextoAutenticacao';
+import Turnstile, { turnstileAtivo } from '../../componentes/Turnstile';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -8,6 +9,7 @@ export default function Login() {
   const [mostrarSenha, setMostrarSenha] = useState(false);
   const [erro, setErro] = useState('');
   const [carregando, setCarregando] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState('');
 
   const { login } = useAutenticacao();
   const navegar = useNavigate();
@@ -20,7 +22,7 @@ export default function Login() {
     setCarregando(true);
 
     try {
-      const dados = await login(email, senha);
+      const dados = await login(email, senha, turnstileToken);
       
       if (dados.usuario.perfil === 'admin') {
         navegar('/admin', { replace: true });
@@ -67,9 +69,11 @@ export default function Login() {
           <div className="relative"><input type={mostrarSenha ? 'text' : 'password'} value={senha} onChange={(e) => setSenha(e.target.value)} required autoComplete="current-password" className="w-full bg-zinc-900/90 border border-zinc-800 rounded-lg px-4 py-3 pr-20 text-zinc-100 text-sm focus:outline-none focus:border-amber-500/80 transition-colors" /><button type="button" onClick={() => setMostrarSenha((valor) => !valor)} aria-pressed={mostrarSenha} className="absolute inset-y-0 right-3 text-xs font-semibold text-[#d4af45] hover:text-[#e2c25d]">{mostrarSenha ? 'Ocultar' : 'Mostrar'}</button></div>
         </div>
 
+        <Turnstile acao="login" aoValidar={setTurnstileToken} />
+
         <button
           type="submit"
-          disabled={carregando}
+          disabled={carregando || (turnstileAtivo() && !turnstileToken)}
           className="w-full rounded bg-[#d4af45] px-4 py-3.5 text-xs font-bold uppercase tracking-[0.15em] text-[#090a09] shadow-lg shadow-black/30 transition-all hover:bg-[#e2c25d] disabled:opacity-50"
         >
           {carregando ? 'Entrando...' : 'Entrar'}

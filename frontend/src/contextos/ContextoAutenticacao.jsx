@@ -1,50 +1,34 @@
 import { createContext, useContext, useState, useEffect } from 'react';
-import { login as loginServico, registrar as registrarServico } from '../servicos/autenticacaoService';
+import { login as loginServico, logout as logoutServico, registrar as registrarServico } from '../servicos/autenticacaoService';
+import { limparCsrf } from '../servicos/apiSegura';
 
 const ContextoAutenticacao = createContext(null);
 
 export function ProvedorAutenticacao({ children }) {
   const [usuario, setUsuario] = useState(null);
-  const [token, setToken] = useState(null);
   const [carregando, setCarregando] = useState(true);
   const [sessaoEncerrada, setSessaoEncerrada] = useState(false);
 
   useEffect(() => {
-    const tokenSalvo = localStorage.getItem('token');
-    const usuarioSalvo = localStorage.getItem('usuario');
     let ativo = true;
 
-    if (tokenSalvo && usuarioSalvo) {
-      fetch(`${import.meta.env.VITE_API_URL || '/api'}/usuarios/me`, {
-        headers: { Authorization: `Bearer ${tokenSalvo}` },
-      }).then(async (resposta) => {
+    fetch(`${import.meta.env.VITE_API_URL || '/api'}/usuarios/me`).then(async (resposta) => {
         if (!ativo) return;
         if (!resposta.ok) throw new Error('Sessão inválida');
         const dados = await resposta.json();
-        setToken(tokenSalvo);
         setUsuario(dados);
-        localStorage.setItem('usuario', JSON.stringify(dados));
       }).catch(() => {
         if (!ativo) return;
-        localStorage.removeItem('token');
-        localStorage.removeItem('usuario');
-        setSessaoEncerrada(true);
+        setUsuario(null);
       }).finally(() => { if (ativo) setCarregando(false); });
-    } else {
-      setCarregando(false);
-    }
     return () => { ativo = false; };
   }, []);
 
-  async function login(email, senha) {
-    const dados = await loginServico(email, senha);
+  async function login(email, senha, turnstileToken) {
+    const dados = await loginServico(email, senha, turnstileToken);
     setSessaoEncerrada(false);
 
-    setToken(dados.token);
     setUsuario(dados.usuario);
-
-    localStorage.setItem('token', dados.token);
-    localStorage.setItem('usuario', JSON.stringify(dados.usuario));
 
     return dados;
   }
@@ -53,22 +37,20 @@ export function ProvedorAutenticacao({ children }) {
     return await registrarServico(dadosUsuario);
   }
 
-  function logout() {
+  async function logout() {
+    try { await logoutServico(); } catch { /* A interface ainda encerra a sessão local. */ }
     setSessaoEncerrada(true);
-    setToken(null);
     setUsuario(null);
-    localStorage.removeItem('token');
-    localStorage.removeItem('usuario');
+    limparCsrf();
   }
 
   function atualizarUsuario(dados) {
     const atualizado = { ...usuario, nome: dados.nome, email: dados.email };
     setUsuario(atualizado);
-    localStorage.setItem('usuario', JSON.stringify(atualizado));
   }
 
   return (
-    <ContextoAutenticacao.Provider value={{ usuario, token, carregando, login, registrar, logout, atualizarUsuario, sessaoEncerrada }}>
+    <ContextoAutenticacao.Provider value={{ usuario, carregando, login, registrar, logout, atualizarUsuario, sessaoEncerrada }}>
       {children}
     </ContextoAutenticacao.Provider>
   );

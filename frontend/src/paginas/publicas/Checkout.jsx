@@ -204,7 +204,7 @@ export default function Checkout() {
 
       const respostaCpf = await fetch(`${API_URL}/usuarios/${usuario.id}/cpf`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token') || ''}` },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ cpf }),
       });
       if (!respostaCpf.ok) {
@@ -215,12 +215,10 @@ export default function Checkout() {
       setResumoServidor(respostaPedido);
       localStorage.setItem('pedido_pendente_carrinho', String(respostaPedido.id));
 
-      const token = localStorage.getItem('token');
       const respostaPagamento = await fetch(`${API_URL}/pagamentos/${respostaPedido.id}`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': token ? `Bearer ${token}` : ''
+          'Content-Type': 'application/json'
         }
       });
 

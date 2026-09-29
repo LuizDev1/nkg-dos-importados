@@ -59,7 +59,7 @@ async function editarConta(req, res) {
 
 async function listarClientes(req, res) {
   try {
-    const clientes = await Usuario.listarClientes(req.query.busca || '');
+    const clientes = await Usuario.listarClientes(req.queryValidada.busca);
     res.json(clientes);
   } catch (erro) {
     console.error(erro);
@@ -114,7 +114,8 @@ async function atualizarCpf(req, res) {
     });
     res.json({ mensagem: 'CPF atualizado com sucesso' });
   } catch (erro) {
-    res.status(500).json({ mensagem: erro.message });
+    console.error('Erro ao atualizar CPF:', erro);
+    res.status(500).json({ mensagem: 'Erro ao atualizar CPF' });
   }
 }
 
