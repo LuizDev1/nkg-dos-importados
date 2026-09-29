@@ -8,6 +8,8 @@
     "dev": "nodemon src/app.js",
     "test": "node --test",
     "migrate": "node database/migrate.js",
+    "rotate-encryption-key": "node scripts/rotacionar-chave.js",
+    "configure-db-user": "node database/configurar-usuario-app.js",
     "tunnel": "node ngrok-tunnel.js"
   },
   "dependencies": {

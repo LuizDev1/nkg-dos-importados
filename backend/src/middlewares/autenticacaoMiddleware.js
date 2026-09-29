@@ -1,14 +1,36 @@
 const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
 const Usuario = require('../models/Usuario');
+
+const COOKIE_SESSAO = 'nkg_sessao';
+const COOKIE_CSRF = 'nkg_csrf';
+
+function lerCookies(req) {
+  return String(req.headers.cookie || '').split(';').reduce((cookies, parte) => {
+    const indice = parte.indexOf('=');
+    if (indice < 0) return cookies;
+    const nome = parte.slice(0, indice).trim();
+    const valor = parte.slice(indice + 1).trim();
+    try { cookies[nome] = decodeURIComponent(valor); } catch { cookies[nome] = valor; }
+    return cookies;
+  }, {});
+}
+
+function valoresIguais(valorA, valorB) {
+  const a = Buffer.from(String(valorA || ''));
+  const b = Buffer.from(String(valorB || ''));
+  return a.length === b.length && a.length > 0 && crypto.timingSafeEqual(a, b);
+}
 
 async function verificarAutenticacao(req, res, next) {
   const authHeader = req.headers.authorization;
+  const bearer = authHeader?.startsWith('Bearer ') ? authHeader.slice('Bearer '.length).trim() : '';
+  const cookies = lerCookies(req);
+  const token = bearer || cookies[COOKIE_SESSAO];
 
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+  if (!token) {
     return res.status(401).json({ mensagem: 'Token não fornecido' });
   }
-
-  const token = authHeader.slice('Bearer '.length);
 
   try {
     const opcoes = {};
@@ -26,6 +48,16 @@ async function verificarAutenticacao(req, res, next) {
     }
 
     req.usuario = { id: usuario.id, perfil: usuario.perfil, status: usuario.status };
+    req.autenticacaoPorCookie = !bearer;
+
+    if (req.autenticacaoPorCookie) {
+      const csrf = cookies[COOKIE_CSRF];
+      const metodoSeguro = ['GET', 'HEAD', 'OPTIONS'].includes(req.method);
+      if (!metodoSeguro && !valoresIguais(csrf, req.get('X-CSRF-Token'))) {
+        return res.status(403).json({ mensagem: 'Token CSRF inválido ou ausente' });
+      }
+      if (csrf) res.setHeader('X-CSRF-Token', csrf);
+    }
     next();
   } catch (erro) {
     if (erro.name === 'JsonWebTokenError' || erro.name === 'TokenExpiredError') {
@@ -38,3 +70,5 @@ async function verificarAutenticacao(req, res, next) {
 }
 
 module.exports = verificarAutenticacao;
+module.exports.COOKIE_SESSAO = COOKIE_SESSAO;
+module.exports.COOKIE_CSRF = COOKIE_CSRF;

@@ -5,7 +5,6 @@ export async function cadastrarAvisoEstoque(produtoId, variacaoId = null) {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${localStorage.getItem('token') || ''}`,
     },
     body: JSON.stringify({ produto_id: produtoId, ...(variacaoId ? { variacao_id: variacaoId } : {}) }),
   });

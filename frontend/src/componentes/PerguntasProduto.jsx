@@ -32,7 +32,7 @@ export default function PerguntasProduto({ produtoId }) {
     try {
       const resposta = await fetch(`${API_URL}/produtos/${produtoId}/perguntas`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token') || ''}` },
+headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ pergunta: texto }),
       });
       const dados = await resposta.json();

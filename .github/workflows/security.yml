@@ -1,0 +1,79 @@
+name: Segurança e qualidade
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+  schedule:
+    - cron: '17 8 * * 1'
+
+permissions:
+  contents: read
+
+jobs:
+  verificar:
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: teste
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -pteste"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+    env:
+      NODE_ENV: test
+      DB_HOST: 127.0.0.1
+      DB_PORT: 3306
+      DB_NAME: nkg_importados
+      DB_USER: root
+      DB_PASSWORD: teste
+      DB_SSL: 'false'
+      JWT_SECRET: segredo-de-testes-com-mais-de-32-caracteres
+      JWT_ISSUER: nkg-testes
+      JWT_AUDIENCE: nkg-testes-web
+      DATA_ENCRYPTION_KEY: BwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwc=
+      FRONTEND_URL: http://localhost:5173
+      RATE_LIMIT_ENABLED: 'false'
+      CEP_ORIGEM: '64900000'
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            backend/package-lock.json
+            frontend/package-lock.json
+
+      - name: Instalar dependências
+        run: |
+          npm ci
+          npm ci --prefix backend
+          npm ci --prefix frontend
+
+      - name: Auditar dependências
+        run: |
+          npm audit --audit-level=high
+          npm audit --prefix backend --audit-level=high
+          npm audit --prefix frontend --audit-level=high
+
+      - name: Preparar banco de testes
+        run: |
+          mysql -h 127.0.0.1 -uroot -pteste < backend/database/schema.sql
+          npm run migrate --prefix backend
+
+      - name: Testar backend
+        run: npm test --prefix backend
+
+      - name: Verificar frontend
+        run: |
+          npm run lint --prefix frontend
+          npm test --prefix frontend
+          npm run build --prefix frontend

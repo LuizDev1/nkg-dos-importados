@@ -1,10 +1,8 @@
 const API_URL = import.meta.env.VITE_API_URL || '/api';
 
 function headersComToken() {
-  const token = localStorage.getItem('token');
   return {
     'Content-Type': 'application/json',
-    Authorization: token ? `Bearer ${token}` : '',
   };
 }
 
@@ -68,14 +66,10 @@ export async function atualizarCodigoRastreio(id, codigo_rastreio) {
 }
 
 export async function listarPedidosPorUsuario(usuarioId) {
-  const token = localStorage.getItem('token');
-
   const resposta = await fetch(
     `${API_URL}/pedidos/usuario/${usuarioId}`,
     {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
+      headers: headersComToken(),
     }
   );
 

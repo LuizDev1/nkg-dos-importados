@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { registrar } from '../../servicos/autenticacaoService';
 import { formatarCpf } from '../../servicos/formatadores';
+import Turnstile, { turnstileAtivo } from '../../componentes/Turnstile';
 
 export default function Cadastro() {
   const [nome, setNome] = useState('');
@@ -12,6 +13,7 @@ export default function Cadastro() {
   const [erro, setErro] = useState('');
   const [sucesso, setSucesso] = useState(false);
   const [carregando, setCarregando] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState('');
 
   const navegar = useNavigate();
 
@@ -36,7 +38,7 @@ export default function Cadastro() {
     setCarregando(true);
 
     try {
-      await registrar({ nome, email, senha, cpf });
+      await registrar({ nome, email, senha, cpf, turnstile_token: turnstileToken });
       setSucesso(true);
       setTimeout(() => navegar('/login'), 1500);
     } catch (erro) {
@@ -107,9 +109,11 @@ export default function Cadastro() {
           {senha && requisitosSenha(senha).length > 0 && <div role="status" className="mt-3 rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs leading-relaxed text-amber-200"><strong className="font-semibold text-amber-300">Senha ainda não atende aos requisitos.</strong><span className="block mt-1">{requisitosSenha(senha).join(' ')}</span></div>}
         </div>
 
+        <Turnstile acao="cadastro" aoValidar={setTurnstileToken} />
+
         <button
           type="submit"
-          disabled={carregando}
+          disabled={carregando || (turnstileAtivo() && !turnstileToken)}
           className="w-full rounded bg-[#d4af45] px-4 py-3.5 text-xs font-bold uppercase tracking-[0.15em] text-[#090a09] shadow-lg shadow-black/30 transition-all hover:bg-[#e2c25d] disabled:opacity-50"
         >
           {carregando ? 'Cadastrando...' : 'Cadastrar'}

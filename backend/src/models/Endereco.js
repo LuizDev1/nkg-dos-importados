@@ -1,11 +1,14 @@
 const pool = require('../config/banco');
+const { criptografar, descriptografarCampos } = require('../utils/criptografia');
+
+const camposProtegidos = ['cep', 'rua', 'numero', 'complemento', 'bairro', 'cidade', 'telefone'];
 
 async function listar(usuarioId) {
   const [enderecos] = await pool.query(
-    'SELECT * FROM enderecos_usuarios WHERE usuario_id = ? ORDER BY principal DESC, atualizado_em DESC',
+    'SELECT id, usuario_id, apelido, cep, rua, numero, complemento, bairro, cidade, estado, telefone, principal, criado_em, atualizado_em FROM enderecos_usuarios WHERE usuario_id = ? ORDER BY principal DESC, atualizado_em DESC',
     [usuarioId]
   );
-  return enderecos;
+  return enderecos.map((endereco) => descriptografarCampos(endereco, camposProtegidos));
 }
 
 async function criar(usuarioId, dados) {
@@ -19,7 +22,7 @@ async function criar(usuarioId, dados) {
       `INSERT INTO enderecos_usuarios
        (usuario_id, apelido, cep, rua, numero, complemento, bairro, cidade, estado, telefone, principal)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [usuarioId, dados.apelido, dados.cep.replace(/\D/g, ''), dados.rua, dados.numero, dados.complemento, dados.bairro, dados.cidade, dados.estado.toUpperCase(), dados.telefone, principal]
+      [usuarioId, dados.apelido, criptografar(dados.cep.replace(/\D/g, '')), criptografar(dados.rua), criptografar(dados.numero), criptografar(dados.complemento), criptografar(dados.bairro), criptografar(dados.cidade), dados.estado.toUpperCase(), criptografar(dados.telefone), principal]
     );
     await conexao.commit();
     return resultado.insertId;

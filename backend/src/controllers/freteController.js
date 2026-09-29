@@ -22,7 +22,7 @@ async function cotar(req, res) {
   } catch (erro) {
     console.error('Erro ao cotar frete:', erro.message);
     const status = erro.message.includes('inválido') || erro.message.includes('obrigatório') ? 400 : 500;
-    return res.status(status).json({ mensagem: erro.message });
+    return res.status(status).json({ mensagem: status === 400 ? 'Dados de frete inválidos' : 'Erro ao calcular frete' });
   }
 }
 
