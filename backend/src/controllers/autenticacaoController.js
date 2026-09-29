@@ -1,6 +1,18 @@
 const Usuario = require('../models/Usuario');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
+const { COOKIE_SESSAO, COOKIE_CSRF } = require('../middlewares/autenticacaoMiddleware');
+
+function opcoesCookie(httpOnly) {
+  return {
+    httpOnly,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: process.env.SESSION_COOKIE_SAME_SITE || 'lax',
+    path: '/api',
+    maxAge: Number(process.env.SESSION_MAX_AGE_MS || 15 * 60 * 1000),
+  };
+}
 
 async function registrar(req, res){
     try{
@@ -14,7 +26,11 @@ async function registrar(req, res){
         });
         res.status(201).json({ id });
     }catch(erro){
-        res.status(500).json({mensagem: erro.message});
+        if (erro.code === 'ER_DUP_ENTRY') {
+          return res.status(409).json({ mensagem: 'Não foi possível concluir o cadastro com esses dados' });
+        }
+        console.error('Erro ao registrar usuário:', erro);
+        res.status(500).json({ mensagem: 'Erro ao registrar usuário' });
     }  
 };
 
@@ -46,13 +62,27 @@ async function login(req, res) {
       }
     );
 
-    res.json({ token, usuario: { id: usuario.id, nome: usuario.nome, perfil: usuario.perfil } });
+    const csrfToken = crypto.randomBytes(32).toString('hex');
+    res.cookie(COOKIE_SESSAO, token, opcoesCookie(true));
+    res.cookie(COOKIE_CSRF, csrfToken, opcoesCookie(false));
+    res.setHeader('X-CSRF-Token', csrfToken);
+    res.json({ usuario: { id: usuario.id, nome: usuario.nome, perfil: usuario.perfil } });
   } catch (erro) {
-    res.status(500).json({ mensagem: erro.message });
+    console.error('Erro ao autenticar usuário:', erro);
+    res.status(500).json({ mensagem: 'Erro ao autenticar usuário' });
   }
+}
+
+function logout(req, res) {
+  const opcoes = opcoesCookie(true);
+  delete opcoes.maxAge;
+  res.clearCookie(COOKIE_SESSAO, opcoes);
+  res.clearCookie(COOKIE_CSRF, { ...opcoes, httpOnly: false });
+  return res.status(204).send();
 }
 
 module.exports = {
  login,
- registrar
+ registrar,
+ logout
 };

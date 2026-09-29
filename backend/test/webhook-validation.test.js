@@ -94,18 +94,32 @@ test('login deve bloquear usuário inativo', async () => {
   assert.match(resposta.body.mensagem, /bloqueado/i);
 });
 
-test('login deve gerar token para usuário ativo', async () => {
+test('login deve criar cookie HttpOnly e exigir CSRF nas escritas', async () => {
   const email = `ativo-${Date.now()}@teste.com`;
   await criarUsuarioTeste(email, 'senha123', 'cliente', 'ativo');
+  const agente = request.agent(app);
 
-  const resposta = await request(app)
+  const resposta = await agente
     .post('/api/auth/login')
     .send({ email, senha: 'senha123' });
 
   assert.equal(resposta.status, 200);
-  assert.ok(resposta.body.token);
+  assert.equal(resposta.body.token, undefined);
+  assert.match(resposta.headers['set-cookie'].join(';'), /nkg_sessao=.*HttpOnly/i);
+  assert.ok(resposta.headers['x-csrf-token']);
   assert.equal(resposta.body.usuario.email, undefined);
   assert.equal(resposta.body.usuario.perfil, 'cliente');
+
+  const conta = await agente.get('/api/usuarios/me');
+  assert.equal(conta.status, 200);
+
+  const logoutSemCsrf = await agente.post('/api/auth/logout');
+  assert.equal(logoutSemCsrf.status, 403);
+
+  const logout = await agente
+    .post('/api/auth/logout')
+    .set('X-CSRF-Token', resposta.headers['x-csrf-token']);
+  assert.equal(logout.status, 204);
 });
 
 test('pedido de outro cliente deve ser bloqueado', async () => {
@@ -123,8 +137,8 @@ test('pedido de outro cliente deve ser bloqueado', async () => {
     .get(`/api/pedidos/${pedido.insertId}`)
     .set('Authorization', `Bearer ${token}`);
 
-  assert.equal(resposta.status, 403);
-  assert.match(resposta.body.mensagem, /acesso/i);
+  assert.equal(resposta.status, 404);
+  assert.match(resposta.body.mensagem, /não encontrado/i);
 });
 
 test('webhook deve rejeitar assinatura inválida', async () => {

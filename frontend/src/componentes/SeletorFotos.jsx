@@ -17,7 +17,7 @@ export default function SeletorFotos({ fotos, onChange, maximo = 5, rotulo = 'Fo
     try {
       const novas = [];
       for (const arquivo of arquivos) {
-        const resposta = await fetch(API_URL + '/' + rotaUpload, { method: 'POST', headers: { Authorization: 'Bearer ' + (localStorage.getItem('token') || ''), 'Content-Type': arquivo.type }, body: arquivo });
+const resposta = await fetch(API_URL + '/' + rotaUpload, { method: 'POST', headers: { 'Content-Type': arquivo.type }, body: arquivo });
         const dados = await resposta.json();
         if (!resposta.ok) throw new Error(dados.mensagem || 'Erro ao enviar foto');
         const origem = new URL(API_URL, window.location.origin).origin;

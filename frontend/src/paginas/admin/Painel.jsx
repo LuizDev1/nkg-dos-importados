@@ -17,10 +17,7 @@ export default function Painel() {
   const [erroEstoque, setErroEstoque] = useState('');
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    fetch(`${import.meta.env.VITE_API_URL || '/api'}/produtos/estoque-baixo`, {
-      headers: { Authorization: `Bearer ${token || ''}` },
-    }).then(async resposta => {
+    fetch(`${import.meta.env.VITE_API_URL || '/api'}/produtos/estoque-baixo`).then(async resposta => {
       if (!resposta.ok) throw new Error('Não foi possível carregar os alertas de estoque.');
       return resposta.json();
     }).then(setEstoqueBaixo).catch(erro => setErroEstoque(erro.message));

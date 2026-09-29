@@ -2,7 +2,7 @@ const pool = require('../config/banco');
 
 async function buscarValida(codigo, conexao = pool) {
   const [promocoes] = await conexao.query(
-    `SELECT * FROM promocoes
+    `SELECT id, codigo, tipo, valor, ativo, inicio_em, fim_em, uso_maximo, usos, criado_em FROM promocoes
      WHERE codigo = ? AND ativo = TRUE
        AND (inicio_em IS NULL OR inicio_em <= NOW())
        AND (fim_em IS NULL OR fim_em >= NOW())
@@ -22,7 +22,7 @@ async function incrementarUso(id, conexao = pool) {
 
 async function listar() {
   const [promocoes] = await pool.query(
-    'SELECT * FROM promocoes ORDER BY criado_em DESC'
+    'SELECT id, codigo, tipo, valor, ativo, inicio_em, fim_em, uso_maximo, usos, criado_em FROM promocoes ORDER BY criado_em DESC'
   );
   return promocoes;
 }

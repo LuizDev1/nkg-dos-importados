@@ -27,7 +27,7 @@ const CONTEUDO = {
 export default function StatusPedido() {
   const { id, resultado } = useParams();
   const { limparCarrinho } = useCarrinho();
-  const { token } = useAutenticacao();
+  const { usuario } = useAutenticacao();
   const sincronizado = useRef(false);
   const pedidoAtualRef = useRef(null);
   const [pedido, setPedido] = useState(null);
@@ -63,7 +63,7 @@ export default function StatusPedido() {
     }
 
     async function carregarPedido() {
-      if (!token) return;
+      if (!usuario) return;
       try {
         const dados = await buscarPedido(id);
         pedidoAtualRef.current = dados;
@@ -77,13 +77,12 @@ export default function StatusPedido() {
     if (resultado === 'sucesso' || resultado === 'falha') {
       const parametros = new URLSearchParams(window.location.search);
       const paymentId = parametros.get('payment_id') || parametros.get('collection_id');
-      if (paymentId && token && !sincronizado.current) {
+      if (paymentId && usuario && !sincronizado.current) {
         sincronizado.current = true;
         fetch(`${API_URL}/pagamentos/${id}/sincronizar`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({ payment_id: paymentId }),
         }).catch(() => {}).finally(carregarPedido);
@@ -100,7 +99,7 @@ export default function StatusPedido() {
     }, 10000);
 
     return () => clearInterval(intervalo);
-  }, [resultado, id, token, limparCarrinho]);
+  }, [resultado, id, usuario, limparCarrinho]);
 
   const etapas = [
     ['aguardando_pagamento', 'Aguardando confirmação do pagamento'],

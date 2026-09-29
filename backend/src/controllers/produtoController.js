@@ -17,29 +17,19 @@ async function registrarAlteracaoEstoque(produtoId, variacaoId, anterior, poster
 
 async function listarPublico(req, res) {
     try {
-        const precoMinimo = req.query.preco_min !== undefined && req.query.preco_min !== ''
-          ? Number(req.query.preco_min) : null;
-        const precoMaximo = req.query.preco_max !== undefined && req.query.preco_max !== ''
-          ? Number(req.query.preco_max) : null;
-
-        if (
-          (precoMinimo != null && (!Number.isFinite(precoMinimo) || precoMinimo < 0)) ||
-          (precoMaximo != null && (!Number.isFinite(precoMaximo) || precoMaximo < 0)) ||
-          (precoMinimo != null && precoMaximo != null && precoMinimo > precoMaximo)
-        ) {
-          return res.status(400).json({ mensagem: 'Faixa de preço inválida' });
-        }
+        const filtros = req.queryValidada;
 
         const produtos = await Produto.listarAtivos({
-          busca: String(req.query.busca || '').trim().slice(0, 100),
-          categoria: String(req.query.categoria || '').trim().slice(0, 100),
-          precoMinimo,
-          precoMaximo,
-          ordenacao: req.query.ordenacao,
+          busca: filtros.busca,
+          categoria: filtros.categoria,
+          precoMinimo: filtros.preco_min ?? null,
+          precoMaximo: filtros.preco_max ?? null,
+          ordenacao: filtros.ordenacao,
         });
         res.json(produtos);
     } catch (erro) {
-        res.status(500).json({ mensagem: erro.message });
+        console.error('Erro ao listar produtos:', erro);
+        res.status(500).json({ mensagem: 'Erro ao listar produtos' });
     }
 };
 
@@ -51,7 +41,8 @@ async function listarAdmin(req, res){
         }));
         res.json(produtos);
     } catch(erro){
-        res.status(500).json({mensagem: erro.message});
+        console.error('Erro ao listar produtos administrativos:', erro);
+        res.status(500).json({ mensagem: 'Erro ao listar produtos' });
     }
     
 };
@@ -121,7 +112,8 @@ async function remover(req, res){
         });
         res.json({ mensagem: 'Produto removido' });
     }catch(erro){
-        res.status(500).json({mensagem: erro.message});
+        console.error('Erro ao remover produto:', erro);
+        res.status(500).json({ mensagem: 'Erro ao remover produto' });
     }
 };
 
@@ -137,7 +129,8 @@ async function reativar(req, res){
         });
         res.json({ mensagem: 'Produto reativado' });
     }catch(erro){
-        res.status(500).json({mensagem: erro.message});
+        console.error('Erro ao reativar produto:', erro);
+        res.status(500).json({ mensagem: 'Erro ao reativar produto' });
     }
 };
 
@@ -156,7 +149,7 @@ async function criarVariacao(req, res) {
         res.status(201).json({ id });
     } catch (erro) {
         const status = erro.code === 'TAMANHO_INVALIDO' ? 400 : erro.code === 'ER_DUP_ENTRY' ? 409 : 500;
-        res.status(status).json({ mensagem: status === 400 ? erro.message : status === 409 ? 'Esta variação já existe' : 'Erro ao criar variação' });
+        res.status(status).json({ mensagem: status === 400 ? 'Escolha um tamanho configurado no produto' : status === 409 ? 'Esta variação já existe' : 'Erro ao criar variação' });
     }
 }
 
@@ -190,7 +183,8 @@ async function listarCategorias(req, res) {
     try {
         res.json(await Produto.listarCategorias());
     } catch (erro) {
-        res.status(500).json({ mensagem: erro.message });
+        console.error('Erro ao listar categorias:', erro);
+        res.status(500).json({ mensagem: 'Erro ao listar categorias' });
     }
 };
 

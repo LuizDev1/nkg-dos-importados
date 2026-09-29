@@ -3,7 +3,9 @@ const pool = require('../config/banco');
 async function buscar(req, res) {
   try {
     const [linhas] = await pool.execute(
-      'SELECT * FROM configuracoes_loja WHERE id = 1'
+      `SELECT id, whatsapp, email_suporte, aviso_ativo, aviso_texto,
+        politica_devolucao, banner_url, banner_titulo, banner_link
+       FROM configuracoes_loja WHERE id = 1`
     );
 
     res.json(linhas[0] || {});

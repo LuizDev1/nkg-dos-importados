@@ -21,13 +21,10 @@ export async function buscarConfiguracoes() {
 }
 
 export async function atualizarConfiguracoes(configuracoes) {
-  const token = localStorage.getItem('token');
-
   const resposta = await fetch(`${API_URL}/configuracoes-loja`, {
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,
     },
     body: JSON.stringify(configuracoes),
   });

@@ -58,19 +58,14 @@ function validarAssinaturaWebhook(req) {
 
 async function criarPagamento(req, res) {
   try {
-    const pedido = await Pedido.buscarPorId(req.params.pedidoId);
+    const pedido = await Pedido.buscarPorIdAutorizado(
+      req.params.pedidoId,
+      req.usuario.id,
+      req.usuario.perfil === 'admin'
+    );
 
     if (!pedido) {
       return res.status(404).json({ mensagem: 'Pedido não encontrado' });
-    }
-
-    if (
-      req.usuario.perfil !== 'admin'
-      && String(pedido.usuario_id) !== String(req.usuario.id)
-    ) {
-      return res.status(403).json({
-        mensagem: 'Você não tem acesso a este pedido',
-      });
     }
 
     const itens = await ItemPedido.listarPorPedido(pedido.id);
@@ -78,10 +73,9 @@ async function criarPagamento(req, res) {
 
     res.json(order);
 } catch (erro) {
-  console.error('Erro completo:', JSON.stringify(erro, null, 2));
-  console.error('apiResponse:', erro.apiResponse);
+  console.error('Falha ao criar pagamento:', { nome: erro.name, status: erro.status, mensagem: erro.message });
   const status = erro.status === 400 ? 400 : erro.message.startsWith('Mercado Pago') ? 502 : 500;
-  res.status(status).json({ mensagem: erro.message });
+  res.status(status).json({ mensagem: status === 400 ? 'Dados de pagamento inválidos' : status === 502 ? 'Provedor de pagamento indisponível' : 'Erro ao criar pagamento' });
 }
 }
 async function receberWebhook(req, res) {
@@ -180,11 +174,15 @@ async function receberWebhook(req, res) {
 
 async function sincronizarPagamento(req, res) {
   try {
-    const pedido = await Pedido.buscarPorId(req.params.pedidoId);
+    const pedido = await Pedido.buscarPorIdAutorizado(
+      req.params.pedidoId,
+      req.usuario.id,
+      req.usuario.perfil === 'admin'
+    );
     const paymentId = req.body?.payment_id
       || req.body?.collection_id
-      || req.query.payment_id
-      || req.query.collection_id;
+      || req.queryValidada.payment_id
+      || req.queryValidada.collection_id;
 
     if (!paymentId) {
       return res.status(400).json({ mensagem: 'payment_id não informado' });
@@ -192,11 +190,6 @@ async function sincronizarPagamento(req, res) {
 
     if (!pedido) {
       return res.status(404).json({ mensagem: 'Pedido não encontrado' });
-    }
-
-    if (req.usuario.perfil !== 'admin'
-      && String(pedido.usuario_id) !== String(req.usuario.id)) {
-      return res.status(403).json({ mensagem: 'Você não tem acesso a este pedido' });
     }
 
     const pagamento = await mercadoPagoService.buscarPagamento(paymentId);
@@ -246,11 +239,11 @@ async function sincronizarPagamento(req, res) {
     console.error('Erro ao sincronizar pagamento:', erro);
 
     if (erro.message.startsWith('Estoque insuficiente')) {
-      return res.status(409).json({ mensagem: erro.message });
+      return res.status(409).json({ mensagem: 'Estoque insuficiente para concluir o pagamento' });
     }
 
     if (erro.message.startsWith('Mercado Pago')) {
-      return res.status(502).json({ mensagem: erro.message });
+      return res.status(502).json({ mensagem: 'Provedor de pagamento indisponível' });
     }
 
     return res.status(500).json({ mensagem: 'Erro ao sincronizar pagamento' });

@@ -2,14 +2,14 @@ const pool = require('../config/banco');
 
 async function listarAtivos() {
   const [banners] = await pool.query(
-    'SELECT * FROM banners WHERE ativo = TRUE ORDER BY principal DESC, ordem ASC, criado_em DESC'
+    'SELECT id, titulo, imagem_url, imagem_url_2, link_url, ativo, ordem, posicao_x, posicao_y, posicao_x_2, posicao_y_2, zoom, zoom_2, principal, criado_em FROM banners WHERE ativo = TRUE ORDER BY principal DESC, ordem ASC, criado_em DESC'
   );
   return banners;
 }
 
 async function listarTodos() {
   const [banners] = await pool.query(
-    'SELECT * FROM banners ORDER BY principal DESC, ordem ASC, criado_em DESC'
+    'SELECT id, titulo, imagem_url, imagem_url_2, link_url, ativo, ordem, posicao_x, posicao_y, posicao_x_2, posicao_y_2, zoom, zoom_2, principal, criado_em FROM banners ORDER BY principal DESC, ordem ASC, criado_em DESC'
   );
   return banners;
 }

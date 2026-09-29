@@ -5,7 +5,6 @@ async function requisitar(caminho, dados) {
     method: dados ? 'PATCH' : 'GET',
     headers: {
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${localStorage.getItem('token') || ''}`,
     },
     ...(dados ? { body: JSON.stringify(dados) } : {}),
   });

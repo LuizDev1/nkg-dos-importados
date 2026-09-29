@@ -6,6 +6,9 @@ import { ProvedorAutenticacao } from './contextos/ContextoAutenticacao.jsx'
 import { ProvedorCarrinho } from './contextos/ContextoCarrinho.jsx'
 import { ProvedorFavoritos } from './contextos/ContextoFavoritos.jsx'
 import './index.css'
+import { configurarFetchSeguro } from './servicos/apiSegura.js'
+
+configurarFetchSeguro()
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>

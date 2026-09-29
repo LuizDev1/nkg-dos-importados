@@ -1,6 +1,15 @@
 const { z } = require('zod');
 const { normalizarCpf, validarCpf } = require('../utils/cpf');
 
+const urlHttp = (maximo = 500) => z.string().trim().max(maximo).url().refine((valor) => {
+  try {
+    const protocolo = new URL(valor).protocol;
+    return protocolo === 'http:' || protocolo === 'https:';
+  } catch {
+    return false;
+  }
+}, 'Use uma URL HTTP ou HTTPS válida');
+
 const dataHoraValida = z.string().refine((valor) => {
   const partes = valor.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/);
   if (!partes) return !Number.isNaN(new Date(valor).getTime());
@@ -25,13 +34,13 @@ const schemas = {
     categoria: z.string().trim().max(100).optional().default(''),
     preco: z.coerce.number().finite().positive().max(999999.99),
     tag: z.string().trim().max(100).optional().default(''),
-    foto_url: z.union([z.string().url().max(255), z.literal('')]).optional().default(''),
+    foto_url: z.union([urlHttp(255), z.literal('')]).optional().default(''),
     estoque_qtd: z.coerce.number().int().nonnegative().max(100000),
     peso_kg: z.coerce.number().finite().positive().max(50).default(0.3),
     largura_cm: z.coerce.number().finite().positive().max(200).default(20),
     altura_cm: z.coerce.number().finite().positive().max(200).default(10),
     comprimento_cm: z.coerce.number().finite().positive().max(300).default(30),
-    imagens: z.array(z.string().trim().url().max(500)).max(9).optional().default([]),
+    imagens: z.array(urlHttp(500)).max(9).optional().default([]),
   }).strict(),
   autenticacao: z.object({
     nome: z.string().trim().min(2).max(150),
@@ -46,6 +55,46 @@ const schemas = {
   login: z.object({
     email: z.string().trim().email().max(150),
     senha: z.string().min(1).max(128),
+  }).strict(),
+  configuracaoLoja: z.object({
+    whatsapp: z.string().trim().max(30).optional().default(''),
+    email_suporte: z.union([z.string().trim().email().max(150), z.literal('')]).optional().default(''),
+    aviso_ativo: z.boolean().optional().default(false),
+    aviso_texto: z.string().trim().max(255).optional().default(''),
+    politica_devolucao: z.string().trim().max(10000).optional().default(''),
+    banner_url: z.union([urlHttp(500), z.literal('')]).optional().default(''),
+    banner_titulo: z.string().trim().max(150).optional().default(''),
+    banner_link: z.union([urlHttp(500), z.literal('')]).optional().default(''),
+  }).strict(),
+  statusCliente: z.object({ status: z.enum(['ativo', 'bloqueado']) }).strict(),
+  cpf: z.object({
+    cpf: z.string().trim().max(14).refine(validarCpf, 'CPF inválido').transform(normalizarCpf),
+  }).strict(),
+  rastreio: z.object({
+    codigo_rastreio: z.string().trim().min(1).max(100).regex(/^[\p{L}\p{N}._/-]+$/u, 'Código de rastreio inválido'),
+  }).strict(),
+  statusPedido: z.object({
+    status_pedido: z.enum(['em_preparacao', 'enviado', 'entregue', 'cancelado', 'reembolsado']),
+  }).strict(),
+  avisoEstoque: z.object({
+    produto_id: z.coerce.number().int().positive(),
+    variacao_id: z.coerce.number().int().nonnegative().optional().default(0),
+  }).strict(),
+  filtrosProduto: z.object({
+    busca: z.string().trim().max(100).optional().default(''),
+    categoria: z.string().trim().max(100).optional().default(''),
+    preco_min: z.coerce.number().finite().nonnegative().optional(),
+    preco_max: z.coerce.number().finite().nonnegative().optional(),
+    ordenacao: z.enum(['recentes', 'menor_preco', 'maior_preco', 'nome', 'melhor_avaliados']).optional().default('recentes'),
+  }).strict().refine((dados) => dados.preco_min === undefined || dados.preco_max === undefined || dados.preco_min <= dados.preco_max, {
+    message: 'Faixa de preço inválida', path: ['preco_max'],
+  }),
+  buscaClientes: z.object({
+    busca: z.string().trim().max(100).optional().default(''),
+  }).strict(),
+  sincronizacaoPagamento: z.object({
+    payment_id: z.union([z.string().trim().min(1).max(150), z.number().int().positive().transform(String)]).optional(),
+    collection_id: z.union([z.string().trim().min(1).max(150), z.number().int().positive().transform(String)]).optional(),
   }).strict(),
   pedido: z.object({
     tipo_entrega: z.enum(['envio', 'entrega_local']),
@@ -99,9 +148,9 @@ const schemas = {
   }),
   banner: z.object({
     titulo: z.string().trim().max(150).optional().default(''),
-    imagem_url: z.string().trim().url().max(500),
-    imagem_url_2: z.union([z.string().trim().url().max(500), z.literal('')]).optional().default(''),
-    link_url: z.union([z.string().trim().url().max(500), z.literal('')]).optional().default(''),
+    imagem_url: urlHttp(500),
+    imagem_url_2: z.union([urlHttp(500), z.literal('')]).optional().default(''),
+    link_url: z.union([urlHttp(500), z.literal('')]).optional().default(''),
     ativo: z.boolean().optional().default(true),
     ordem: z.coerce.number().int().min(0).max(10000).optional().default(0),
     posicao_x: z.coerce.number().int().min(0).max(100).optional().default(50),
@@ -131,7 +180,7 @@ const schemas = {
     }, 'Foto inválida')).max(5).optional().default([]),
     nota: z.coerce.number().int().min(1).max(5),
     comentario: z.string().trim().max(1000).optional().default(''),
-    foto_url: z.union([z.string().trim().url().max(500), z.literal('')]).optional().default(''),
+    foto_url: z.union([urlHttp(500), z.literal('')]).optional().default(''),
   }).strict(),
 };
 
@@ -159,4 +208,26 @@ function validar(schema) {
   };
 }
 
-module.exports = { schemas, validar };
+function validarIds(...nomes) {
+  return (req, res, next) => {
+    for (const nome of nomes) {
+      const valor = Number(req.params[nome]);
+      if (!Number.isSafeInteger(valor) || valor <= 0) {
+        return res.status(400).json({ mensagem: `Parâmetro ${nome} inválido` });
+      }
+      req.params[nome] = String(valor);
+    }
+    return next();
+  };
+}
+
+function validarQuery(schema) {
+  return (req, res, next) => {
+    const resultado = schema.safeParse(req.query);
+    if (!resultado.success) return res.status(400).json({ mensagem: resultado.error.issues[0].message || 'Parâmetros inválidos' });
+    req.queryValidada = resultado.data;
+    return next();
+  };
+}
+
+module.exports = { schemas, validar, validarIds, validarQuery };

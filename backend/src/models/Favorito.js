@@ -2,7 +2,9 @@ const pool = require('../config/banco');
 
 async function listar(usuarioId) {
   const [produtos] = await pool.query(
-    `SELECT p.* FROM favoritos f
+    `SELECT p.id, p.nome, p.categoria, p.preco, p.tag, p.foto_url, p.estoque_qtd,
+       p.estoque_minimo, p.peso_kg, p.largura_cm, p.altura_cm, p.comprimento_cm,
+       p.tamanhos_json, p.ativo, p.criado_em FROM favoritos f
      INNER JOIN produtos p ON p.id = f.produto_id
      WHERE f.usuario_id = ? AND p.ativo = TRUE
      ORDER BY f.criado_em DESC`,

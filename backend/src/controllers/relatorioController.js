@@ -14,7 +14,8 @@ async function mensal(req, res) {
       ticket_medio: ticketMedio,
     });
   } catch (erro) {
-    res.status(500).json({ mensagem: erro.message });
+    console.error('Erro ao gerar relatório:', erro);
+    res.status(500).json({ mensagem: 'Erro ao gerar relatório' });
   }
 }
 
