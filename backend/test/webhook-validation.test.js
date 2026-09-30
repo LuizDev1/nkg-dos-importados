@@ -33,6 +33,18 @@ async function criarUsuarioTeste(email, senha, perfil = 'cliente', status = 'ati
   return { id, email, senha };
 }
 
+function criarTokenTeste(usuario) {
+  return jwt.sign(
+    { id: usuario.id, perfil: usuario.perfil },
+    process.env.JWT_SECRET,
+    {
+      expiresIn: '1h',
+      ...(process.env.JWT_ISSUER ? { issuer: process.env.JWT_ISSUER } : {}),
+      ...(process.env.JWT_AUDIENCE ? { audience: process.env.JWT_AUDIENCE } : {}),
+    }
+  );
+}
+
 test.after(async () => {
   if (usuariosTeste.length) {
     const [pedidos] = await pool.query(
@@ -131,7 +143,7 @@ test('pedido de outro cliente deve ser bloqueado', async () => {
     [dono.id, 'envio', 'Rua A, 123', '(61)99999-9999', 50.00]
   );
 
-  const token = jwt.sign({ id: intruso.id, perfil: 'cliente' }, process.env.JWT_SECRET, { expiresIn: '1h' });
+  const token = criarTokenTeste(intruso);
 
   const resposta = await request(app)
     .get(`/api/pedidos/${pedido.insertId}`)
@@ -173,7 +185,7 @@ test('webhook deve validar assinatura correta antes de processar', async () => {
 
 test('cliente pode cancelar pedido e receber estoque de volta', async () => {
   const usuario = await criarUsuarioTeste(`cancel-${Date.now()}@teste.com`, 'senha123');
-  const token = jwt.sign({ id: usuario.id, perfil: 'cliente' }, process.env.JWT_SECRET, { expiresIn: '1h' });
+  const token = criarTokenTeste(usuario);
 
   const [produto] = await pool.query(
     'INSERT INTO produtos (nome, categoria, preco, tag, foto_url, estoque_qtd, ativo) VALUES (?, ?, ?, ?, ?, ?, ?)',
@@ -220,7 +232,7 @@ test('cliente pode cancelar pedido e receber estoque de volta', async () => {
 
 test('cancelamento de pagamento pendente não cria reembolso', async () => {
   const usuario = await criarUsuarioTeste(`pendente-${Date.now()}@teste.com`, 'senha123');
-  const token = jwt.sign({ id: usuario.id, perfil: 'cliente' }, process.env.JWT_SECRET, { expiresIn: '1h' });
+  const token = criarTokenTeste(usuario);
 
   const [pedido] = await pool.query(
     `INSERT INTO pedidos
@@ -246,7 +258,7 @@ test('cancelamento de pagamento pendente não cria reembolso', async () => {
 
 test('criação de pedido é idempotente e não duplica reserva de estoque', async () => {
   const usuario = await criarUsuarioTeste(`idempotente-${Date.now()}@teste.com`, 'senha123');
-  const token = jwt.sign({ id: usuario.id, perfil: 'cliente' }, process.env.JWT_SECRET, { expiresIn: '1h' });
+  const token = criarTokenTeste(usuario);
 
   const [produto] = await pool.query(
     'INSERT INTO produtos (nome, categoria, preco, estoque_qtd, ativo) VALUES (?, ?, ?, ?, ?)',
@@ -299,7 +311,7 @@ test('criação de pedido é idempotente e não duplica reserva de estoque', asy
 test('status operacional respeita a ordem de expedição', async () => {
   const admin = await criarUsuarioTeste(`admin-status-${Date.now()}@teste.com`, 'senha123', 'admin');
   const cliente = await criarUsuarioTeste(`cliente-status-${Date.now()}@teste.com`, 'senha123');
-  const token = jwt.sign({ id: admin.id, perfil: 'admin' }, process.env.JWT_SECRET, { expiresIn: '1h' });
+  const token = criarTokenTeste(admin);
 
   const [pedido] = await pool.query(
     `INSERT INTO pedidos
@@ -334,7 +346,7 @@ test('status operacional respeita a ordem de expedição', async () => {
 });
 test('avaliacao unica por produto e voto util unico por usuario', async () => {
   const usuario = await criarUsuarioTeste('avaliacao-' + Date.now() + '@teste.com', 'senha123');
-  const token = jwt.sign({ id: usuario.id, perfil: 'cliente' }, process.env.JWT_SECRET, { expiresIn: '1h' });
+  const token = criarTokenTeste(usuario);
   const [produto] = await pool.query('INSERT INTO produtos (nome, categoria, preco, estoque_qtd, ativo) VALUES (?, ?, ?, ?, ?)', ['Produto Avaliacao', 'Teste', 20, 5, true]);
   produtosTeste.push(produto.insertId);
   const rota = '/api/produtos/' + produto.insertId + '/avaliacoes';
@@ -389,12 +401,12 @@ test('avaliacao unica por produto e voto util unico por usuario', async () => {
 
 test('upload de fotos restrito ao admin e arquivo acessivel', async () => {
   const usuario = await criarUsuarioTeste('upload-admin-' + Date.now() + '@teste.com', 'senha123', 'admin');
-  const token = jwt.sign({ id: usuario.id, perfil: 'admin' }, process.env.JWT_SECRET, { expiresIn: '1h' });
+  const token = criarTokenTeste(usuario);
   const foto = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+a0i8AAAAASUVORK5CYII=', 'base64');
   let resposta = await request(app).post('/api/imagens').set('Content-Type', 'image/png').send(foto);
   assert.equal(resposta.status, 401);
   const cliente = await criarUsuarioTeste('upload-cliente-' + Date.now() + '@teste.com', 'senha123');
-  const tokenCliente = jwt.sign({ id: cliente.id, perfil: 'cliente' }, process.env.JWT_SECRET, { expiresIn: '1h' });
+  const tokenCliente = criarTokenTeste(cliente);
   resposta = await request(app).post('/api/imagens').set('Authorization', 'Bearer ' + tokenCliente).set('Content-Type', 'image/png').send(foto);
   assert.equal(resposta.status, 403);
   resposta = await request(app).post('/api/imagens').set('Authorization', 'Bearer ' + token).set('Content-Type', 'image/png').send(Buffer.from('invalid image'));
@@ -440,7 +452,7 @@ test('upload de fotos restrito ao admin e arquivo acessivel', async () => {
 
 test('banners agrupam duas imagens e principal vem primeiro', async () => {
   const usuario = await criarUsuarioTeste('banners-admin-' + Date.now() + '@teste.com', 'senha123', 'admin');
-  const token = jwt.sign({ id: usuario.id, perfil: 'admin' }, process.env.JWT_SECRET, { expiresIn: '1h' });
+  const token = criarTokenTeste(usuario);
   const [principaisAnteriores] = await pool.query('SELECT id FROM banners WHERE principal = TRUE');
   const criados = [];
   const base = {

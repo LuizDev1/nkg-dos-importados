@@ -37,6 +37,7 @@ jobs:
       JWT_ISSUER: nkg-testes
       JWT_AUDIENCE: nkg-testes-web
       DATA_ENCRYPTION_KEY: BwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwc=
+      RESEND_API_KEY: re_test_ci
       FRONTEND_URL: http://localhost:5173
       RATE_LIMIT_ENABLED: 'false'
       CEP_ORIGEM: '64900000'
@@ -48,19 +49,16 @@ jobs:
           node-version: 22
           cache: npm
           cache-dependency-path: |
-            package-lock.json
             backend/package-lock.json
             frontend/package-lock.json
 
       - name: Instalar dependências
         run: |
-          npm ci
           npm ci --prefix backend
           npm ci --prefix frontend
 
       - name: Auditar dependências
         run: |
-          npm audit --audit-level=high
           npm audit --prefix backend --audit-level=high
           npm audit --prefix frontend --audit-level=high
 

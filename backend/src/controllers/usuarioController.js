@@ -41,6 +41,13 @@ async function editarConta(req, res) {
       return res.status(409).json({ mensagem: 'Conta anonimizada não pode ser editada' });
     }
     await Usuario.atualizarDados(id, resultado.data);
+    await Log.registrar({
+      tipo: 'cliente',
+      acao: 'dados_atualizados',
+      entidade_id: id,
+      usuario_id: req.usuario.id,
+      detalhes: { campos: ['nome', 'email', 'cpf'] },
+    });
     return res.json(dadosPublicos({ ...usuario, ...resultado.data }));
   } catch (erro) {
     if (erro.code === 'ER_DUP_ENTRY') {
@@ -99,6 +106,12 @@ async function atualizarCpf(req, res) {
       return res.status(400).json({ mensagem: 'CPF inválido' });
     }
     await Usuario.atualizarCpf(req.params.id, normalizarCpf(cpf));
+    await Log.registrar({
+      tipo: 'cliente',
+      acao: 'cpf_atualizado',
+      entidade_id: req.params.id,
+      usuario_id: req.usuario.id,
+    });
     res.json({ mensagem: 'CPF atualizado com sucesso' });
   } catch (erro) {
     console.error('Erro ao atualizar CPF:', erro);
@@ -119,6 +132,12 @@ async function exportarDados(req, res) {
 async function anonimizarConta(req, res) {
   try {
     await Usuario.anonimizar(req.usuario.id);
+    await Log.registrar({
+      tipo: 'cliente',
+      acao: 'anonimizado',
+      entidade_id: req.usuario.id,
+      usuario_id: req.usuario.id,
+    });
     return res.json({ mensagem: 'Dados pessoais anonimizados com sucesso' });
   } catch (erro) {
     console.error('Erro ao anonimizar conta:', erro);

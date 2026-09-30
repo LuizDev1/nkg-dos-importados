@@ -1,4 +1,5 @@
 const Promocao = require('../models/Promocao');
+const Log = require('../models/Log');
 
 function formatarDataBanco(valor) {
   if (!valor) return null;
@@ -24,6 +25,13 @@ async function criar(req, res) {
       inicio_em: formatarDataBanco(req.body.inicio_em),
       fim_em: formatarDataBanco(req.body.fim_em),
     });
+    await Log.registrar({
+      tipo: 'promocao',
+      acao: 'criada',
+      entidade_id: id,
+      usuario_id: req.usuario.id,
+      detalhes: { codigo: req.body.codigo.trim().toUpperCase() },
+    });
     return res.status(201).json({ id });
   } catch (erro) {
     if (erro.code === 'ER_DUP_ENTRY') {
@@ -36,6 +44,14 @@ async function criar(req, res) {
 async function desativar(req, res) {
   try {
     const alteradas = await Promocao.desativar(req.params.id);
+    if (alteradas) {
+      await Log.registrar({
+        tipo: 'promocao',
+        acao: 'desativada',
+        entidade_id: req.params.id,
+        usuario_id: req.usuario.id,
+      });
+    }
     return alteradas
       ? res.json({ mensagem: 'Promoção desativada' })
       : res.status(404).json({ mensagem: 'Promoção não encontrada' });
@@ -47,6 +63,14 @@ async function desativar(req, res) {
 async function reativar(req, res) {
   try {
     const alteradas = await Promocao.reativar(req.params.id);
+    if (alteradas) {
+      await Log.registrar({
+        tipo: 'promocao',
+        acao: 'reativada',
+        entidade_id: req.params.id,
+        usuario_id: req.usuario.id,
+      });
+    }
     return alteradas
       ? res.json({ mensagem: 'Promoção reativada' })
       : res.status(404).json({ mensagem: 'Promoção não encontrada' });
@@ -63,6 +87,15 @@ async function atualizar(req, res) {
       inicio_em: formatarDataBanco(req.body.inicio_em),
       fim_em: formatarDataBanco(req.body.fim_em),
     });
+    if (alteradas) {
+      await Log.registrar({
+        tipo: 'promocao',
+        acao: 'atualizada',
+        entidade_id: req.params.id,
+        usuario_id: req.usuario.id,
+        detalhes: { codigo: req.body.codigo.trim().toUpperCase() },
+      });
+    }
     return alteradas
       ? res.json({ mensagem: 'Promoção atualizada' })
       : res.status(404).json({ mensagem: 'Promoção não encontrada' });
