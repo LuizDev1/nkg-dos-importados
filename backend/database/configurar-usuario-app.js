@@ -1,6 +1,7 @@
 const mysql = require('mysql2/promise');
 const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
+const { opcoesSslBanco } = require('../src/config/sslBanco');
 
 function identificador(valor, nome) {
   if (!/^[A-Za-z0-9_]{1,64}$/.test(valor || '')) throw new Error(`${nome} inválido`);
@@ -23,7 +24,7 @@ async function executar() {
     port: process.env.DB_PORT,
     user: process.env.DB_ADMIN_USER,
     password: process.env.DB_ADMIN_PASSWORD,
-    ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: true } : undefined,
+    ssl: opcoesSslBanco(),
   });
   try {
     const conta = `${conexao.escape(usuario)}@${conexao.escape(hostUsuario)}`;

@@ -1,5 +1,6 @@
 const mysql = require('mysql2/promise');
 require('dotenv').config();
+const { opcoesSslBanco } = require('./sslBanco');
 
 const pool = mysql.createPool({
   host: process.env.DB_HOST,
@@ -9,7 +10,7 @@ const pool = mysql.createPool({
   port: process.env.DB_PORT,
   waitForConnections: true,
   connectionLimit: 10,
-  ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: true } : undefined,
+  ssl: opcoesSslBanco(),
 });
 
 module.exports = pool;

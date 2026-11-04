@@ -2,6 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const mysql = require('mysql2/promise');
 require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
+const { opcoesSslBanco } = require('../src/config/sslBanco');
 const pool = mysql.createPool({
   host: process.env.DB_HOST,
   port: process.env.DB_PORT,
@@ -10,7 +11,7 @@ const pool = mysql.createPool({
   database: process.env.DB_NAME,
   waitForConnections: true,
   connectionLimit: 2,
-  ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: true } : undefined,
+  ssl: opcoesSslBanco(),
 });
 
 async function executar() {
