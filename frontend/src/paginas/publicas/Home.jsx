@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Search } from 'lucide-react';
 import { useAutenticacao } from '../../contextos/ContextoAutenticacao';
 import { listarCategorias, listarProdutos } from '../../servicos/produtoService';
 import { buscarConfiguracoes } from '../../servicos/configuracaoService';
 import CartaoProduto from '../../componentes/CartaoProduto';
+import GradeProdutosSkeleton from '../../componentes/CartaoProdutoSkeleton';
 import CarrosselBanners from '../../componentes/CarrosselBanners';
 import { listarBanners } from '../../servicos/bannerService';
 
@@ -77,10 +79,6 @@ export default function Home() {
     return () => clearTimeout(temporizador);
   }, [busca, categoria, precoMinimo, precoMaximo, ordenacao]);
 
-  if (carregando) {
-    return <p className="text-center mt-10">Carregando produtos...</p>;
-  }
-
   const pesquisaRealizada = busca.trim().length > 0;
 
   return (
@@ -108,7 +106,7 @@ export default function Home() {
         >
           <div className="relative flex-1">
             <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 text-gray-400">
-              &#128269;
+              <Search className="h-4 w-4 text-[#aaa399]" />
             </span>
             <input
               type="search"
@@ -158,33 +156,33 @@ export default function Home() {
               </select>
 
               <p className="mb-2 text-sm font-semibold">Faixa de preço</p>
-              <div className="mb-5 grid grid-cols-2 gap-2">
-              <input
-                type="number"
-                min="0"
-                step="0.01"
-                value={filtrosPendentes.precoMinimo}
-                onChange={(evento) => setFiltrosPendentes((atuais) => ({
-                  ...atuais,
-                  precoMinimo: evento.target.value,
-                }))}
-                placeholder="Preço mínimo"
-                aria-label="Preço mínimo"
-                className="min-w-0 rounded border border-gray-300 px-3 py-2"
-              />
-              <input
-                type="number"
-                min="0"
-                step="0.01"
-                value={filtrosPendentes.precoMaximo}
-                onChange={(evento) => setFiltrosPendentes((atuais) => ({
-                  ...atuais,
-                  precoMaximo: evento.target.value,
-                }))}
-                placeholder="Preço máximo"
-                aria-label="Preço máximo"
-                className="min-w-0 rounded border border-gray-300 px-3 py-2"
-              />
+              <div className="mb-5 flex gap-2">
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  placeholder="Mín"
+                  aria-label="Preço mínimo"
+                  value={filtrosPendentes.precoMinimo}
+                  onChange={(evento) => setFiltrosPendentes((atuais) => ({
+                    ...atuais,
+                    precoMinimo: evento.target.value,
+                  }))}
+                  className="w-1/2 rounded border border-gray-300 px-2 py-1"
+                />
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  placeholder="Máx"
+                  aria-label="Preço máximo"
+                  value={filtrosPendentes.precoMaximo}
+                  onChange={(evento) => setFiltrosPendentes((atuais) => ({
+                    ...atuais,
+                    precoMaximo: evento.target.value,
+                  }))}
+                  className="w-1/2 rounded border border-gray-300 px-2 py-1"
+                />
               </div>
 
               <label className="mb-2 block text-sm font-semibold" htmlFor="ordenacao">
@@ -200,10 +198,9 @@ export default function Home() {
                 className="w-full rounded border border-gray-300 px-3 py-2"
               >
                 <option value="recentes">Mais recentes</option>
-                <option value="melhor_avaliados">Melhor avaliados</option>
                 <option value="menor_preco">Menor preço</option>
                 <option value="maior_preco">Maior preço</option>
-                <option value="nome">Nome</option>
+                <option value="melhor_avaliados">Melhor avaliados</option>
               </select>
 
               <button
@@ -247,7 +244,9 @@ export default function Home() {
               </p>
             )}
 
-            {!erro && produtos.length === 0 ? (
+            {carregando ? (
+              <GradeProdutosSkeleton quantidade={8} />
+            ) : !erro && produtos.length === 0 ? (
               <div className="rounded-lg bg-white p-8 text-center shadow">
                 <p className="text-gray-500">Nenhum produto encontrado.</p>
               </div>

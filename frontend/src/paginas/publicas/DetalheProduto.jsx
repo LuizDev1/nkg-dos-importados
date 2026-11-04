@@ -9,6 +9,8 @@ import { useFavoritos } from '../../contextos/ContextoFavoritos';
 import { cadastrarAvisoEstoque } from '../../servicos/avisoEstoqueService';
 import { listarAvaliacoes, salvarAvaliacao, verificarPermissaoAvaliacao, marcarAvaliacaoUtil } from '../../servicos/avaliacaoService';
 import PerguntasProduto from '../../componentes/PerguntasProduto';
+import ToastNotificacao from '../../componentes/ToastNotificacao';
+import { Heart, ShoppingBag, Check } from 'lucide-react';
 
 export default function DetalheProduto() {
   const { id } = useParams();
@@ -17,6 +19,7 @@ export default function DetalheProduto() {
   const [erro, setErro] = useState('');
   const [quantidade, setQuantidade] = useState(1);
   const [adicionado, setAdicionado] = useState(false);
+  const [toastAberto, setToastAberto] = useState(false);
   const [relacionados, setRelacionados] = useState([]);
   const [cep, setCep] = useState('');
   const [cotacao, setCotacao] = useState(null);
@@ -177,6 +180,7 @@ export default function DetalheProduto() {
     }
 
     setAdicionado(true);
+    setToastAberto(true);
     clearTimeout(timerAdicionado.current);
     timerAdicionado.current = setTimeout(() => setAdicionado(false), 1200);
   }
@@ -359,11 +363,11 @@ export default function DetalheProduto() {
                 type="button"
                 onClick={() => usuario ? alternarFavorito(produto) : navigate('/login')}
                 disabled={!produtoAtivo}
-                className={`shrink-0 rounded-full border px-3 py-1.5 text-lg disabled:cursor-not-allowed disabled:opacity-40 ${estaFavorito(produto.id) ? 'border-[#d4af45] bg-[#d4af45] text-[#090a09]' : 'border-[#3a3526] text-[#d4af45] hover:border-[#d4af45]'}`}
+                className={`shrink-0 rounded-full border p-2.5 transition-all duration-200 active:scale-90 disabled:cursor-not-allowed disabled:opacity-40 ${estaFavorito(produto.id) ? 'border-[#d4af45] bg-[#d4af45] text-[#090a09] shadow-[0_4px_12px_rgba(212,175,69,0.3)]' : 'border-[#3a3526] text-[#d4af45] hover:scale-110 hover:border-[#d4af45]'}`}
                 aria-label={!produtoAtivo ? 'Produto inativo' : estaFavorito(produto.id) ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
                 title={!produtoAtivo ? 'Produto inativo' : undefined}
               >
-                {estaFavorito(produto.id) ? '♥' : '♡'}
+                <Heart className={`h-5 w-5 ${estaFavorito(produto.id) ? 'fill-current' : ''}`} />
               </button>
             )}
           </div>
@@ -431,14 +435,24 @@ export default function DetalheProduto() {
           <button
             onClick={aoAdicionar}
             disabled={!produtoAtivo || estoqueDisponivel === 0}
-            className={`w-full py-3 rounded transition ${adicionado
+            className={`w-full py-3.5 rounded font-semibold transition-all duration-300 flex items-center justify-center gap-2 ${adicionado
                 ? 'bg-green-600 text-white'
                 : !produtoAtivo || estoqueDisponivel === 0
                   ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                  : 'bg-blue-600 text-white hover:bg-blue-700'
+                  : 'bg-[#d4af45] text-[#090a09] hover:bg-[#e2c25d] hover:shadow-[0_8px_24px_rgba(212,175,69,0.35)] active:scale-[0.98]'
               }`}
           >
-            {adicionado ? 'Adicionado!' : 'Adicionar ao carrinho'}
+            {adicionado ? (
+              <>
+                <Check className="h-5 w-5" />
+                Adicionado ao carrinho!
+              </>
+            ) : (
+              <>
+                <ShoppingBag className="h-5 w-5" />
+                Adicionar ao carrinho
+              </>
+            )}
           </button>
 
           {erroCarrinho && <p role="alert" className="mt-2 text-sm text-red-600">{erroCarrinho}</p>}
@@ -654,6 +668,13 @@ export default function DetalheProduto() {
       </section>
 
       <PerguntasProduto produtoId={id} />
+
+      <ToastNotificacao
+        aberto={toastAberto}
+        fechar={() => setToastAberto(false)}
+        produto={produto}
+        quantidade={quantidade}
+      />
 
       {relacionados.length > 0 && (
         <section className="mt-12 border-t border-gray-200 pt-8">

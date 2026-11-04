@@ -1,7 +1,16 @@
 const { Resend } = require('resend');
 const pool = require('../config/banco');
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+let resendClient = null;
+function getResendClient() {
+  if (!process.env.RESEND_API_KEY) {
+    return null;
+  }
+  if (!resendClient) {
+    resendClient = new Resend(process.env.RESEND_API_KEY);
+  }
+  return resendClient;
+}
 
 async function notificarStatusPedido(emailCliente, numeroPedido, status) {
   const conteudos = {
@@ -24,6 +33,11 @@ async function notificarStatusPedido(emailCliente, numeroPedido, status) {
   const conteudo = conteudos[status];
   if (!conteudo) return;
 
+  const resend = getResendClient();
+  if (!resend) {
+    return;
+  }
+
   try {
     const data = await resend.emails.send({
       from: 'NKG DOS IMPORTADOS <onboarding@resend.dev>', 
@@ -40,6 +54,11 @@ async function notificarStatusPedido(emailCliente, numeroPedido, status) {
 }
 
 async function notificarReposicao(produtoId, variacaoId = 0) {
+  const resend = getResendClient();
+  if (!resend) {
+    return;
+  }
+
   const [inscricoes] = await pool.query(
     `SELECT ae.usuario_id, u.email, p.nome AS produto_nome, pv.nome AS variacao_nome
      FROM avisos_estoque ae
