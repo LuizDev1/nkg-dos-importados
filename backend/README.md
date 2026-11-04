@@ -12,6 +12,6 @@ Estrutura inicial (MVC) do backend em Node.js + Express + MySQL.
 
 A API exige `Idempotency-Key` no `POST /api/pedidos`. O webhook valida o manifesto oficial do Mercado Pago (`ts`, `v1`, `x-request-id` e `data.id`) e ignora eventos já processados.
 
-O frete de envio é cotado pelo Melhor Envio usando `CEP_ORIGEM=64900000`, peso e dimensões dos produtos. Configure `MELHOR_ENVIO_TOKEN` e um `MELHOR_ENVIO_USER_AGENT` com o contato da aplicação. Destinos no mesmo CEP de origem recebem frete grátis sem chamada externa. Execute a migração para criar os campos logísticos antes de publicar.
+O frete de envio é cotado pelo Melhor Envio usando `CEP_ORIGEM=64900000`, peso e dimensões dos produtos. Configure `MELHOR_ENVIO_TOKEN` e um `MELHOR_ENVIO_USER_AGENT` com o contato da aplicação. O token do painel sandbox só autentica em `sandbox.melhorenvio.com.br`; um token de produção exige o host `melhorenvio.com.br`. Destinos no mesmo CEP de origem recebem frete grátis sem chamada externa. Execute a migração para criar os campos logísticos antes de publicar.
 
 Em desenvolvimento, cadastre no Mercado Pago a URL exibida pelo túnel com o sufixo `/api/pagamentos/webhook`. Em produção, use uma URL HTTPS estável; não use a URL temporária do ngrok como configuração permanente.

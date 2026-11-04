@@ -74,6 +74,9 @@ async function criarPagamento(req, res) {
     res.json(order);
 } catch (erro) {
   console.error('Falha ao criar pagamento:', { nome: erro.name, status: erro.status, mensagem: erro.message });
+  if (erro.status === 401) {
+    return res.status(401).json({ mensagem: erro.message });
+  }
   const status = erro.status === 400 ? 400 : erro.message.startsWith('Mercado Pago') ? 502 : 500;
   res.status(status).json({ mensagem: status === 400 ? 'Dados de pagamento inválidos' : status === 502 ? 'Provedor de pagamento indisponível' : 'Erro ao criar pagamento' });
 }

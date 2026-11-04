@@ -1,7 +1,14 @@
 const { Resend } = require('resend');
 const pool = require('../config/banco');
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+let resend;
+
+function obterResend() {
+  const chave = process.env.RESEND_API_KEY?.trim();
+  if (!chave) return null;
+  if (!resend) resend = new Resend(chave);
+  return resend;
+}
 
 async function notificarStatusPedido(emailCliente, numeroPedido, status) {
   const conteudos = {
@@ -24,8 +31,14 @@ async function notificarStatusPedido(emailCliente, numeroPedido, status) {
   const conteudo = conteudos[status];
   if (!conteudo) return;
 
+  const cliente = obterResend();
+  if (!cliente) {
+    console.warn(`RESEND_API_KEY ausente; e-mail de status do pedido ${numeroPedido} não enviado.`);
+    return;
+  }
+
   try {
-    const data = await resend.emails.send({
+    const data = await cliente.emails.send({
       from: 'NKG DOS IMPORTADOS <onboarding@resend.dev>', 
       to: emailCliente, 
       subject: conteudo.assunto,
@@ -50,9 +63,15 @@ async function notificarReposicao(produtoId, variacaoId = 0) {
     [produtoId, variacaoId]
   );
 
+  const cliente = obterResend();
+  if (!cliente) {
+    console.warn(`RESEND_API_KEY ausente; aviso de reposição do produto ${produtoId} não enviado.`);
+    return;
+  }
+
   for (const inscricao of inscricoes) {
     const complemento = inscricao.variacao_nome ? ` - ${inscricao.variacao_nome}` : '';
-    const resultado = await resend.emails.send({
+    const resultado = await cliente.emails.send({
       from: 'NKG DOS IMPORTADOS <onboarding@resend.dev>',
       to: inscricao.email,
       subject: `${inscricao.produto_nome}${complemento} voltou ao estoque`,

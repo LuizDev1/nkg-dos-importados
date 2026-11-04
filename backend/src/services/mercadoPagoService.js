@@ -122,6 +122,14 @@ async function criarOrder(pedido, itens) {
   console.log('resposta da order:', JSON.stringify(dados, null, 2));
 
   if (!resposta.ok) {
+    if (resposta.status === 401) {
+      const erro = new Error(
+        'Credencial do Mercado Pago recusada. Cole em MERCADOPAGO_ACCESS_TOKEN o Access Token de teste do painel, que começa com APP_USR.'
+      );
+      erro.status = 401;
+      throw erro;
+    }
+
     const detalhe = dados.message
       || dados.error
       || dados.cause?.map((causa) => causa.description).join('; ')
