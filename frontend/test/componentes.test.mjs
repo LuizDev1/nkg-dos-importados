@@ -29,8 +29,8 @@ test('tomDoStatus mapeia os status reais sem depender de acento ou caixa', () =>
   assert.equal(tomDoStatus('pendente'), 'aviso');
   assert.equal(tomDoStatus('aguardando_pagamento'), 'aviso');
   assert.equal(tomDoStatus('reembolso_pendente'), 'aviso');
-  assert.equal(tomDoStatus('em_preparacao'), 'info');
-  assert.equal(tomDoStatus('enviado'), 'info');
+  assert.equal(tomDoStatus('em_preparacao'), 'aviso');
+  assert.equal(tomDoStatus('enviado'), 'aviso');
   assert.equal(tomDoStatus('desconhecido'), 'neutro');
   assert.equal(tomDoStatus(null), 'neutro');
 });

@@ -111,8 +111,12 @@ export default function Home() {
           }}
         >
           <div className="relative flex-1">
+            {/* Lupa decorativa: o campo já se chama "Buscar produtos". */}
             <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 text-gray-400">
-              &#128269;
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">
+                <circle cx="11" cy="11" r="6.5" />
+                <path d="M16 16l4.5 4.5" />
+              </svg>
             </span>
             <input
               type="search"

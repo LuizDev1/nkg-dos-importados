@@ -459,6 +459,7 @@ export default function DetalheProduto() {
               <form onSubmit={calcularFrete} className="flex items-end gap-2">
                   <Campo
                     id="frete-cep"
+                    name="cep"
                     rotulo="CEP de entrega"
                     className="flex-1"
                     type="text"

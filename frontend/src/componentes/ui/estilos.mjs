@@ -87,8 +87,8 @@ export function classesSelo(tom = 'neutro') {
 const TONS_STATUS = {
   sucesso: ['ativo', 'ativa', 'pago', 'aprovado', 'concluido', 'concluida', 'entregue', 'reembolsado', 'em_estoque'],
   erro: ['cancelado', 'cancelada', 'inativo', 'inativa', 'bloqueado', 'bloqueada', 'recusado', 'falha', 'rejeitado', 'sem_estoque'],
-  aviso: ['pendente', 'aguardando_pagamento', 'reembolso_pendente', 'estoque_baixo'],
-  info: ['em_preparacao', 'enviado'],
+  // Em preparação e enviado seguem como aviso, igual a corStatus() (usado no select do admin): mesmo tom para cliente e admin.
+  aviso: ['pendente', 'aguardando_pagamento', 'reembolso_pendente', 'estoque_baixo', 'em_preparacao', 'enviado'],
 };
 
 export function tomDoStatus(status) {
