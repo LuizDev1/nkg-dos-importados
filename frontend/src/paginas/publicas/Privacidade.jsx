@@ -42,8 +42,8 @@ export default function Privacidade() {
   return (
     <div className="max-w-3xl mx-auto px-4 py-8">
       <h1 className="text-2xl font-bold mb-6">Privacidade e dados pessoais</h1>
-      {mensagem && <p className="text-green-600 mb-4">{mensagem}</p>}
-      {erro && <p className="text-red-600 mb-4">{erro}</p>}
+      {mensagem && <p className="text-sucesso mb-4">{mensagem}</p>}
+      {erro && <p className="text-erro mb-4">{erro}</p>}
       <section className="bg-white rounded-lg shadow p-5 space-y-4 text-gray-700">
         <p>Utilizamos seus dados para criar e proteger sua conta, processar pedidos, pagamentos, entregas e prestar atendimento.</p>
         <p>Os dados necessários podem ser compartilhados com os provedores de pagamento, entrega e comunicação envolvidos no pedido. Não vendemos dados pessoais.</p>
@@ -56,7 +56,7 @@ export default function Privacidade() {
         {usuario ? (
           <>
             <button type="button" onClick={exportar} className="block text-blue-600 hover:underline">Baixar meus dados</button>
-            <button type="button" onClick={anonimizar} className="block text-red-600 hover:underline">Anonimizar minha conta</button>
+            <button type="button" onClick={anonimizar} className="block text-erro hover:underline">Anonimizar minha conta</button>
           </>
         ) : (
           <p className="text-gray-600"><Link to="/login" className="text-blue-600 hover:underline">Entre na sua conta</Link> para acessar ou anonimizar seus dados.</p>

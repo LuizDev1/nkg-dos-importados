@@ -80,7 +80,7 @@ export default function DetalheMeuPedido() {
   if (erro || !pedido) {
     return (
       <div className="max-w-3xl mx-auto px-4 py-10 text-center">
-        <p className="text-red-600 mb-4">
+        <p className="text-erro mb-4">
           {erro || 'Pedido não encontrado'}
         </p>
 
@@ -140,7 +140,7 @@ export default function DetalheMeuPedido() {
               const atual = etapaAtual === indice;
               return <li key={chave} className="flex items-center gap-2 pr-2 text-sm">
                 <span aria-hidden="true" className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold ${concluida ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-500'}`}>{concluida ? '✓' : indice + 1}</span>
-                <span className={atual ? 'font-semibold text-blue-700' : concluida ? 'text-gray-800' : 'text-gray-500'}>{titulo}</span>
+                <span className={atual ? 'font-semibold text-link' : concluida ? 'text-gray-800' : 'text-gray-500'}>{titulo}</span>
               </li>;
             })}
           </ol>
@@ -178,7 +178,7 @@ export default function DetalheMeuPedido() {
 
           <p>
             <strong>Código de rastreio:</strong>{' '}
-            {rastreioUrl ? <a href={rastreioUrl} target="_blank" rel="noreferrer" className="font-medium text-blue-700 underline hover:text-blue-900">{pedido.codigo_rastreio} (acompanhar entrega)</a> : 'Ainda não disponível'}
+            {rastreioUrl ? <a href={rastreioUrl} target="_blank" rel="noreferrer" className="font-medium text-link underline hover:text-acao-hover">{pedido.codigo_rastreio} (acompanhar entrega)</a> : 'Ainda não disponível'}
           </p>
         </div>
       </section>

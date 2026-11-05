@@ -1,3 +1,4 @@
+import TabelaRolavel from '../../componentes/TabelaRolavel';
 import { corStatus } from '../../servicos/statusVisual';
 import CampoRotulado from '../../componentes/CampoRotulado';
 import { useEffect, useState } from 'react';
@@ -159,31 +160,31 @@ export default function Promocoes() {
       </Link>
 
       <h1 className="text-2xl font-bold mt-2 mb-6">Promoções</h1>
-      {erro && <p className="text-red-600 mb-4">{erro}</p>}
+      <div role="alert" className={erro ? "text-erro mb-4" : ""}>{erro}</div>
 
-      <form onSubmit={aoSalvar} className="bg-white rounded-lg shadow p-4 mb-8 grid grid-cols-2 sm:grid-cols-3 gap-3">
+      <form onSubmit={aoSalvar} className="bg-white rounded-lg shadow p-4 mb-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
         <CampoRotulado rotulo="Código" name="codigo" value={form.codigo} onChange={aoMudarCampo} placeholder="Código" required maxLength="50" className="border rounded px-2 py-1" />
         <CampoRotulado rotulo="Tipo de desconto" as="select" name="tipo" value={form.tipo} onChange={aoMudarCampo} className="border rounded px-2 py-1">
           <option value="percentual">Percentual</option>
           <option value="fixo">Valor fixo</option>
         </CampoRotulado>
         <CampoRotulado rotulo={form.tipo === 'percentual' ? 'Percentual' : 'Valor'} name="valor" value={form.valor} onChange={aoMudarCampo} placeholder={form.tipo === 'percentual' ? 'Percentual' : 'Valor'} type="number" min="0.01" step="0.01" required className="border rounded px-2 py-1" />
-        <fieldset className="text-sm text-gray-600">
+        <fieldset className="min-w-0 text-sm text-gray-600">
           <legend>Início</legend>
-          <div className="flex gap-2">
-            <input name="inicio_data" value={form.inicio_data} onChange={aoMudarCampo} type="date" aria-label="Data de início" className="w-full border rounded px-2 py-1 text-gray-900" />
-            <input name="inicio_hora" value={form.inicio_hora} onChange={aoMudarCampo} type="time" aria-label="Hora de início" className="w-full border rounded px-2 py-1 text-gray-900" />
+          <div className="flex flex-wrap gap-2">
+            <input name="inicio_data" value={form.inicio_data} onChange={aoMudarCampo} type="date" aria-label="Data de início" className="min-w-0 flex-1 basis-32 border rounded px-2 py-1 text-gray-900" />
+            <input name="inicio_hora" value={form.inicio_hora} onChange={aoMudarCampo} type="time" aria-label="Hora de início" className="min-w-0 flex-1 basis-32 border rounded px-2 py-1 text-gray-900" />
           </div>
         </fieldset>
-        <fieldset className="text-sm text-gray-600">
+        <fieldset className="min-w-0 text-sm text-gray-600">
           <legend>Fim</legend>
-          <div className="flex gap-2">
-            <input name="fim_data" value={form.fim_data} onChange={aoMudarCampo} type="date" aria-label="Data de fim" className="w-full border rounded px-2 py-1 text-gray-900" />
-            <input name="fim_hora" value={form.fim_hora} onChange={aoMudarCampo} type="time" aria-label="Hora de fim" className="w-full border rounded px-2 py-1 text-gray-900" />
+          <div className="flex flex-wrap gap-2">
+            <input name="fim_data" value={form.fim_data} onChange={aoMudarCampo} type="date" aria-label="Data de fim" className="min-w-0 flex-1 basis-32 border rounded px-2 py-1 text-gray-900" />
+            <input name="fim_hora" value={form.fim_hora} onChange={aoMudarCampo} type="time" aria-label="Hora de fim" className="min-w-0 flex-1 basis-32 border rounded px-2 py-1 text-gray-900" />
           </div>
         </fieldset>
         <CampoRotulado rotulo="Limite de usos" name="uso_maximo" value={form.uso_maximo} onChange={aoMudarCampo} placeholder="Limite de usos" type="number" min="1" step="1" className="border rounded px-2 py-1" />
-        <div className="col-span-2 flex justify-end gap-2 sm:col-span-3">
+        <div className="flex justify-end gap-2 sm:col-span-2 lg:col-span-3">
           {Boolean(editandoId) && (
             <button type="button" onClick={() => { setEditandoId(null); setForm(FORM_VAZIO); }} className="rounded border px-4 py-2">
               Cancelar
@@ -196,7 +197,7 @@ export default function Promocoes() {
       </form>
 
       {carregando ? <p>Carregando promoções...</p> : (
-        <div className="overflow-x-auto">
+        <TabelaRolavel rotulo="Promoções cadastradas">
           <table className="w-full bg-white rounded-lg shadow overflow-hidden text-sm">
             <thead className="bg-gray-100 text-left">
               <tr>
@@ -218,9 +219,9 @@ export default function Promocoes() {
                     <div className="flex gap-3">
                       <button onClick={() => aoEditar(promocao)} className="text-blue-600 hover:underline">Editar</button>
                       {promocao.ativo ? (
-                        <button onClick={() => aoDesativar(promocao.id)} className="text-red-600 hover:underline">Desativar</button>
+                        <button onClick={() => aoDesativar(promocao.id)} className="text-erro hover:underline">Desativar</button>
                       ) : (
-                        <button onClick={() => aoReativar(promocao.id)} className="text-green-600 hover:underline">Reativar</button>
+                        <button onClick={() => aoReativar(promocao.id)} className="text-sucesso hover:underline">Reativar</button>
                       )}
                     </div>
                   </td>
@@ -228,7 +229,7 @@ export default function Promocoes() {
               ))}
             </tbody>
           </table>
-        </div>
+        </TabelaRolavel>
       )}
     </div>
   );

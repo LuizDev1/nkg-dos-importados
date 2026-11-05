@@ -23,6 +23,7 @@ import Privacidade from '../paginas/publicas/Privacidade';
 import Favoritos from '../paginas/cliente/Favoritos';
 import MinhaConta from '../paginas/cliente/MinhaConta';
 import Perguntas from '../paginas/admin/Perguntas';
+import NaoEncontrada from '../paginas/publicas/NaoEncontrada';
 
 export default function RotasApp() {
   return (
@@ -61,7 +62,7 @@ export default function RotasApp() {
       <Route
         path="/minha-conta/pedidos"
         element={
-          <RotaPrivada>
+          <RotaPrivada somenteCliente>
             <MeusPedidosCliente />
           </RotaPrivada>
         }
@@ -69,7 +70,7 @@ export default function RotasApp() {
       <Route
         path="/minha-conta/pedidos/:id"
         element={
-          <RotaPrivada>
+          <RotaPrivada somenteCliente>
             <DetalheMeuPedido />
           </RotaPrivada>
         }
@@ -163,6 +164,7 @@ export default function RotasApp() {
           </RotaPrivada>
         }
       />
+      <Route path="*" element={<NaoEncontrada />} />
     </Routes>
   );
 }

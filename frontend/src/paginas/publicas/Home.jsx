@@ -112,6 +112,8 @@ export default function Home() {
             </span>
             <input
               type="search"
+              name="busca"
+              autoComplete="off"
               value={termoBusca}
               onChange={(evento) => {
                 setTermoBusca(evento.target.value);
@@ -131,7 +133,7 @@ export default function Home() {
         </form>
 
         {erro && (
-          <p role="alert" className="mb-6 rounded bg-red-50 p-3 text-red-700">
+          <p role="alert" className="mb-6 rounded border border-erro-borda bg-erro-fundo p-3 text-[#fca5a5]">
             {erro}
           </p>
         )}
@@ -146,6 +148,7 @@ export default function Home() {
               </label>
               <select
                 id="categoria"
+                name="categoria"
                 value={filtrosPendentes.categoria}
                 onChange={(evento) => setFiltrosPendentes((atuais) => ({
                   ...atuais,
@@ -157,8 +160,8 @@ export default function Home() {
                 {categorias.map((item) => <option key={item} value={item}>{item}</option>)}
               </select>
 
-              <p className="mb-2 text-sm font-semibold">Faixa de preço</p>
-              <div className="mb-5 grid grid-cols-2 gap-2">
+              <p id="faixa-preco" className="mb-2 text-sm font-semibold">Faixa de preço (R$)</p>
+              <div className="mb-5 grid grid-cols-2 gap-2" role="group" aria-labelledby="faixa-preco">
               <input
                 type="number"
                 min="0"
@@ -168,7 +171,9 @@ export default function Home() {
                   ...atuais,
                   precoMinimo: evento.target.value,
                 }))}
-                placeholder="Preço mínimo"
+                name="preco_min"
+                inputMode="decimal"
+                placeholder="Mínimo"
                 aria-label="Preço mínimo"
                 className="min-w-0 rounded border border-gray-300 px-3 py-2"
               />
@@ -181,7 +186,9 @@ export default function Home() {
                   ...atuais,
                   precoMaximo: evento.target.value,
                 }))}
-                placeholder="Preço máximo"
+                name="preco_max"
+                inputMode="decimal"
+                placeholder="Máximo"
                 aria-label="Preço máximo"
                 className="min-w-0 rounded border border-gray-300 px-3 py-2"
               />
@@ -192,6 +199,7 @@ export default function Home() {
               </label>
               <select
                 id="ordenacao"
+                name="ordenacao"
                 value={filtrosPendentes.ordenacao}
                 onChange={(evento) => setFiltrosPendentes((atuais) => ({
                   ...atuais,
@@ -240,7 +248,7 @@ export default function Home() {
             </aside>
           )}
 
-          <main>
+          <section aria-label="Produtos">
             {pesquisaRealizada && (
               <p className="mb-4 text-gray-600">
                 Resultado da pesquisa para <strong>&quot;{busca}&quot;</strong>
@@ -252,13 +260,13 @@ export default function Home() {
                 <p className="text-gray-500">Nenhum produto encontrado.</p>
               </div>
             ) : (
-              <div className={`grid grid-cols-2 gap-6 sm:grid-cols-3 ${pesquisaRealizada ? 'xl:grid-cols-3' : 'lg:grid-cols-4'}`}>
+              <div className={`grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-6 ${pesquisaRealizada ? 'xl:grid-cols-3' : 'lg:grid-cols-4'}`}>
                 {produtos.map((produto) => (
                   <CartaoProduto key={produto.id} produto={produto} />
                 ))}
               </div>
             )}
-          </main>
+          </section>
         </div>
       </div>
     </div>

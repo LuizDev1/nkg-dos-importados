@@ -2,6 +2,7 @@ import { corStatus } from '../../servicos/statusVisual';
 import { useEffect, useState } from 'react';
 import { avisarAdmin } from '../../utilitarios/avisoAdmin';
 import { Link } from 'react-router-dom';
+import TabelaRolavel from '../../componentes/TabelaRolavel';
 import { listarPedidosAdmin, atualizarStatusOperacional } from '../../servicos/pedidoService';
 
 const TRANSICOES = {
@@ -63,11 +64,18 @@ export default function Pedidos() {
 
       <h1 className="text-2xl font-bold mt-2 mb-6">Pedidos</h1>
 
-      {erro && <p className="text-red-600 mb-4">{erro}</p>}
+      <div role="alert" className={erro ? "text-erro mb-4" : ""}>{erro}</div>
 
       {carregando ? (
-        <p>Carregando pedidos...</p>
-      ) : (
+        <p role="status">Carregando pedidos...</p>
+      ) : !pedidos.length ? (!erro && (
+        <div className="rounded-lg border border-[#29261d] bg-[#111210] p-8 text-center">
+          <p className="font-semibold">Nenhum pedido ainda</p>
+          <p className="mt-1 text-sm text-texto-secundario">Quando um cliente finalizar uma compra, o pedido aparece aqui com o pagamento e a etapa da entrega.</p>
+          <Link to="/admin/produtos" className="mt-4 inline-flex rounded border border-borda-campo px-4 py-2 font-semibold text-link hover:border-link">Revisar produtos à venda</Link>
+        </div>
+      )) : (
+        <TabelaRolavel rotulo="Pedidos">
         <table className="w-full bg-white rounded-lg shadow overflow-hidden">
           <thead className="bg-gray-100 text-left text-sm">
             <tr>
@@ -99,6 +107,8 @@ export default function Pedidos() {
                     const opcoes = TRANSICOES[pedido.status_pedido] || [];
                     return (
                   <select
+                    name={`status-${pedido.id}`}
+                    aria-label={`Operação do pedido de ${pedido.usuario_nome}`}
                     value=""
                     disabled={opcoes.length === 0}
                     onChange={(e) => aoMudarStatus(pedido.id, e.target.value)}
@@ -118,6 +128,7 @@ export default function Pedidos() {
             ))}
           </tbody>
         </table>
+        </TabelaRolavel>
       )}
     </div>
   );

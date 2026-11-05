@@ -1,5 +1,29 @@
 @import "tailwindcss";
 
+/* Tokens funcionais (etapa de correção; o sistema visual completo vem no redesign).
+   Contrastes medidos contra #090a09 / #111210 / #151613. */
+@theme {
+  --color-texto-secundario: #aaa399; /* 7,94 / 7,52 / 7,27 */
+  --color-placeholder: #8f897e;      /* 5,71 / 5,41 / 5,23 */
+  --color-link: #d4af45;             /* 9,46 / 8,96 / 8,67 */
+  --color-foco: #d4af45;
+  --color-borda-campo: #756d56;      /* 3,85 / 3,65 / 3,53 (1.4.11) */
+  --color-acao: #d4af45;             /* rótulo #090a09: 9,46 */
+  --color-acao-hover: #e2c25d;
+  --color-acao-texto: #090a09;
+  --color-erro: #f87171;             /* 7,17 / 6,79 / 6,57 */
+  --color-erro-fundo: #2a1414;       /* com #fca5a5: 9,15 */
+  --color-erro-borda: #7f2d2d;
+  --color-aviso: #facc15;
+  --color-aviso-texto: #fde68a;      /* sobre aviso-fundo: 12,52 */
+  --color-aviso-fundo: #2a2310;
+  --color-aviso-borda: #7a6420;
+  --color-sucesso: #4ade80;          /* 11,38 / 10,78 */
+  --color-sucesso-texto: #86efac;    /* sobre sucesso-fundo: 11,49 */
+  --color-sucesso-fundo: #10251a;
+  --color-sucesso-borda: #2f6b45;
+}
+
 :root {
   --cor-fundo: #090a09;
   --cor-superficie: #111210;
@@ -41,11 +65,12 @@ body {
 
 input, select, textarea {
   background-color: #151613 !important;
-  border-color: #3a3526 !important;
+  border-color: var(--color-borda-campo) !important;
   color: #f4efe5 !important;
 }
 
-input::placeholder, textarea::placeholder { color: #77736b !important; }
+input::placeholder, textarea::placeholder { color: var(--color-placeholder) !important; }
+input[aria-invalid="true"], select[aria-invalid="true"], textarea[aria-invalid="true"] { border-color: var(--color-erro) !important; }
 input:-webkit-autofill,
 input:-webkit-autofill:hover,
 input:-webkit-autofill:focus {
@@ -176,6 +201,16 @@ button:focus-visible, a:focus-visible { outline: 2px solid #d4af45; outline-offs
 }
 
 h1, h2, h3 { letter-spacing: -0.02em; }
+
+/* Alvo do foco programático nas trocas de rota: sem anel no título focado. */
+[data-foco-rota]:focus { outline: none; }
+html { scroll-padding-block-start: 6rem; }
+
+/* Tabelas largas: rolagem horizontal própria (componente TabelaRolavel). */
+.tabela-rolavel { overflow-x: auto; overscroll-behavior-inline: contain; }
+.tabela-rolavel:focus-visible { outline: 2px solid var(--color-foco); outline-offset: 3px; }
+.tabela-rolavel > table th, .tabela-rolavel > table td { white-space: nowrap; }
+.tabela-rolavel > table td.quebra { white-space: normal; min-width: 12rem; }
 
 .admin-area main { background: transparent; }
 .admin-area main > div > h1,

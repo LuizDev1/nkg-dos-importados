@@ -10,17 +10,17 @@ const CONTEUDO = {
   sucesso: {
     titulo: 'Pagamento aprovado!',
     mensagem: 'Seu pedido foi confirmado e já está sendo preparado.',
-    cor: 'text-green-600',
+    cor: 'text-sucesso',
   },
   pendente: {
     titulo: 'Pagamento em análise',
     mensagem: 'Assim que for confirmado, seu pedido será processado.',
-    cor: 'text-yellow-600',
+    cor: 'text-aviso',
   },
   falha: {
     titulo: 'Pagamento não concluído',
     mensagem: 'Algo deu errado ou a compra foi cancelada. Você pode tentar novamente.',
-    cor: 'text-red-600',
+    cor: 'text-erro',
   },
 };
 
@@ -114,9 +114,9 @@ export default function StatusPedido() {
     <div className="max-w-md mx-auto px-4 py-16 text-center">
       <h1 className={`text-2xl font-bold mb-3 ${conteudo.cor}`}>{conteudo.titulo}</h1>
       <p className="text-gray-600 mb-2">{conteudo.mensagem}</p>
-      <p className="text-sm text-gray-400 mb-6">Pedido #{id}</p>
+      {pedido?.numero_cliente ? <p className="text-sm text-gray-400 mb-6">Pedido #{pedido.numero_cliente}</p> : <div className="mb-6" />}
 
-      {erroPedido && <p className="text-sm text-red-600 mb-4">{erroPedido}</p>}
+      <div role="alert" className={erroPedido ? "text-sm text-erro mb-4" : ""}>{erroPedido}</div>
 
       {pedido && (
         <div className="text-left bg-white border rounded-lg p-5 mb-6">
@@ -130,10 +130,10 @@ export default function StatusPedido() {
             ))}
           </ol>
           {pedido.status_pedido === 'cancelado' && (
-            <p className="text-red-600 mt-4">Pedido cancelado.</p>
+            <p className="text-erro mt-4">Pedido cancelado.</p>
           )}
           {pedido.status_pedido === 'reembolso_pendente' && (
-            <p className="text-yellow-600 mt-4">Reembolso em processamento.</p>
+            <p className="text-aviso mt-4">Reembolso em processamento.</p>
           )}
           {pedido.codigo_rastreio && (
             <p className="mt-4 text-sm">Código de rastreio: <strong>{pedido.codigo_rastreio}</strong></p>

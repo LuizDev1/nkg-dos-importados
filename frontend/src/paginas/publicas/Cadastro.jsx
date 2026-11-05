@@ -1,8 +1,11 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { registrar } from '../../servicos/autenticacaoService';
 import { formatarCpf } from '../../servicos/formatadores';
 import Turnstile, { turnstileAtivo } from '../../componentes/Turnstile';
+
+const ROTULO = 'block text-[11px] uppercase tracking-[0.2em] text-zinc-400 mb-2 font-medium';
+const CAMPO = 'w-full bg-zinc-900/90 border border-zinc-800 rounded-lg px-4 py-3 text-zinc-100 text-base sm:text-sm focus:outline-none focus:border-amber-500/80 transition-colors';
 
 export default function Cadastro() {
   const [nome, setNome] = useState('');
@@ -11,10 +14,12 @@ export default function Cadastro() {
   const [senha, setSenha] = useState('');
   const [mostrarSenha, setMostrarSenha] = useState(false);
   const [erro, setErro] = useState('');
+  const [erroSenha, setErroSenha] = useState('');
   const [sucesso, setSucesso] = useState(false);
   const [carregando, setCarregando] = useState(false);
   const [turnstileToken, setTurnstileToken] = useState('');
-
+  const campoNome = useRef(null);
+  const campoSenha = useRef(null);
   const navegar = useNavigate();
 
   function requisitosSenha(valor) {
@@ -30,11 +35,15 @@ export default function Cadastro() {
   async function aoEnviar(evento) {
     evento.preventDefault();
     setErro('');
+    setErroSenha('');
+
     const faltam = requisitosSenha(senha);
     if (faltam.length) {
-      setErro(`Não foi possível se cadastrar. Para sua senha ficar segura, ${faltam.join(' ')}`);
+      setErroSenha(`Para sua senha ficar segura, ${faltam.join(' ')}`);
+      campoSenha.current?.focus();
       return;
     }
+
     setCarregando(true);
 
     try {
@@ -43,70 +52,104 @@ export default function Cadastro() {
       setTimeout(() => navegar('/login'), 1500);
     } catch (erro) {
       setErro(erro.message);
+      campoNome.current?.focus();
     } finally {
       setCarregando(false);
     }
   }
 
+  const pendencias = senha ? requisitosSenha(senha) : [];
+
   return (
     <div className="auth-page min-h-[calc(100dvh-73px)] flex items-center justify-center px-4 py-12">
       <form
         onSubmit={aoEnviar}
-        className="auth-card w-full max-w-md rounded-lg border border-[#343024] bg-[#111210]/95 p-8 shadow-[0_24px_70px_rgba(0,0,0,0.5)] backdrop-blur-md"
+        className="auth-card w-full max-w-md rounded-lg border border-[#343024] bg-[#111210]/95 p-6 sm:p-8 shadow-[0_24px_70px_rgba(0,0,0,0.5)] backdrop-blur-md"
       >
         <div className="text-center mb-8">
           <h1 className="mt-4 text-3xl font-black tracking-[0.12em] text-[#f4efe5]">Criar conta</h1>
           <p className="mt-2 text-xs font-medium uppercase tracking-[0.3em] text-[#d4af45]">NKG Dos Importados</p>
         </div>
 
-        {erro && (
-          <div className="bg-red-950/60 border border-red-900/50 text-red-200 text-xs p-3 rounded-lg mb-6 text-center">
-            {erro}
-          </div>
-        )}
-
-        {sucesso && (
-          <div className="bg-emerald-950/60 border border-emerald-900/50 text-emerald-200 text-xs p-3 rounded-lg mb-6 text-center">
-            Cadastro feito! Redirecionando para o login...
-          </div>
-        )}
+        {/* Regiões estáveis: existem vazias antes de receber a mensagem. */}
+        <div role="alert" id="cadastro-erro" className={erro ? 'bg-erro-fundo border border-erro-borda text-[#fca5a5] text-sm p-3 rounded-lg mb-6 text-center' : ''}>
+          {erro}
+        </div>
+        <div role="status" className={sucesso ? 'bg-sucesso-fundo border border-sucesso-borda text-sucesso-texto text-sm p-3 rounded-lg mb-6 text-center' : ''}>
+          {sucesso ? 'Cadastro feito! Redirecionando para o login...' : ''}
+        </div>
 
         <div className="mb-4">
-          <label className="block text-[11px] uppercase tracking-[0.2em] text-zinc-400 mb-2 font-medium">Nome</label>
+          <label htmlFor="cadastro-nome" className={ROTULO}>Nome</label>
           <input
+            ref={campoNome}
+            id="cadastro-nome"
+            name="nome"
             type="text"
+            autoComplete="name"
             value={nome}
             onChange={(e) => setNome(e.target.value)}
             required
-            className="w-full bg-zinc-900/90 border border-zinc-800 rounded-lg px-4 py-3 text-zinc-100 text-sm focus:outline-none focus:border-amber-500/80 transition-colors"
+            aria-describedby={erro ? 'cadastro-erro' : undefined}
+            className={CAMPO}
           />
         </div>
 
         <div className="mb-4">
-          <label className="block text-[11px] uppercase tracking-[0.2em] text-zinc-400 mb-2 font-medium">E-mail</label>
+          <label htmlFor="cadastro-email" className={ROTULO}>E-mail</label>
           <input
+            id="cadastro-email"
+            name="email"
             type="email"
+            inputMode="email"
+            autoComplete="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
-            className="w-full bg-zinc-900/90 border border-zinc-800 rounded-lg px-4 py-3 text-zinc-100 text-sm focus:outline-none focus:border-amber-500/80 transition-colors"
+            className={CAMPO}
           />
         </div>
 
         <div className="mb-4">
-          <label htmlFor="cpf" className="block text-[11px] uppercase tracking-[0.2em] text-zinc-400 mb-2 font-medium">CPF</label>
-          <input id="cpf" type="text" inputMode="numeric" value={cpf}
+          <label htmlFor="cpf" className={ROTULO}>CPF</label>
+          <input id="cpf" name="cpf" type="text" inputMode="numeric" autoComplete="off" value={cpf}
             onChange={(e) => setCpf(formatarCpf(e.target.value))} required maxLength={14}
-            placeholder="000.000.000-00"
-            className="w-full bg-zinc-900/90 border border-zinc-800 rounded-lg px-4 py-3 text-zinc-100 text-sm focus:outline-none focus:border-amber-500/80 transition-colors" />
-          <p className="text-xs text-zinc-400 mt-2">Usado para identificar o comprador no pagamento.</p>
+            placeholder="000.000.000-00" aria-describedby="cpf-ajuda"
+            className={CAMPO} />
+          <p id="cpf-ajuda" className="text-xs text-zinc-400 mt-2">Usado para identificar o comprador no pagamento.</p>
         </div>
 
         <div className="mb-6">
-          <label className="block text-[11px] uppercase tracking-[0.2em] text-zinc-400 mb-2 font-medium">Senha</label>
-          <div className="relative"><input type={mostrarSenha ? 'text' : 'password'} value={senha} onChange={(e) => setSenha(e.target.value)} required minLength={8} autoComplete="new-password" className="w-full bg-zinc-900/90 border border-zinc-800 rounded-lg px-4 py-3 pr-20 text-zinc-100 text-sm focus:outline-none focus:border-amber-500/80 transition-colors" /><button type="button" onClick={() => setMostrarSenha((valor) => !valor)} aria-pressed={mostrarSenha} className="absolute inset-y-0 right-3 text-xs font-semibold text-[#d4af45] hover:text-[#e2c25d]">{mostrarSenha ? 'Ocultar' : 'Mostrar'}</button></div>
-          <p className="mt-2 text-xs text-zinc-400">Use 8 ou mais caracteres, com letra maiúscula, minúscula, número e símbolo (ex.: @ ou #).</p>
-          {senha && requisitosSenha(senha).length > 0 && <div role="status" className="mt-3 rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs leading-relaxed text-amber-200"><strong className="font-semibold text-amber-300">Senha ainda não atende aos requisitos.</strong><span className="block mt-1">{requisitosSenha(senha).join(' ')}</span></div>}
+          <label htmlFor="cadastro-senha" className={ROTULO}>Senha</label>
+          <div className="relative">
+            <input
+              ref={campoSenha}
+              id="cadastro-senha"
+              name="senha"
+              type={mostrarSenha ? 'text' : 'password'}
+              value={senha}
+              onChange={(e) => { setSenha(e.target.value); setErroSenha(''); }}
+              required
+              minLength={8}
+              autoComplete="new-password"
+              aria-invalid={erroSenha ? 'true' : undefined}
+              aria-describedby={`senha-ajuda senha-pendencias${erroSenha ? ' senha-erro' : ''}`}
+              className={`${CAMPO} pr-20`}
+            />
+            <button type="button" onClick={() => setMostrarSenha((valor) => !valor)} aria-pressed={mostrarSenha} aria-controls="cadastro-senha" aria-label={mostrarSenha ? 'Ocultar senha' : 'Mostrar senha'} className="absolute inset-y-0 right-3 text-xs font-semibold text-[#d4af45] hover:text-[#e2c25d]">
+              {mostrarSenha ? 'Ocultar' : 'Mostrar'}
+            </button>
+          </div>
+          <p id="senha-ajuda" className="mt-2 text-xs text-zinc-400">Use 8 ou mais caracteres, com letra maiúscula, minúscula, número e símbolo (ex.: @ ou #).</p>
+          {erroSenha && <p id="senha-erro" className="mt-2 text-sm text-erro">{erroSenha}</p>}
+          <div id="senha-pendencias" role="status" className={!erroSenha && pendencias.length ? 'mt-3 rounded-md border border-aviso-borda bg-aviso-fundo px-3 py-2 text-xs leading-relaxed text-aviso-texto' : ''}>
+            {!erroSenha && pendencias.length > 0 && (
+              <>
+                <strong className="font-semibold">Senha ainda não atende aos requisitos.</strong>
+                <span className="block mt-1">{pendencias.join(' ')}</span>
+              </>
+            )}
+          </div>
         </div>
 
         <Turnstile acao="cadastro" aoValidar={setTurnstileToken} />

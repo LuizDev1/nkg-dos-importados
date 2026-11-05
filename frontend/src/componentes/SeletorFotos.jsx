@@ -36,7 +36,7 @@ const resposta = await fetch(API_URL + '/' + rotaUpload, { method: 'POST', heade
     <input id={id} type="file" accept={aceitarGif ? 'image/jpeg,image/png,image/webp,image/gif' : 'image/jpeg,image/png,image/webp'} multiple={maximo > 1} disabled={disabled || carregando || fotos.length >= maximo} onChange={selecionar} className="sr-only" />
     <p className="mt-2 text-xs text-[#aaa396]">{fotos.length}/{maximo} - JPG, PNG, WebP{aceitarGif ? ' ou GIF' : ''} · até {limiteMb} MB</p>
     {carregando && <p role="status" className="mt-2 text-sm">Enviando fotos...</p>}
-    {erro && <p role="alert" className="mt-2 text-sm text-red-600">{erro}</p>}
+    {erro && <p role="alert" className="mt-2 text-sm text-erro">{erro}</p>}
     <div className="mt-3 flex flex-wrap gap-3">{fotos.map((foto, i) => <div key={foto + i} className="relative">
       <img src={foto} alt={'Foto ' + (i + 1)} className="h-20 w-20 rounded object-cover" />
       <button type="button" disabled={disabled || carregando} onClick={() => onChange(fotos.filter((_, indice) => indice !== i))} aria-label={'Remover foto ' + (i + 1)} className="absolute -right-2 -top-2 rounded-full bg-[#11120f] px-2 text-[#d4af45]">×</button>

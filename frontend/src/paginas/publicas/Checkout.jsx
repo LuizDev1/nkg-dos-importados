@@ -8,6 +8,8 @@ import { listarEnderecos } from '../../servicos/enderecoService';
 import { formatarCep, formatarCpf, formatarTelefone } from '../../servicos/formatadores';
 
 const API_URL = import.meta.env.VITE_API_URL || '/api';
+// Ordem visual dos campos validados: o foco vai para o primeiro com erro.
+const ORDEM_CAMPOS = ['telefone', 'cep', 'rua', 'numero', 'bairro', 'cidade', 'estado'];
 
 export default function Checkout() {
   const { itens, carregandoEstoque, erroEstoque } = useCarrinho();
@@ -130,6 +132,8 @@ export default function Checkout() {
     }
 
     setErros(novosErros);
+    const primeiroInvalido = ORDEM_CAMPOS.find((campo) => novosErros[campo]);
+    if (primeiroInvalido) document.getElementById(`checkout-${primeiroInvalido}`)?.focus();
     return Object.keys(novosErros).length === 0;
   }
 
@@ -239,12 +243,28 @@ export default function Checkout() {
   }
 
   function classeCampo(campo) {
-    return `w-full border rounded px-3 py-2 ${erros[campo] ? 'border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500' : 'border-gray-300'}`;
+    return `w-full border rounded px-3 py-2 text-base sm:text-sm ${erros[campo] ? 'focus:outline-none focus:ring-1 focus:ring-erro' : ''}`;
   }
+
+  // id, name e ligação com a mensagem de erro de cada campo validado.
+  function propsCampo(campo) {
+    return {
+      id: `checkout-${campo}`,
+      name: campo,
+      'aria-invalid': erros[campo] ? 'true' : undefined,
+      'aria-describedby': erros[campo] ? `checkout-${campo}-erro` : undefined,
+    };
+  }
+
+  function erroCampo(campo) {
+    return erros[campo] ? <p id={`checkout-${campo}-erro`} className="mt-1 text-sm text-erro">{erros[campo]}</p> : null;
+  }
+
+  const rotulo = 'block text-sm text-gray-600';
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-8">
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
         <h1 className="text-2xl font-bold">Finalizar Compra</h1>
         <button
           type="button"
@@ -268,16 +288,16 @@ export default function Checkout() {
           <div className="text-gray-600">
             {!cotacaoFrete && <p>Frete calculado no servidor ao finalizar</p>}
             {cotacaoFrete && cotacaoFrete.opcoes?.length > 1 && (
-              <div className="mt-3">
-                <p className="mb-2 text-sm font-semibold text-gray-700">Escolha a entrega</p>
+              <fieldset className="mt-3">
+                <legend className="mb-2 text-sm font-semibold text-gray-700">Escolha a entrega</legend>
                 <div className="grid gap-2 sm:grid-cols-2">
                   {cotacaoFrete.opcoes.map((opcao) => (
                     <label
                       key={opcao.servico_id}
                       className={`cursor-pointer rounded-lg border p-3 transition ${
                         freteServicoId === opcao.servico_id
-                          ? 'border-blue-600 bg-blue-50 ring-1 ring-blue-600'
-                          : 'border-gray-200 hover:border-blue-300'
+                          ? 'border-acao bg-blue-50 ring-1 ring-acao'
+                          : 'border-borda-campo hover:border-link'
                       }`}
                     >
                       <input
@@ -301,10 +321,10 @@ export default function Checkout() {
                     </label>
                   ))}
                 </div>
-              </div>
+              </fieldset>
             )}
             {cotacaoFrete?.gratuito ? (
-              <p className="mt-2 font-semibold text-green-600">Entrega grátis</p>
+              <p className="mt-2 font-semibold text-sucesso">Entrega grátis</p>
             ) : cotacaoFrete ? (
               <p className="mt-2">
                 Frete: {Number(cotacaoFrete.valor).toLocaleString('pt-BR', {
@@ -320,92 +340,98 @@ export default function Checkout() {
       <form onSubmit={finalizarCompra} className="bg-white p-6 rounded-lg shadow space-y-4">
         <h2 className="text-lg font-semibold mb-2">Dados de Entrega</h2>
 
-        {erro && <p className="text-red-600 bg-red-50 p-3 rounded">{erro}</p>}
+        {/* Região estável para falhas gerais (frete, pedido, pagamento). */}
+        <div role="alert" className={erro ? 'rounded border border-erro-borda bg-erro-fundo p-3 text-[#fca5a5]' : ''}>{erro}</div>
 
-        {carregandoEnderecos && <p className="text-sm text-gray-500">Carregando endereço principal...</p>}
-        {erroEnderecos && <p role="alert" className="rounded bg-amber-50 p-3 text-sm text-amber-800">{erroEnderecos}</p>}
+        <div role="status" className={carregandoEnderecos ? 'text-sm text-gray-500' : 'sr-only'}>
+          {carregandoEnderecos ? 'Carregando endereço principal...' : ''}
+        </div>
+        {erroEnderecos && <p role="alert" className="rounded border border-aviso-borda bg-aviso-fundo p-3 text-sm text-aviso-texto">{erroEnderecos}</p>}
 
         <div>
-          <label htmlFor="cpf-pagamento" className="block text-sm text-gray-600">CPF do comprador</label>
-          <input id="cpf-pagamento" type="text" inputMode="numeric" value={cpf}
+          <label htmlFor="cpf-pagamento" className={rotulo}>CPF do comprador</label>
+          <input id="cpf-pagamento" name="cpf" type="text" inputMode="numeric" autoComplete="off" value={cpf}
             onChange={(e) => setCpf(formatarCpf(e.target.value))} required maxLength={14}
-            placeholder="000.000.000-00" className={classeCampo('cpf')} />
-          <p className="text-xs text-gray-500 mt-1">Necessário para identificar o comprador no pagamento.</p>
+            placeholder="000.000.000-00" aria-describedby="cpf-pagamento-ajuda" className={classeCampo('cpf')} />
+          <p id="cpf-pagamento-ajuda" className="text-xs text-gray-500 mt-1">Necessário para identificar o comprador no pagamento.</p>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
-            <label className="block text-sm text-gray-600">Telefone de Contato</label>
-            <input type="text" name="telefone" value={formulario.telefone} onChange={lidarComMudanca} className={classeCampo('telefone')} placeholder="(61) 90000-0000" />
-            {erros.telefone && <p className="text-red-500 text-xs mt-1">{erros.telefone}</p>}
+            <label htmlFor="checkout-telefone" className={rotulo}>Telefone de Contato</label>
+            <input type="tel" inputMode="tel" autoComplete="tel" {...propsCampo('telefone')} value={formulario.telefone} onChange={lidarComMudanca} className={classeCampo('telefone')} placeholder="(61) 90000-0000" />
+            {erroCampo('telefone')}
           </div>
           <div>
-            <label className="block text-sm text-gray-600">CEP</label>
+            <label htmlFor="checkout-cep" className={rotulo}>CEP</label>
             <div className="relative">
-              <input type="text" name="cep" value={formulario.cep} onChange={lidarComCep} className={classeCampo('cep')} placeholder="00000-000" maxLength="9" />
+              <input type="text" inputMode="numeric" autoComplete="postal-code" {...propsCampo('cep')} value={formulario.cep} onChange={lidarComCep} className={classeCampo('cep')} placeholder="00000-000" maxLength="9" />
               {buscandoCep && (
-                <span className="absolute right-3 top-2.5 text-xs text-gray-400">Buscando...</span>
+                <span role="status" className="absolute right-3 top-2.5 text-xs text-gray-400">Buscando...</span>
               )}
             </div>
-            {erros.cep && <p className="text-red-500 text-xs mt-1">{erros.cep}</p>}
+            {erroCampo('cep')}
           </div>
         </div>
 
-        <div className="grid grid-cols-3 gap-4">
-          <div className="col-span-2">
-            <label className="block text-sm text-gray-600">Rua / Quadra</label>
-            <input type="text" name="rua" value={formulario.rua} onChange={lidarComMudanca} className={classeCampo('rua')} />
-            {erros.rua && <p className="text-red-500 text-xs mt-1">{erros.rua}</p>}
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <div className="sm:col-span-2">
+            <label htmlFor="checkout-rua" className={rotulo}>Rua / Quadra</label>
+            <input type="text" autoComplete="address-line1" {...propsCampo('rua')} value={formulario.rua} onChange={lidarComMudanca} className={classeCampo('rua')} />
+            {erroCampo('rua')}
           </div>
           <div>
-            <label className="block text-sm text-gray-600">Número</label>
-            <input type="text" name="numero" value={formulario.numero} onChange={lidarComMudanca} className={classeCampo('numero')} />
-            {erros.numero && <p className="text-red-500 text-xs mt-1">{erros.numero}</p>}
+            <label htmlFor="checkout-numero" className={rotulo}>Número</label>
+            <input type="text" inputMode="numeric" {...propsCampo('numero')} value={formulario.numero} onChange={lidarComMudanca} className={classeCampo('numero')} />
+            {erroCampo('numero')}
           </div>
         </div>
 
         <div>
-          <label className="block text-sm text-gray-600">Complemento</label>
-          <input type="text" name="complemento" value={formulario.complemento} onChange={lidarComMudanca} className={classeCampo('complemento')} placeholder="Apartamento, bloco, referência..." />
+          <label htmlFor="checkout-complemento" className={rotulo}>Complemento</label>
+          <input type="text" id="checkout-complemento" name="complemento" autoComplete="address-line2" value={formulario.complemento} onChange={lidarComMudanca} className={classeCampo('complemento')} placeholder="Apartamento, bloco, referência..." />
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
-            <label className="block text-sm text-gray-600">Bairro</label>
-            <input type="text" name="bairro" value={formulario.bairro} onChange={lidarComMudanca} className={classeCampo('bairro')} />
-            {erros.bairro && <p className="text-red-500 text-xs mt-1">{erros.bairro}</p>}
+            <label htmlFor="checkout-bairro" className={rotulo}>Bairro</label>
+            <input type="text" autoComplete="address-level3" {...propsCampo('bairro')} value={formulario.bairro} onChange={lidarComMudanca} className={classeCampo('bairro')} />
+            {erroCampo('bairro')}
           </div>
           <div>
-            <label className="block text-sm text-gray-600">Cidade</label>
-            <input type="text" name="cidade" value={formulario.cidade} onChange={lidarComMudanca} className={classeCampo('cidade')} />
-            {erros.cidade && <p className="text-red-500 text-xs mt-1">{erros.cidade}</p>}
+            <label htmlFor="checkout-cidade" className={rotulo}>Cidade</label>
+            <input type="text" autoComplete="address-level2" {...propsCampo('cidade')} value={formulario.cidade} onChange={lidarComMudanca} className={classeCampo('cidade')} />
+            {erroCampo('cidade')}
           </div>
         </div>
 
         <div>
-          <label className="block text-sm text-gray-600">Estado (UF)</label>
-          <input type="text" name="estado" value={formulario.estado} onChange={lidarComMudanca} className={classeCampo('estado')} placeholder="Ex: DF" maxLength="2" />
-          {erros.estado && <p className="text-red-500 text-xs mt-1">{erros.estado}</p>}
+          <label htmlFor="checkout-estado" className={rotulo}>Estado (UF)</label>
+          <input type="text" autoComplete="address-level1" {...propsCampo('estado')} value={formulario.estado} onChange={lidarComMudanca} className={classeCampo('estado')} placeholder="Ex: DF" maxLength="2" />
+          {erroCampo('estado')}
         </div>
 
         {enderecosSalvos.length > 0 && (
           <div className="rounded border border-gray-200 bg-gray-50 p-4">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div><p className="font-semibold text-gray-800">{enderecoSelecionadoId ? 'Endereço salvo aplicado' : 'Endereços salvos'}</p><p className="text-xs text-gray-600">{enderecoSelecionadoId ? 'Você pode revisar os campos acima antes de finalizar.' : 'Selecione um endereço para preencher os campos.'}</p></div>
-              {(enderecosSalvos.length > 1 || !enderecoSelecionadoId) && <button type="button" onClick={() => setMostrarEnderecos((aberto) => !aberto)} className="text-sm font-semibold text-blue-700 underline">{mostrarEnderecos ? 'Fechar opções' : 'Trocar endereço salvo'}</button>}
+              {(enderecosSalvos.length > 1 || !enderecoSelecionadoId) && <button type="button" onClick={() => setMostrarEnderecos((aberto) => !aberto)} aria-expanded={mostrarEnderecos} className="text-sm font-semibold text-link underline underline-offset-2">{mostrarEnderecos ? 'Fechar opções' : 'Trocar endereço salvo'}</button>}
             </div>
             {(mostrarEnderecos || enderecosSalvos.length === 1 || !enderecoSelecionadoId) && (
               <div className="mt-3 grid gap-2">
-                {enderecosSalvos.map((endereco) => <button key={endereco.id} type="button" onClick={() => { usarEndereco(endereco); setMostrarEnderecos(false); }} className={`rounded border p-3 text-left text-sm ${String(endereco.id) === enderecoSelecionadoId ? 'border-blue-600 bg-blue-50' : 'border-gray-200 bg-white hover:border-blue-300'}`}><strong>{endereco.apelido}{endereco.principal ? ' · Principal' : ''}</strong><span className="mt-1 block text-gray-600">{endereco.rua}, {endereco.numero}{endereco.complemento ? ` — ${endereco.complemento}` : ''} · {endereco.cidade}/{endereco.estado}</span></button>)}
+                {enderecosSalvos.map((endereco) => <button key={endereco.id} type="button" onClick={() => { usarEndereco(endereco); setMostrarEnderecos(false); }} className={`rounded border p-3 text-left text-sm ${String(endereco.id) === enderecoSelecionadoId ? 'border-acao bg-blue-50' : 'border-borda-campo bg-white hover:border-link'}`} aria-pressed={String(endereco.id) === enderecoSelecionadoId}><strong>{endereco.apelido}{endereco.principal ? ' · Principal' : ''}</strong><span className="mt-1 block text-gray-600">{endereco.rua}, {endereco.numero}{endereco.complemento ? ` — ${endereco.complemento}` : ''} · {endereco.cidade}/{endereco.estado}</span></button>)}
               </div>
             )}
           </div>
         )}
 
         <div>
-          <label className="block text-sm text-gray-600">Cupom de desconto</label>
+          <label htmlFor="checkout-cupom" className={rotulo}>Cupom de desconto</label>
           <input
+            id="checkout-cupom"
+            name="codigo_promocao"
             type="text"
+            autoComplete="off"
             value={codigoPromocao}
             onChange={(e) => setCodigoPromocao(e.target.value.toUpperCase())}
             className={classeCampo('codigoPromocao')}
@@ -417,7 +443,7 @@ export default function Checkout() {
         <button 
           type="submit" 
           disabled={carregando || buscandoCep || carregandoEstoque || Boolean(erroEstoque) || itens.some(item => !item.estoque_qtd || item.quantidade < 1)}
-          className={`w-full py-3 rounded text-white font-bold mt-4 transition ${carregando || buscandoCep ? 'bg-gray-400' : 'bg-green-600 hover:bg-green-700'}`}
+          className="w-full py-3 rounded bg-acao text-acao-texto font-bold mt-4 transition hover:bg-acao-hover disabled:cursor-not-allowed disabled:opacity-60"
         >
           {carregando
             ? 'Processando...'

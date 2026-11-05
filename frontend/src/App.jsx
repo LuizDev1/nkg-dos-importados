@@ -1,17 +1,36 @@
+import { useEffect, useRef } from 'react';
 import Cabecalho from './componentes/Cabecalho';
 import Rodape from './componentes/Rodape';
 import AvisoAdmin from './componentes/AvisoAdmin';
 import RotasApp from './rotas/RotasApp';
 import { useLocation } from 'react-router-dom';
+import { tituloDaRota } from './rotas/titulos';
 
 function App() {
   const location = useLocation();
   const areaAdmin = location.pathname.startsWith('/admin');
+  const conteudo = useRef(null);
+  const rotaAnterior = useRef(null);
+
+  // Troca de rota no cliente: atualiza o título e leva o foco ao conteúdo novo (WCAG 2.4.2 e 2.4.3).
+  // Compara com a rota anterior (e não com um indicador de "primeira vez") para o carregamento inicial
+  // não roubar o foco, inclusive quando o StrictMode executa o efeito duas vezes.
+  useEffect(() => {
+    document.title = `${tituloDaRota(location.pathname)} · NKG dos Importados`;
+    const anterior = rotaAnterior.current;
+    rotaAnterior.current = location.pathname;
+    if (anterior === null || anterior === location.pathname || location.hash) return;
+    window.scrollTo(0, 0);
+    conteudo.current?.focus({ preventScroll: true });
+  }, [location.pathname, location.hash]);
 
   return (
     <div className={`site-shell min-h-screen flex flex-col text-[#f4efe5] ${areaAdmin ? 'admin-area' : ''}`}>
+      <a href="#conteudo" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[60] focus:rounded focus:bg-acao focus:px-4 focus:py-2 focus:font-semibold focus:text-acao-texto">
+        Pular para o conteúdo
+      </a>
       <Cabecalho />
-      <main className="flex-1">
+      <main id="conteudo" ref={conteudo} tabIndex={-1} data-foco-rota className="flex-1">
         <RotasApp />
       </main>
       <Rodape />

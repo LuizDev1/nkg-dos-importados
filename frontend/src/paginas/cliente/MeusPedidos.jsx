@@ -55,7 +55,7 @@ export default function MeusPedidos() {
       <h1 className="mt-4 text-2xl font-bold mb-6">Meus pedidos</h1>
 
       {erro && (
-        <p className="text-red-600 bg-red-50 rounded p-3 mb-4">
+        <p className="text-erro bg-erro-fundo rounded p-3 mb-4">
           {erro}
         </p>
       )}

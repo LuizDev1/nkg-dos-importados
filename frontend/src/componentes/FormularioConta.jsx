@@ -26,8 +26,8 @@ export default function FormularioConta({ conta, salvar, aoSalvar }) {
 
   return (
     <form onSubmit={enviar} className="formulario-conta space-y-5">
-      {erro && <p role="alert" className="rounded-lg bg-red-950/50 p-3 text-sm text-red-200">{erro}</p>}
-      {sucesso && <p role="status" className="rounded-lg bg-emerald-950/50 p-3 text-sm text-emerald-200">{sucesso}</p>}
+      <div role="alert" className={erro ? 'rounded-lg border border-erro-borda bg-erro-fundo p-3 text-sm text-[#fca5a5]' : ''}>{erro}</div>
+      <div role="status" className={sucesso ? 'rounded-lg border border-sucesso-borda bg-sucesso-fundo p-3 text-sm text-sucesso-texto' : ''}>{sucesso}</div>
       {[
         ['nome', 'Nome completo', 'text', 150, 'name'],
         ['email', 'E-mail', 'email', 150, 'email'],
@@ -35,7 +35,7 @@ export default function FormularioConta({ conta, salvar, aoSalvar }) {
       ].map(([campo, titulo, tipo, limite, autocomplete]) => (
         <div key={campo}>
           <label htmlFor={`conta-${campo}`} className="mb-2 block text-sm text-[#aaa399]">{titulo}</label>
-          <input id={`conta-${campo}`} type={tipo} maxLength={limite} required
+          <input id={`conta-${campo}`} name={campo} type={tipo} maxLength={limite} required
             autoComplete={autocomplete} inputMode={campo === 'cpf' ? 'numeric' : undefined}
             disabled={carregando} value={dados[campo]}
             onChange={(e) => { setDados({ ...dados, [campo]: campo === 'cpf' ? formatarCpf(e.target.value) : e.target.value }); setSucesso(''); }}

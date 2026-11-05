@@ -2,6 +2,7 @@ import { corStatus } from '../../servicos/statusVisual';
 import { useEffect, useState } from 'react';
 import { avisarAdmin } from '../../utilitarios/avisoAdmin';
 import { Link, useParams } from 'react-router-dom';
+import TabelaRolavel from '../../componentes/TabelaRolavel';
 import {
   buscarPedido,
   atualizarCodigoRastreio,
@@ -53,7 +54,7 @@ export default function DetalhePedido() {
   }
 
   if (erro && !pedido) {
-    return <p className="text-center mt-10 text-red-600">{erro}</p>;
+    return <p className="text-center mt-10 text-erro">{erro}</p>;
   }
 
   return (
@@ -66,8 +67,9 @@ export default function DetalhePedido() {
       </Link>
 
       <h1 className="text-2xl font-bold mt-2 mb-6">
-        Pedido #{pedido.id}
+        Pedido #{pedido.numero_cliente} de {pedido.usuario_nome}
       </h1>
+      <p className="-mt-4 mb-6 text-sm text-texto-secundario">ID interno: {pedido.id}</p>
 
       <div className="bg-white rounded-lg shadow p-5 mb-6 space-y-1">
         <p><strong>Cliente:</strong> {pedido.usuario_nome}</p>
@@ -89,15 +91,18 @@ export default function DetalhePedido() {
         className="bg-white rounded-lg shadow p-5 mb-6"
       >
         <h2 className="text-xl font-semibold mb-3">
-          Código de rastreio
+          <label htmlFor="codigo-rastreio">Código de rastreio</label>
         </h2>
 
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <input
+            id="codigo-rastreio"
+            name="codigo_rastreio"
+            autoComplete="off"
             value={codigoRastreio}
             onChange={(evento) => setCodigoRastreio(evento.target.value)}
             placeholder="Ex.: BR123456789BR"
-            className="border rounded px-3 py-2 flex-1"
+            className="border rounded px-3 py-2 flex-1 min-w-0 basis-48"
           />
 
           <button
@@ -109,13 +114,13 @@ export default function DetalhePedido() {
           </button>
         </div>
 
-        {mensagem && <p className="text-green-600 mt-2">{mensagem}</p>}
-        {erro && <p className="text-red-600 mt-2">{erro}</p>}
+        {mensagem && <p className="text-sucesso mt-2">{mensagem}</p>}
+        {erro && <p className="text-erro mt-2">{erro}</p>}
       </form>
 
       <h2 className="text-xl font-semibold mb-3">Produtos do pedido</h2>
 
-      <div className="bg-white rounded-lg shadow overflow-x-auto">
+      <TabelaRolavel rotulo="Produtos do pedido" className="bg-white rounded-lg shadow">
         <table className="w-full text-sm">
           <thead className="bg-gray-100 text-left">
             <tr>
@@ -150,7 +155,7 @@ export default function DetalhePedido() {
             ))}
           </tbody>
         </table>
-      </div>
+      </TabelaRolavel>
     </div>
   );
 }
