@@ -1,36 +1,229 @@
 @import "tailwindcss";
 
-/* Tokens funcionais (etapa de correção; o sistema visual completo vem no redesign).
-   Contrastes medidos contra #090a09 / #111210 / #151613. */
-@theme {
-  --color-texto-secundario: #aaa399; /* 7,94 / 7,52 / 7,27 */
-  --color-placeholder: #8f897e;      /* 5,71 / 5,41 / 5,23 */
-  --color-link: #d4af45;             /* 9,46 / 8,96 / 8,67 */
-  --color-foco: #d4af45;
-  --color-borda-campo: #756d56;      /* 3,85 / 3,65 / 3,53 (1.4.11) */
-  --color-acao: #d4af45;             /* rótulo #090a09: 9,46 */
-  --color-acao-hover: #e2c25d;
-  --color-acao-texto: #090a09;
-  --color-erro: #f87171;             /* 7,17 / 6,79 / 6,57 */
-  --color-erro-fundo: #2a1414;       /* com #fca5a5: 9,15 */
-  --color-erro-borda: #7f2d2d;
-  --color-aviso: #facc15;
-  --color-aviso-texto: #fde68a;      /* sobre aviso-fundo: 12,52 */
-  --color-aviso-fundo: #2a2310;
-  --color-aviso-borda: #7a6420;
-  --color-sucesso: #4ade80;          /* 11,38 / 10,78 */
-  --color-sucesso-texto: #86efac;    /* sobre sucesso-fundo: 11,49 */
-  --color-sucesso-fundo: #10251a;
-  --color-sucesso-borda: #2f6b45;
+/* =====================================================================
+   FUNDAMENTOS VISUAIS — NKG dos Importados
+   Mapa completo, contrastes e decisões: .coordination/reports/2026-11-05-05-fundamentos-visuais.md
+   Camadas: (0) fonte · (1) primitivos (nunca usados direto em componentes)
+            · (2) tokens semânticos (@theme → utilitários do Tailwind) · (3) tokens sem utilitário
+   ===================================================================== */
+
+/* 0. Manrope variável (200–800), servida localmente.
+   Origem: @fontsource-variable/manrope@5.3.0 (de google/fonts, v20). Licença: SIL OFL 1.1 em assets/fonts/manrope/OFL.txt. */
+@font-face {
+  font-family: "Manrope";
+  font-style: normal;
+  font-weight: 200 800;
+  font-display: swap;
+  src: url("./assets/fonts/manrope/manrope-latin-wght-normal.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: "Manrope";
+  font-style: normal;
+  font-weight: 200 800;
+  font-display: swap;
+  src: url("./assets/fonts/manrope/manrope-latin-ext-wght-normal.woff2") format("woff2");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
 }
 
+/* 1. Primitivos: nomeados pelo material/matiz. Componentes não usam estes nomes. */
 :root {
-  --cor-fundo: #090a09;
-  --cor-superficie: #111210;
+  /* Neutros esverdeados quase acromáticos (OKLCH croma ≤ 0,011): degraus de luminosidade. */
+  --nkg-neutro-950: #090a09; /* fundo da loja */
+  --nkg-neutro-900: #111210;
+  --nkg-neutro-850: #151613;
+  --nkg-neutro-800: #171813;
+  --nkg-neutro-750: #1d1e19;
+  /* Bronze: divisores e bordas (matiz quente, OKLCH ~91°). */
+  --nkg-bronze-800: #29261d;
+  --nkg-bronze-700: #343024;
+  --nkg-bronze-500: #756d56;
+  /* Marfim: textos. */
+  --nkg-marfim-50: #f4efe5;
+  --nkg-marfim-300: #aaa399;
+  --nkg-marfim-400: #8f897e;
+  /* Ouro: marca e ações (OKLCH ~90°). */
+  --nkg-ouro-300: #f0d77e;
+  --nkg-ouro-400: #e2c25d;
+  --nkg-ouro-500: #d4af45;
+  --nkg-ouro-600: #b99a42;
+  --nkg-ouro-700: #8b7437;
+  --nkg-ouro-800: #51452b;
+  --nkg-ouro-950: #211d12;
+  /* Estados. */
+  --nkg-vermelho-400: #f87171;
+  --nkg-vermelho-200: #fca5a5;
+  --nkg-vermelho-900: #7f2d2d;
+  --nkg-vermelho-950: #2a1414;
+  /* Laranja só para aviso (OKLCH 56°: 34° do ouro e 34° do vermelho; decisão do usuário em 2026-11-05). */
+  --nkg-laranja-400: #fb923c;
+  --nkg-laranja-300: #fdba74;
+  --nkg-laranja-600: #a3541c;
+  --nkg-laranja-800: #7c3a12;
+  --nkg-laranja-950: #2a1a0e;
+  --nkg-verde-400: #4ade80;
+  --nkg-verde-300: #86efac;
+  --nkg-verde-800: #2f6b45;
+  --nkg-verde-950: #10251a;
+  --nkg-azul-300: #93c5fd;
+  --nkg-azul-200: #bfdbfe;
+  --nkg-azul-800: #2c4a6e;
+  --nkg-azul-950: #0f1b2a;
+  /* Preto puro: só profundidade e sombras. */
+  --nkg-preto: #000;
+}
+
+/* 2. Tokens semânticos (geram utilitários: bg-superficie, text-texto-discreto, border-borda...). */
+@theme inline {
+  /* Fundos e superfícies (cada degrau ~ +2 a 3 % de luminosidade). */
+  --color-fundo: var(--nkg-neutro-950);
+  --color-superficie: var(--nkg-neutro-900);
+  --color-campo: var(--nkg-neutro-850);
+  --color-superficie-elevada: var(--nkg-neutro-800);
+  --color-superficie-destaque: var(--nkg-neutro-750);
+  --color-sobreposicao: rgb(0 0 0 / 0.6);
+
+  /* Textos (contraste mínimo sobre a superfície mais clara, #1d1e19). */
+  --color-texto: var(--nkg-marfim-50);              /* 14,64 */
+  --color-texto-secundario: var(--nkg-marfim-300);  /* 6,72 */
+  --color-texto-discreto: var(--nkg-marfim-400);    /* 4,83 */
+  --color-texto-inverso: var(--nkg-neutro-950);     /* sobre marca: 9,46 */
+
+  /* Marca e estados de interação. */
+  --color-marca: var(--nkg-ouro-500);               /* 8,00 sobre #1d1e19 */
+  --color-marca-hover: var(--nkg-ouro-400);
+  --color-marca-ativo: var(--nkg-ouro-600);
+  --color-marca-clara: var(--nkg-ouro-300);
+  --color-marca-suave: var(--nkg-ouro-950);         /* fundo de seleção/realce */
+  --color-marca-borda: var(--nkg-ouro-700);         /* borda decorativa em hover */
+
+  /* Bordas e divisores. */
+  --color-divisor: var(--nkg-bronze-800);           /* decorativo */
+  --color-borda: var(--nkg-bronze-700);             /* contorno de superfície, decorativo */
+  --color-borda-forte: var(--nkg-bronze-500);       /* controles, 1.4.11: ≥ 3,26 */
+
+  /* Estados de feedback. */
+  --color-erro: var(--nkg-vermelho-400);
+  --color-erro-texto: var(--nkg-vermelho-200);
+  --color-erro-fundo: var(--nkg-vermelho-950);
+  --color-erro-borda: var(--nkg-vermelho-900);
+  --color-aviso: var(--nkg-laranja-400);            /* 7,41 sobre #1d1e19 */
+  --color-aviso-texto: var(--nkg-laranja-300);      /* sobre aviso-fundo: 9,94 */
+  --color-aviso-fundo: var(--nkg-laranja-950);
+  --color-aviso-borda: var(--nkg-laranja-800);      /* decorativa */
+  --color-aviso-controle: var(--nkg-laranja-600);   /* borda de controle em aviso: 3,44 (1.4.11) */
+  --color-sucesso: var(--nkg-verde-400);
+  --color-sucesso-texto: var(--nkg-verde-300);
+  --color-sucesso-fundo: var(--nkg-verde-950);
+  --color-sucesso-borda: var(--nkg-verde-800);
+  --color-info: var(--nkg-azul-300);
+  --color-info-texto: var(--nkg-azul-200);
+  --color-info-fundo: var(--nkg-azul-950);
+  --color-info-borda: var(--nkg-azul-800);
+  --color-foco: var(--nkg-ouro-500);
+
+  /* Apelidos da etapa de correção (2026-11-05-04): mesmos nomes e valores. */
+  --color-placeholder: var(--nkg-marfim-400);
+  --color-link: var(--nkg-ouro-500);
+  --color-borda-campo: var(--nkg-bronze-500);
+  --color-acao: var(--nkg-ouro-500);
+  --color-acao-hover: var(--nkg-ouro-400);
+  --color-acao-texto: var(--nkg-neutro-950);
+}
+
+@theme {
+  /* Tipografia: Manrope com fallback de sistema. */
+  --font-sans: "Manrope", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+
+  /* Escala por papel (rem, line-height sem unidade, tracking em em). Piso: 12px.
+     Títulos fluidos com clamp(rem + vw), máximo ≤ 1,6 × mínimo. */
+  --text-legenda: 0.75rem;
+  --text-legenda--line-height: 1.4;
+  --text-auxiliar: 0.8125rem;
+  --text-auxiliar--line-height: 1.45;
+  --text-rotulo: 0.875rem;
+  --text-rotulo--line-height: 1.4;
+  --text-rotulo--font-weight: 600;
+  --text-corpo: 1rem;
+  --text-corpo--line-height: 1.6;
+  --text-corpo-lg: 1.125rem;
+  --text-corpo-lg--line-height: 1.55;
+  --text-preco: 1.125rem;
+  --text-preco--line-height: 1.3;
+  --text-preco--font-weight: 700;
+  --text-preco-destaque: clamp(1.75rem, 1.55rem + 0.8vw, 2.25rem);
+  --text-preco-destaque--line-height: 1.15;
+  --text-preco-destaque--font-weight: 800;
+  --text-preco-destaque--letter-spacing: -0.01em;
+  --text-titulo-sm: 1.25rem;
+  --text-titulo-sm--line-height: 1.3;
+  --text-titulo-sm--font-weight: 700;
+  --text-titulo-sm--letter-spacing: -0.01em;
+  --text-titulo-md: clamp(1.375rem, 1.25rem + 0.5vw, 1.75rem);
+  --text-titulo-md--line-height: 1.25;
+  --text-titulo-md--font-weight: 700;
+  --text-titulo-md--letter-spacing: -0.015em;
+  --text-titulo-lg: clamp(1.75rem, 1.45rem + 1.25vw, 2.5rem);
+  --text-titulo-lg--line-height: 1.15;
+  --text-titulo-lg--font-weight: 800;
+  --text-titulo-lg--letter-spacing: -0.02em;
+  --text-display: clamp(2.25rem, 1.75rem + 2vw, 3.5rem);
+  --text-display--line-height: 1.08;
+  --text-display--font-weight: 800;
+  --text-display--letter-spacing: -0.025em;
+  --tracking-rotulo: 0.05em;   /* caixa alta pequena */
+  --tracking-titulo: -0.02em;
+
+  /* Espaçamento (a escala numérica do Tailwind continua valendo; estes são os papéis). */
+  --spacing-item: 0.5rem;
+  --spacing-grupo: 1rem;
+  --spacing-bloco: clamp(1.5rem, 1.1rem + 1.5vw, 2.5rem);
+  --spacing-secao: clamp(2.5rem, 1.75rem + 3vw, 4.5rem);
+  --spacing-margem: clamp(1rem, 0.5rem + 2vw, 2rem);
+
+  /* Raios: controles < cartões < painéis < destaques. */
+  --radius-controle: 0.375rem;
+  --radius-cartao: 0.5rem;
+  --radius-painel: 0.75rem;
+  --radius-destaque: 1rem;
+  --radius-pilula: 9999px;
+
+  /* Sombras: só preto puro, mais o realce dourado interno opcional. */
+  --shadow-nivel-1: 0 1px 2px rgb(0 0 0 / 0.45);
+  --shadow-nivel-2: 0 8px 24px rgb(0 0 0 / 0.35);
+  --shadow-nivel-3: 0 18px 45px rgb(0 0 0 / 0.45);
+  --shadow-nivel-4: 0 24px 70px rgb(0 0 0 / 0.55);
+  --shadow-realce: inset 0 1px 0 rgb(240 215 126 / 0.12);
+
+  /* Easing (só tokens; nenhuma animação nova nesta etapa). */
+  --ease-saida: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-movimento: cubic-bezier(0.77, 0, 0.175, 1);
+}
+
+/* 3. Tokens sem utilitário automático (uso: z-(--z-cabecalho), duration-(--duracao-rapida)). */
+:root {
+  --z-base: 0;
+  --z-elevado: 10;
+  --z-cabecalho: 50;
+  --z-sobreposicao: 60;
+  --z-modal: 70;
+  --z-aviso: 80;
+
+  --duracao-instantanea: 100ms;
+  --duracao-rapida: 150ms;
+  --duracao-padrao: 200ms;
+  --duracao-lenta: 300ms;
+
+  /* Apelidos antigos usados por este arquivo. */
+  --cor-fundo: var(--color-fundo);
+  --cor-superficie: var(--color-superficie);
+
   color-scheme: dark;
-  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  background: var(--cor-fundo);
-  color: #f4efe5;
+  font-family: var(--font-sans);
+  background: var(--color-fundo);
+  color: var(--color-texto);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 html { scroll-behavior: smooth; }
@@ -59,14 +252,14 @@ body {
   width: 64%;
   height: 1px;
   content: "";
-  background: linear-gradient(90deg, transparent, #d4af45, transparent);
+  background: linear-gradient(90deg, transparent, var(--color-marca), transparent);
 }
-::selection { background: #d4af45; color: #090a09; }
+::selection { background: var(--color-marca); color: var(--color-texto-inverso); }
 
 input, select, textarea {
-  background-color: #151613 !important;
+  background-color: var(--color-campo) !important;
   border-color: var(--color-borda-campo) !important;
-  color: #f4efe5 !important;
+  color: var(--color-texto) !important;
 }
 
 input::placeholder, textarea::placeholder { color: var(--color-placeholder) !important; }
@@ -74,39 +267,39 @@ input[aria-invalid="true"], select[aria-invalid="true"], textarea[aria-invalid="
 input:-webkit-autofill,
 input:-webkit-autofill:hover,
 input:-webkit-autofill:focus {
-  -webkit-text-fill-color: #f4efe5 !important;
-  box-shadow: 0 0 0 1000px #151613 inset !important;
-  caret-color: #f4efe5;
+  -webkit-text-fill-color: var(--color-texto) !important;
+  box-shadow: 0 0 0 1000px var(--color-campo) inset !important;
+  caret-color: var(--color-texto);
   transition: background-color 9999s ease-out;
 }
 input:focus, select:focus, textarea:focus {
-  border-color: #d4af45 !important;
+  border-color: var(--color-marca) !important;
   box-shadow: 0 0 0 2px rgb(212 175 69 / 18%) !important;
   outline: none;
 }
 
-.status-verde { color: #4ade80 !important; }
-.status-amarelo { color: #facc15 !important; }
-.status-vermelho { color: #f87171 !important; }
+.status-verde { color: var(--color-sucesso) !important; }
+.status-amarelo { color: var(--color-aviso) !important; }
+.status-vermelho { color: var(--color-erro) !important; }
 select.status-verde { border-color: #166534 !important; }
-select.status-amarelo { border-color: #854d0e !important; }
+select.status-amarelo { border-color: var(--color-aviso-controle) !important; }
 select.status-vermelho { border-color: #991b1b !important; }
-select.status-cancelado { color: #f87171 !important; border-color: #7f1d1d !important; }
-.bg-white { background-color: #111210 !important; }
-.bg-gray-50, .bg-gray-100 { background-color: #151613 !important; }
-.border-gray-100, .border-gray-200, .border-gray-300 { border-color: #343024 !important; }
-.text-gray-400, .text-gray-500, .text-gray-600, .text-gray-700 { color: #aaa399 !important; }
-.text-gray-800, .text-gray-900 { color: #f4efe5 !important; }
-.text-blue-600, .hover\:text-blue-600:hover { color: #d4af45 !important; }
-.bg-blue-600 { background-color: #d4af45 !important; color: #090a09 !important; }
-.hover\:bg-blue-700:hover { background-color: #e2c25d !important; }
-.border-blue-600 { border-color: #d4af45 !important; }
-.bg-blue-50 { background-color: #211d12 !important; }
+select.status-cancelado { color: var(--color-erro) !important; border-color: #7f1d1d !important; }
+.bg-white { background-color: var(--color-superficie) !important; }
+.bg-gray-50, .bg-gray-100 { background-color: var(--color-campo) !important; }
+.border-gray-100, .border-gray-200, .border-gray-300 { border-color: var(--color-borda) !important; }
+.text-gray-400, .text-gray-500, .text-gray-600, .text-gray-700 { color: var(--color-texto-secundario) !important; }
+.text-gray-800, .text-gray-900 { color: var(--color-texto) !important; }
+.text-blue-600, .hover\:text-blue-600:hover { color: var(--color-marca) !important; }
+.bg-blue-600 { background-color: var(--color-marca) !important; color: var(--color-fundo) !important; }
+.hover\:bg-blue-700:hover { background-color: var(--color-marca-hover) !important; }
+.border-blue-600 { border-color: var(--color-marca) !important; }
+.bg-blue-50 { background-color: var(--color-marca-suave) !important; }
 .shadow, .shadow-sm, .shadow-md, .shadow-lg { box-shadow: 0 12px 36px rgb(0 0 0 / 28%) !important; }
 
 button, a { transition: color 260ms cubic-bezier(.2,.7,.2,1), background-color 260ms cubic-bezier(.2,.7,.2,1), border-color 260ms cubic-bezier(.2,.7,.2,1), transform 260ms cubic-bezier(.2,.7,.2,1), box-shadow 260ms cubic-bezier(.2,.7,.2,1), opacity 260ms ease; }
 button:not(:disabled):active { transform: translateY(1px) scale(.99); }
-button:focus-visible, a:focus-visible { outline: 2px solid #d4af45; outline-offset: 3px; }
+button:focus-visible, a:focus-visible { outline: 2px solid var(--color-foco); outline-offset: 3px; }
 
 .nav-link {
   position: relative;
@@ -120,12 +313,12 @@ button:focus-visible, a:focus-visible { outline: 2px solid #d4af45; outline-offs
   left: 0;
   height: 1px;
   content: "";
-  background: #d4af45;
+  background: var(--color-marca);
   transform: scaleX(0);
   transform-origin: right;
   transition: transform 300ms cubic-bezier(.2,.7,.2,1);
 }
-.nav-link:hover { color: #f0d77e !important; }
+.nav-link:hover { color: var(--color-marca-clara) !important; }
 .nav-link:hover::after {
   transform: scaleX(1);
   transform-origin: left;
@@ -139,7 +332,7 @@ button:focus-visible, a:focus-visible { outline: 2px solid #d4af45; outline-offs
   border-radius: .65rem;
 }
 .nav-icone:hover, .nav-icone:focus-visible {
-  color: #f0d77e;
+  color: var(--color-marca-clara);
   background: linear-gradient(145deg, #292519, #12130f);
   border-color: #51452b;
   transform: translateY(-3px);
@@ -155,7 +348,7 @@ button:focus-visible, a:focus-visible { outline: 2px solid #d4af45; outline-offs
   border: 1px solid #51452b;
   border-radius: .4rem;
   background: #171810;
-  color: #f4efe5;
+  color: var(--color-texto);
   font-size: .75rem;
   font-weight: 500;
   text-transform: none;
@@ -186,17 +379,17 @@ button:focus-visible, a:focus-visible { outline: 2px solid #d4af45; outline-offs
   padding: .5rem .9rem;
   border: 1px solid #3a3526;
   border-radius: .35rem;
-  background: #111210;
-  color: #d4af45 !important;
+  background: var(--color-superficie);
+  color: var(--color-marca) !important;
   font-size: .8rem;
   font-weight: 600;
   text-decoration: none !important;
   box-shadow: 0 8px 24px rgb(0 0 0 / 14%);
 }
 .botao-voltar:hover {
-  border-color: #8b7437;
+  border-color: var(--color-marca-borda);
   background: #19170f;
-  color: #f0d77e !important;
+  color: var(--color-marca-clara) !important;
   transform: translateX(-2px);
 }
 
@@ -214,21 +407,21 @@ html { scroll-padding-block-start: 6rem; }
 
 .admin-area main { background: transparent; }
 .admin-area main > div > h1,
-.admin-area main > div > div > h1 { color: #f4efe5; }
+.admin-area main > div > div > h1 { color: var(--color-texto); }
 .admin-area main form,
 .admin-area main table,
 .admin-area main section.bg-white {
-  border: 1px solid #29261d;
-  background: #111210 !important;
+  border: 1px solid var(--color-divisor);
+  background: var(--color-superficie) !important;
   box-shadow: 0 18px 45px rgb(0 0 0 / 22%) !important;
 }
 .admin-area main table { overflow: hidden; border-collapse: separate; border-spacing: 0; }
-.admin-area main thead { background: #181813 !important; color: #d4af45; text-transform: uppercase; letter-spacing: .08em; }
+.admin-area main thead { background: #181813 !important; color: var(--color-marca); text-transform: uppercase; letter-spacing: .08em; }
 .admin-area main tbody tr { transition: background-color 220ms ease; }
 .admin-area main tbody tr:hover { background: rgb(212 175 69 / 4%); }
-.admin-area main tbody td { border-color: #29261d; }
+.admin-area main tbody td { border-color: var(--color-divisor); }
 .admin-card { transition: transform 320ms cubic-bezier(.2,.75,.2,1), border-color 320ms ease, box-shadow 320ms ease; }
-.admin-card:hover { transform: translateY(-4px); border-color: #8b7437; box-shadow: 0 18px 50px rgb(0 0 0 / 32%); }
+.admin-card:hover { transform: translateY(-4px); border-color: var(--color-marca-borda); box-shadow: 0 18px 50px rgb(0 0 0 / 32%); }
 .admin-area main .formulario-conta,
 .admin-area main .variacoes-form {
   border: 0;
@@ -241,14 +434,14 @@ html { scroll-padding-block-start: 6rem; }
   min-height: 2.25rem;
   margin-bottom: .6rem;
   padding: .45rem .85rem;
-  border: 1px solid #343024;
+  border: 1px solid var(--color-borda);
   border-radius: .25rem;
-  color: #d4af45 !important;
+  color: var(--color-marca) !important;
   text-decoration: none;
-  background: #111210;
+  background: var(--color-superficie);
 }
 .admin-area main > div > a:first-child:not(.botao-voltar):hover {
-  border-color: #8b7437;
+  border-color: var(--color-marca-borda);
   background: #19170f;
   transform: translateX(-2px);
 }
