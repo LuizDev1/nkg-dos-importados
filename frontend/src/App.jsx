@@ -24,6 +24,19 @@ function App() {
     conteudo.current?.focus({ preventScroll: true });
   }, [location.pathname, location.hash]);
 
+  // O cabeçalho é fixo e muda de altura com a largura (76 px no desktop, 167 px no celular). A altura real
+  // vira --altura-cabecalho, usada no scroll-padding, para o foco nunca ficar escondido atrás dele (WCAG 2.4.11).
+  useEffect(() => {
+    const cabecalho = document.querySelector('header');
+    if (!cabecalho || typeof ResizeObserver === 'undefined') return undefined;
+    const raiz = document.documentElement;
+    const observador = new ResizeObserver(() => {
+      raiz.style.setProperty('--altura-cabecalho', `${Math.ceil(cabecalho.getBoundingClientRect().height)}px`);
+    });
+    observador.observe(cabecalho);
+    return () => { observador.disconnect(); raiz.style.removeProperty('--altura-cabecalho'); };
+  }, []);
+
   return (
     <div className={`site-shell min-h-screen flex flex-col text-[#f4efe5] ${areaAdmin ? 'admin-area' : ''}`}>
       <a href="#conteudo" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[60] focus:rounded focus:bg-acao focus:px-4 focus:py-2 focus:font-semibold focus:text-acao-texto">

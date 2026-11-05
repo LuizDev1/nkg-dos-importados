@@ -13,6 +13,13 @@ import Botao from '../../componentes/ui/Botao';
 import BotaoIcone from '../../componentes/ui/BotaoIcone';
 import Campo from '../../componentes/ui/Campo';
 import Preco from '../../componentes/ui/Preco';
+import Superficie from '../../componentes/ui/Superficie';
+import {
+  Estrelas, IconeAlerta, IconeCaminhao, IconeCamera, IconeCheck, IconeCoracao, IconeEscudo, IconeTroca, IconeUtil, SemImagem,
+} from '../../componentes/IconesProduto';
+import { formatarNota, textoAvaliacoes, textoTamanhosIndisponiveis } from '../../servicos/produtoVisual.mjs';
+
+const ORDEM_TAMANHOS = ['PP', 'P', 'M', 'G', 'GG'];
 
 export default function DetalheProduto() {
   const { id } = useParams();
@@ -39,7 +46,7 @@ export default function DetalheProduto() {
   const [votandoUtil, setVotandoUtil] = useState(null);
   const [erroUtil, setErroUtil] = useState('');
   const [imagemSelecionada, setImagemSelecionada] = useState('');
-  const [avaliacoesAbertas, setAvaliacoesAbertas] = useState(true);
+  const [formularioAberto, setFormularioAberto] = useState(false);
 
   const { adicionarItem } = useCarrinho();
   const { usuario } = useAutenticacao();
@@ -49,6 +56,12 @@ export default function DetalheProduto() {
   const paginaVersao = useRef(0);
   const timerAdicionado = useRef(null);
   const [erroCarrinho, setErroCarrinho] = useState('');
+  const tituloErro = useRef(null);
+  const botaoAvaliar = useRef(null);
+  const primeiroCampoAvaliacao = useRef(null);
+  const mensagemAvaliacaoRef = useRef(null);
+  // Para onde o foco vai depois de abrir ou fechar o formulário de avaliação (disclosure em linha).
+  const focoAvaliacao = useRef(null);
 
   useEffect(() => {
     let ativo = true;
@@ -66,7 +79,7 @@ export default function DetalheProduto() {
     setFormAvaliacao({ nota: 5, comentario: '', fotos: [], anonimo: false });
     setAdicionado(false);
     setErroCarrinho('');
-    setAvaliacoesAbertas(true);
+    setFormularioAberto(false);
     async function carregar() {
       setCarregando(true);
       setErro('');
@@ -130,6 +143,25 @@ export default function DetalheProduto() {
     return () => { ativo = false; freteVersao.current += 1; paginaVersao.current += 1; clearTimeout(timerAdicionado.current); };
   }, [id, usuario]);
 
+  // Erro de carregamento: o título recebe o foco (a mensagem é anunciada pela região de alerta).
+  useEffect(() => {
+    if (erro && !carregando) tituloErro.current?.focus();
+  }, [erro, carregando]);
+
+  // Disclosure do formulário de avaliação: ao abrir, foco no primeiro campo; ao fechar, de volta ao botão.
+  useEffect(() => {
+    const destino = focoAvaliacao.current;
+    focoAvaliacao.current = null;
+    if (destino === 'campo') primeiroCampoAvaliacao.current?.focus();
+    else if (destino === 'botao') botaoAvaliar.current?.focus();
+    else if (destino === 'mensagem') mensagemAvaliacaoRef.current?.focus();
+  }, [formularioAberto, podeAvaliar]);
+
+  function alternarFormularioAvaliacao() {
+    focoAvaliacao.current = formularioAberto ? 'botao' : 'campo';
+    setFormularioAberto((aberto) => !aberto);
+  }
+
   function escolherOpcao(cor, tamanho) {
     setCorSelecionada(cor);
     setTamanhoSelecionado(tamanho);
@@ -149,7 +181,9 @@ export default function DetalheProduto() {
     escolherOpcao(corSelecionada === cor ? '' : cor, tamanhoSelecionado);
   }
 
-  function alternarTamanho(tamanho) {
+  function alternarTamanho(tamanho, indisponivel) {
+    // Indisponível continua focável (aria-disabled), mas não pode ser escolhido.
+    if (indisponivel) return;
     escolherOpcao(corSelecionada, tamanhoSelecionado === tamanho ? '' : tamanho);
   }
 
@@ -269,7 +303,10 @@ export default function DetalheProduto() {
       });
       if (versao !== paginaVersao.current) return;
       setMensagemAvaliacao(resposta.mensagem);
+      // O formulário some (já avaliado): o foco vai para a mensagem, sem se perder.
+      focoAvaliacao.current = 'mensagem';
       setPodeAvaliar(false);
+      setFormularioAberto(false);
       const lista = await listarAvaliacoes(produto.id);
       if (versao !== paginaVersao.current) return;
       setAvaliacoes(lista);
@@ -302,8 +339,18 @@ export default function DetalheProduto() {
     }
   }
 
-  if (carregando) return <p className="text-center mt-10">Carregando produto...</p>;
-  if (erro) return <p className="text-center mt-10 text-erro">{erro}</p>;
+  if (carregando) return <p role="status" className="mt-10 text-center text-texto-secundario">Carregando produto...</p>;
+  if (erro) {
+    return (
+      <div className="mx-auto max-w-xl px-4 py-secao text-center">
+        <h1 ref={tituloErro} tabIndex={-1} className="text-titulo-md text-texto outline-none">Produto não encontrado</h1>
+        <p role="alert" className="mt-2 text-auxiliar text-texto-secundario">
+          Não conseguimos abrir este produto. Ele pode ter sido removido ou estar indisponível.
+        </p>
+        <Botao para="/" variante="secundario" className="mt-5">Voltar para a loja</Botao>
+      </div>
+    );
+  }
   if (!produto) return null;
   const variacaoSelecionada = (produto.variacoes || []).find((item) => String(item.id) === variacaoId)
     || (variacaoId.startsWith('tamanho:') && !produto.variacoes?.length
@@ -322,146 +369,192 @@ export default function DetalheProduto() {
     : 0;
   const imagensProduto = [produto.foto_url, ...(produto.imagens || []).map((imagem) => imagem.imagem_url)]
     .filter((url, indice, lista) => url && lista.indexOf(url) === indice);
+  const indiceImagem = Math.max(imagensProduto.indexOf(imagemSelecionada), 0);
   const coresDisponiveis = [...new Set((produto.variacoes || []).map(v => v.nome).filter(Boolean))];
   const produtoAtivo = produto.ativo !== false && Number(produto.ativo) !== 0;
+  const compraBloqueada = !produtoAtivo || estoqueDisponivel === 0;
+  const favorito = estaFavorito(produto.id);
+  const tamanhos = produto.tamanhos?.length
+    ? ORDEM_TAMANHOS.filter((t) => produto.tamanhos.includes(t)).map((tamanho) => {
+      const disponivel = produto.variacoes?.length
+        ? produto.variacoes.some(v => (!corSelecionada || v.nome === corSelecionada) && v.tamanho === tamanho && Number(v.estoque_qtd) > 0)
+        : Number(produto.estoque_qtd) > 0;
+      return { tamanho, indisponivel: !disponivel && tamanhoSelecionado !== tamanho };
+    })
+    : [];
+  const motivoTamanhos = textoTamanhosIndisponiveis(tamanhos.filter((t) => t.indisponivel).map((t) => t.tamanho), corSelecionada);
+  // Botão de opção (cor ou tamanho): seleção marcada por ícone, contorno duplo e aria-pressed, sem fundo dourado.
+  const classeOpcao = (selecionada, indisponivel) => `inline-flex min-h-11 min-w-11 items-center justify-center gap-1.5 rounded-controle border px-3 text-rotulo ${
+    selecionada ? 'border-texto bg-superficie-destaque text-texto ring-1 ring-inset ring-texto'
+      : indisponivel ? 'cursor-not-allowed border-dashed border-borda text-texto-discreto line-through'
+        : 'border-borda-forte text-texto-secundario hover:border-texto hover:text-texto'}`;
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8">
+    <div className="mx-auto max-w-6xl px-4 py-8">
       <Link to="/" className="botao-voltar">
         &larr; Voltar para a loja
       </Link>
 
-      <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-8">
-        <div>
-          {imagemSelecionada ? (
-            <img src={imagemSelecionada} alt={produto.nome} className="h-80 w-full rounded-lg object-cover transition-opacity" />
-          ) : (
-            <div role="img" aria-label={`Imagem indisponível de ${produto.nome}`} className="flex h-80 w-full items-center justify-center rounded-lg bg-[#24251f] text-sm uppercase tracking-[0.18em] text-[#aaa396]">Sem imagem</div>
-          )}
-          {imagensProduto.length > 1 && (
-            <div className="mt-3 grid grid-cols-5 gap-2" aria-label="Galeria do produto">
-              {imagensProduto.map((url, indice) => (
-                <button
-                  key={url}
-                  type="button"
-                  onClick={() => setImagemSelecionada(url)}
-                  className={`overflow-hidden rounded border ${imagemSelecionada === url ? 'border-[#d4af45]' : 'border-[#343024] hover:border-[#8b7437]'}`}
-                  aria-label={`Ver foto ${indice + 1}`}
-                >
-                  <img src={url} alt="" className="h-16 w-full object-cover" loading="lazy" />
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-
-        <div>
-          <div className="mb-2 flex items-start justify-between gap-4">
-            <h1 className="text-2xl font-bold">{produto.nome}</h1>
-            {usuario?.perfil !== 'admin' && (
-              <BotaoIcone
-                onClick={() => usuario ? alternarFavorito(produto) : navigate('/login')}
-                disabled={!produtoAtivo}
-                variante={estaFavorito(produto.id) ? 'marca' : 'neutro'}
-                rotulo={!produtoAtivo ? 'Produto inativo' : estaFavorito(produto.id) ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
-                title={!produtoAtivo ? 'Produto inativo' : undefined}
-                className="text-lg"
-              >
-                {estaFavorito(produto.id) ? '♥' : '♡'}
-              </BotaoIcone>
-            )}
+      <div className="mt-6 grid grid-cols-1 gap-bloco lg:grid-cols-[minmax(0,6fr)_minmax(0,5fr)] lg:gap-10">
+        <figure className="min-w-0">
+          <div className="aspect-[4/5] overflow-hidden rounded-painel bg-superficie-elevada">
+            {imagemSelecionada
+              ? <img src={imagemSelecionada} alt={produto.nome} className="h-full w-full object-contain p-4" />
+              : <SemImagem nome={produto.nome} />}
           </div>
-          <p className="text-sm text-texto-secundario mb-4">{produto.categoria}</p>
-          <Preco valor={produto.preco} tamanho="destaque" as="p" className="mb-4 text-marca" />
-
-          {!produtoAtivo ? (
-            <p className="mb-4 text-sm font-semibold text-erro">Produto inativo e indisponível para compra</p>
-          ) : estoqueDisponivel > 0 ? (
-            <p className="text-sm text-sucesso mb-4">
-              Em estoque ({estoqueDisponivel} disponíveis)
-            </p>
-          ) : (
-            <p className="text-sm text-erro mb-4">Fora de estoque</p>
-          )}
-
-          {coresDisponiveis.length > 0 && (
-            <div className="mb-4">
-              <p id="cores-label" className="mb-2 text-sm font-medium">Escolha uma cor/variação:</p>
-              <div className="flex flex-wrap gap-2" role="group" aria-labelledby="cores-label">
-                {coresDisponiveis.map(cor => (
-                  <button key={cor} type="button" aria-pressed={corSelecionada === cor} onClick={() => alternarCor(cor)} className={`rounded border px-3 py-2 text-sm font-semibold ${corSelecionada === cor ? 'border-[#d4af45] bg-[#d4af45] text-[#090a09]' : 'border-[#49422f] text-[#d4af45] hover:border-[#d4af45]'}`}>{cor}</button>
-                ))}
-              </div>
-            </div>
-          )}
-          {produto.tamanhos?.length > 0 && (
-            <div className="mb-4">
-              <p id="tamanhos-label" className="mb-2 text-sm font-medium">Escolha um tamanho:</p>
-              <div className="flex flex-wrap gap-2" role="group" aria-labelledby="tamanhos-label">
-                {['PP','P','M','G','GG'].filter(t => produto.tamanhos.includes(t)).map(tamanho => {
-                  const disponivel = produto.variacoes?.length
-                    ? produto.variacoes.some(v => (!corSelecionada || v.nome === corSelecionada) && v.tamanho === tamanho && Number(v.estoque_qtd) > 0)
-                    : Number(produto.estoque_qtd) > 0;
-                  return <button key={tamanho} type="button" disabled={!disponivel && tamanhoSelecionado !== tamanho} aria-pressed={tamanhoSelecionado === tamanho} onClick={() => alternarTamanho(tamanho)} className={`rounded border px-3 py-2 text-sm font-semibold disabled:opacity-40 ${tamanhoSelecionado === tamanho ? 'border-[#d4af45] bg-[#d4af45] text-[#090a09]' : 'border-[#49422f] text-[#d4af45] hover:border-[#d4af45]'}`}>{tamanho}</button>;
+          {imagensProduto.length > 1 && (
+            <>
+              <figcaption className="mt-2 text-legenda text-texto-secundario tabular-nums">Foto {indiceImagem + 1} de {imagensProduto.length}</figcaption>
+              <div role="group" aria-label="Fotos do produto" className="mt-3 grid grid-cols-5 gap-2">
+                {imagensProduto.map((url, indice) => {
+                  const atual = imagemSelecionada === url;
+                  return (
+                    <button
+                      key={url}
+                      type="button"
+                      onClick={() => setImagemSelecionada(url)}
+                      aria-pressed={atual}
+                      aria-label={`Foto ${indice + 1} de ${imagensProduto.length}`}
+                      className={`relative aspect-square overflow-hidden rounded-controle bg-superficie-elevada ${atual ? 'outline outline-2 outline-offset-2 outline-texto' : 'opacity-70 hover:opacity-100'}`}
+                    >
+                      <img src={url} alt="" className="h-full w-full object-contain p-1" loading="lazy" />
+                      {atual && <span className="absolute inset-x-2 bottom-1 h-0.5 rounded-pilula bg-texto" aria-hidden="true" />}
+                    </button>
+                  );
                 })}
               </div>
-            </div>
+            </>
           )}
+        </figure>
 
-          <div className="flex items-center gap-3 mb-4">
-            <label htmlFor="produto-quantidade" className="text-sm font-medium">Quantidade:</label>
-            <input
-              id="produto-quantidade"
-              name="quantidade"
-              inputMode="numeric"
-              type="number"
-              min="1"
-              max={estoqueDisponivel}
-              disabled={!produtoAtivo || estoqueDisponivel === 0}
-              value={quantidade}
-              onChange={(e) => {
-                const novaQuantidade = Number(e.target.value);
-                setQuantidade(Math.min(Math.max(Math.trunc(novaQuantidade) || 1, 1), estoqueDisponivel));
-                setCotacao(null);
-                freteVersao.current += 1;
-                setCalculandoFrete(false);
-              }}
-              className="w-20 border rounded px-2 py-1 text-center"
-            />
+        <div className="flex min-w-0 flex-col gap-grupo lg:sticky lg:top-24 lg:self-start">
+          <div>
+            <p className="text-auxiliar text-texto-secundario">{produto.categoria}</p>
+            <div className="mt-1 flex items-start justify-between gap-4">
+              <h1 className="min-w-0 text-titulo-lg text-texto [overflow-wrap:anywhere] [text-wrap:balance]">{produto.nome}</h1>
+              {usuario?.perfil !== 'admin' && (
+                <BotaoIcone
+                  onClick={() => usuario ? alternarFavorito(produto) : navigate('/login')}
+                  disabled={!produtoAtivo}
+                  variante={favorito ? 'marca' : 'neutro'}
+                  rotulo={!produtoAtivo ? 'Produto inativo' : favorito ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
+                  title={!produtoAtivo ? 'Produto inativo' : undefined}
+                  className="shrink-0"
+                >
+                  <IconeCoracao cheio={favorito} />
+                </BotaoIcone>
+              )}
+            </div>
+            {avaliacoes.length > 0 && (
+              <a href="#avaliacoes" className="mt-2 inline-flex items-center gap-2 text-auxiliar text-texto-secundario hover:text-texto">
+                <Estrelas valor={mediaAvaliacoes} quantidade={avaliacoes.length} />
+                <span aria-hidden="true">{formatarNota(mediaAvaliacoes)} · {textoAvaliacoes(avaliacoes.length)}</span>
+              </a>
+            )}
           </div>
 
-          <button
-            onClick={aoAdicionar}
-            disabled={!produtoAtivo || estoqueDisponivel === 0}
-            className={`w-full py-3 rounded transition ${adicionado
-                ? 'bg-sucesso text-acao-texto'
-                : !produtoAtivo || estoqueDisponivel === 0
-                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                  : 'bg-blue-600 text-white hover:bg-blue-700'
-              }`}
-          >
-            {adicionado ? 'Adicionado!' : 'Adicionar ao carrinho'}
-          </button>
+          <Superficie espacamento="padrao" className="flex flex-col gap-grupo">
+            <div className="flex flex-wrap items-end justify-between gap-x-4 gap-y-2">
+              <Preco valor={produto.preco} tamanho="destaque" as="p" className="text-marca" />
+              {!produtoAtivo ? (
+                <p className="inline-flex items-center gap-1.5 text-rotulo text-erro-texto"><IconeAlerta tamanho={16} />Produto inativo e indisponível para compra</p>
+              ) : estoqueDisponivel > 0 ? (
+                <p className="inline-flex items-center gap-1.5 text-rotulo text-sucesso-texto"><IconeCheck tamanho={16} />Em estoque ({estoqueDisponivel} disponíveis)</p>
+              ) : (
+                <p className="inline-flex items-center gap-1.5 text-rotulo text-aviso-texto"><IconeAlerta tamanho={16} />Sem estoque</p>
+              )}
+            </div>
 
-          {erroCarrinho && <p role="alert" className="mt-2 text-sm text-erro">{erroCarrinho}</p>}
-
-          {produtoAtivo && ((produto.variacoes?.length > 0 && variacaoSelecionada && estoqueDisponivel === 0)
-            || (!produto.variacoes?.length && estoqueDisponivel === 0)) && (
-              <Botao variante="secundario" tamanho="lg" larguraTotal onClick={solicitarAviso} className="mt-3">
-                Avise-me quando estiver disponível
-              </Botao>
+            {coresDisponiveis.length > 0 && (
+              <fieldset>
+                <legend className="text-rotulo text-texto">
+                  Cor{corSelecionada && <span className="font-normal text-texto-secundario"> · {corSelecionada}</span>}
+                </legend>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {coresDisponiveis.map(cor => (
+                    <button key={cor} type="button" aria-pressed={corSelecionada === cor} onClick={() => alternarCor(cor)} className={classeOpcao(corSelecionada === cor, false)}>
+                      {corSelecionada === cor && <IconeCheck tamanho={14} />}{cor}
+                    </button>
+                  ))}
+                </div>
+              </fieldset>
             )}
-          <p role="status" className={avisoEstoque ? 'mt-2 text-center text-sm text-texto-secundario' : ''}>{avisoEstoque}</p>
+            {tamanhos.length > 0 && (
+              <fieldset>
+                <legend className="text-rotulo text-texto">
+                  Tamanho{tamanhoSelecionado && <span className="font-normal text-texto-secundario"> · {tamanhoSelecionado}</span>}
+                </legend>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {tamanhos.map(({ tamanho, indisponivel }) => (
+                    <button
+                      key={tamanho}
+                      type="button"
+                      aria-pressed={tamanhoSelecionado === tamanho}
+                      aria-disabled={indisponivel || undefined}
+                      aria-describedby={indisponivel ? 'tamanhos-indisponiveis' : undefined}
+                      onClick={() => alternarTamanho(tamanho, indisponivel)}
+                      className={classeOpcao(tamanhoSelecionado === tamanho, indisponivel)}
+                    >
+                      {tamanhoSelecionado === tamanho && <IconeCheck tamanho={14} />}{tamanho}
+                    </button>
+                  ))}
+                </div>
+                <p id="tamanhos-indisponiveis" className={motivoTamanhos ? 'mt-2 text-legenda text-texto-secundario' : ''}>{motivoTamanhos}</p>
+              </fieldset>
+            )}
 
-          <div className="mt-6 border-t border-divisor pt-5">
-            <h2 className="mb-3 font-semibold">Calcular entrega</h2>
-            {usuario ? (
-              <form onSubmit={calcularFrete} className="flex items-end gap-2">
+            <div className="flex flex-wrap items-end gap-3">
+              <Campo
+                id="produto-quantidade"
+                name="quantidade"
+                rotulo="Quantidade"
+                inputMode="numeric"
+                type="number"
+                min="1"
+                max={estoqueDisponivel}
+                disabled={compraBloqueada}
+                value={quantidade}
+                onChange={(e) => {
+                  const novaQuantidade = Number(e.target.value);
+                  setQuantidade(Math.min(Math.max(Math.trunc(novaQuantidade) || 1, 1), estoqueDisponivel));
+                  setCotacao(null);
+                  freteVersao.current += 1;
+                  setCalculandoFrete(false);
+                }}
+                className="w-24 shrink-0"
+                classeControle="text-center tabular-nums disabled:cursor-not-allowed disabled:opacity-50"
+              />
+              <Botao
+                tamanho="lg"
+                onClick={aoAdicionar}
+                disabled={compraBloqueada}
+                iconeAntes={adicionado ? <IconeCheck /> : null}
+                className="min-w-[15rem] flex-1"
+              >
+                {adicionado ? 'Adicionado ao carrinho' : 'Adicionar ao carrinho'}
+              </Botao>
+            </div>
+            {/* Região estável: o anúncio não depende de animação nem da troca de texto do botão. */}
+            <p role="status" className="sr-only">{adicionado ? 'Produto adicionado ao carrinho.' : ''}</p>
+
+            {erroCarrinho && <p role="alert" className="text-sm text-erro">{erroCarrinho}</p>}
+
+            {produtoAtivo && ((produto.variacoes?.length > 0 && variacaoSelecionada && estoqueDisponivel === 0)
+              || (!produto.variacoes?.length && estoqueDisponivel === 0)) && (
+                <Botao variante="secundario" tamanho="lg" larguraTotal onClick={solicitarAviso}>
+                  Avise-me quando estiver disponível
+                </Botao>
+              )}
+            <p role="status" className={avisoEstoque ? 'text-center text-sm text-texto-secundario' : ''}>{avisoEstoque}</p>
+
+            <div className="border-t border-divisor pt-4">
+              <h2 className="mb-3 text-rotulo text-texto">Calcular entrega</h2>
+              {usuario ? (
+                <form onSubmit={calcularFrete} className="flex items-end gap-2">
                   <Campo
                     id="frete-cep"
-                    name="cep"
                     rotulo="CEP de entrega"
-                    className="flex-1"
+                    className="min-w-0 flex-1"
                     type="text"
                     inputMode="numeric"
                     value={cep}
@@ -479,178 +572,204 @@ export default function DetalheProduto() {
                     aria-invalid={erroFrete ? 'true' : undefined}
                     aria-describedby={erroFrete ? 'frete-erro' : undefined}
                   />
-                <Botao type="submit" variante="secundario" carregando={calculandoFrete}>
-                  {calculandoFrete ? 'Calculando...' : 'Calcular'}
-                </Botao>
-              </form>
-            ) : (
-              <p className="text-sm text-texto-secundario">
-                <Link to="/login" className="text-link underline underline-offset-2">Entre na sua conta</Link>{' '}
-                para calcular o prazo e o valor da entrega.
-              </p>
-            )}
+                  <Botao type="submit" variante="secundario" carregando={calculandoFrete}>
+                    {calculandoFrete ? 'Calculando...' : 'Calcular'}
+                  </Botao>
+                </form>
+              ) : (
+                <p className="text-sm text-texto-secundario">
+                  <Link to="/login" className="text-link underline underline-offset-2">Entre na sua conta</Link>{' '}
+                  para calcular o prazo e o valor da entrega.
+                </p>
+              )}
 
-            <p id="frete-erro" role="alert" className={erroFrete ? 'mt-2 text-sm text-erro' : ''}>{erroFrete}</p>
-            {Boolean(cotacao?.gratuito) && (
-              <p className="mt-3 rounded-cartao border border-sucesso-borda bg-sucesso-fundo p-3 text-sm font-semibold text-sucesso-texto">
-                Entrega grátis
-              </p>
-            )}
-            {cotacao && !cotacao.gratuito && (
-              <div className="mt-3 space-y-2">
-                {(cotacao.opcoes || [cotacao]).map((opcao) => (
-                  <div
-                    key={opcao.servico_id}
-                    className="flex items-center justify-between gap-3 rounded-cartao border border-borda p-3 text-sm"
-                  >
-                    <div>
-                      <p className="font-semibold">
-                        {opcao.nome_exibicao || `${opcao.transportadora} - ${opcao.servico_nome}`}
-                      </p>
-                      <p className="text-texto-secundario">Até {opcao.prazo_dias} dias</p>
-                    </div>
-                    <Preco valor={opcao.valor} as="strong" />
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+              <p id="frete-erro" role="alert" className={erroFrete ? 'mt-2 text-sm text-erro' : ''}>{erroFrete}</p>
+              {Boolean(cotacao?.gratuito) && (
+                <p className="mt-3 rounded-cartao border border-sucesso-borda bg-sucesso-fundo p-3 text-sm font-semibold text-sucesso-texto">
+                  Entrega grátis
+                </p>
+              )}
+              {cotacao && !cotacao.gratuito && (
+                <ul className="mt-2 divide-y divide-divisor">
+                  {(cotacao.opcoes || [cotacao]).map((opcao) => (
+                    <li key={opcao.servico_id} className="flex items-baseline justify-between gap-3 py-3 text-sm">
+                      <div className="min-w-0">
+                        <p className="font-semibold text-texto">
+                          {opcao.nome_exibicao || `${opcao.transportadora} - ${opcao.servico_nome}`}
+                        </p>
+                        <p className="text-texto-secundario">Até {opcao.prazo_dias} dias</p>
+                      </div>
+                      <Preco valor={opcao.valor} as="strong" className="shrink-0 text-texto" />
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </Superficie>
 
-          <ul className="mt-6 space-y-2 border-t border-divisor pt-5 text-sm text-texto-secundario">
-            <li>Pagamento processado em ambiente seguro</li>
-            <li>Estoque confirmado antes da finalização</li>
-            <li>Trocas e devoluções conforme a política da loja</li>
+          <ul className="space-y-2 text-auxiliar text-texto-secundario">
+            <li className="flex items-start gap-2"><IconeEscudo tamanho={16} className="mt-0.5 shrink-0" />Pagamento processado em ambiente seguro</li>
+            <li className="flex items-start gap-2"><IconeCaminhao tamanho={16} className="mt-0.5 shrink-0" />Estoque confirmado antes da finalização</li>
+            <li className="flex items-start gap-2"><IconeTroca tamanho={16} className="mt-0.5 shrink-0" />Trocas e devoluções conforme a política da loja</li>
           </ul>
+
+          <dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-6 gap-y-2 border-t border-divisor pt-4 text-auxiliar">
+            {produto.categoria && <><dt className="text-texto-secundario">Categoria</dt><dd className="text-texto">{produto.categoria}</dd></>}
+            {coresDisponiveis.length > 0 && <><dt className="text-texto-secundario">Cores</dt><dd className="text-texto">{coresDisponiveis.join(', ')}</dd></>}
+            {tamanhos.length > 0 && <><dt className="text-texto-secundario">Tamanhos</dt><dd className="text-texto">{tamanhos.map((t) => t.tamanho).join(', ')}</dd></>}
+          </dl>
         </div>
       </div>
 
-      <section id="avaliacoes" className="mt-12 scroll-mt-24 border-t border-[#302b20] pt-8">
-        <button type="button" onClick={() => setAvaliacoesAbertas(aberta => !aberta)} aria-expanded={avaliacoesAbertas} aria-controls="conteudo-avaliacoes" className="mb-6 flex w-full flex-wrap items-end justify-between gap-3 rounded-xl bg-[#11120f] px-5 py-4 text-left hover:bg-[#171813]">
-          <h2 className="text-xl font-bold">Avaliações</h2>
-          <div className="ml-auto flex items-center gap-3" aria-label={mediaAvaliacoes.toFixed(1) + ' de 5 estrelas'}>
-            <span className="text-4xl font-bold leading-none text-[#d4af45]">
-              {mediaAvaliacoes.toFixed(1)}
-            </span>
-            <div>
-              <div className="relative w-fit text-xl leading-none tracking-[0.12em]" aria-hidden="true">
-                <span className="text-[#45402f]">{'★'.repeat(5)}</span>
-                <span
-                  className="absolute inset-y-0 left-0 overflow-hidden whitespace-nowrap text-[#d4af45]"
-                  style={{ width: (mediaAvaliacoes / 5) * 100 + '%' }}
-                >
-                  {'★'.repeat(5)}
-                </span>
-              </div>
-              <p className="mt-1 text-xs text-[#aaa396]">
-                {avaliacoes.length} {avaliacoes.length <= 1 ? 'Avaliação' : 'Avaliações'}
+      <section id="avaliacoes" aria-labelledby="titulo-avaliacoes" className="mt-secao grid gap-bloco border-t border-divisor pt-bloco lg:grid-cols-[minmax(0,4fr)_minmax(0,8fr)]">
+        <div className="min-w-0">
+          <h2 id="titulo-avaliacoes" className="text-titulo-md text-texto">Avaliações</h2>
+          {avaliacoes.length > 0 ? (
+            <div className="mt-4">
+              <p className="flex items-baseline gap-2" aria-hidden="true">
+                <span className="text-titulo-lg text-texto tabular-nums">{formatarNota(mediaAvaliacoes)}</span>
+                <span className="text-auxiliar text-texto-secundario">de 5</span>
               </p>
+              <Estrelas valor={mediaAvaliacoes} quantidade={avaliacoes.length} tamanho={18} className="mt-2" />
+              <p className="mt-2 text-auxiliar text-texto-secundario" aria-hidden="true">{textoAvaliacoes(avaliacoes.length)}</p>
             </div>
-          </div>
-          <span className={`text-2xl text-[#d4af45] transition-transform ${avaliacoesAbertas ? 'rotate-180' : ''}`} aria-hidden="true">⌄</span>
-        </button>
+          ) : (
+            <p className="mt-3 text-auxiliar text-texto-secundario">Ainda sem avaliações</p>
+          )}
 
-        {avaliacoesAbertas && <div id="conteudo-avaliacoes">
-        {avaliacoes.length === 0 ? (
-          <p className="text-sm text-[#aaa396]">Ainda não há avaliações para este produto.</p>
-        ) : (
-          <div className="grid gap-4 md:grid-cols-2">
-            {avaliacoes.map((avaliacao) => (
-              <article key={avaliacao.id} className="rounded-xl border border-[#302b20] bg-[#11120f] p-5">
-                <div className="flex items-center justify-between gap-3">
-                  <strong>{avaliacao.usuario_nome}</strong>
-                  <span className="text-[#d4af45]">{'★'.repeat(Number(avaliacao.nota))}</span>
-                </div>
-                {avaliacao.comentario && <p className="mt-3 text-sm text-[#d1cabd]">{avaliacao.comentario}</p>}
-                {avaliacao.fotos?.length > 0 && (
-                  <div className="mt-4 grid grid-cols-2 gap-2">
-                    {avaliacao.fotos.map((foto, indice) => <img key={indice} src={foto} alt={'Foto da avaliação ' + (indice + 1)} loading="lazy" className="max-h-72 w-full rounded-lg object-cover" />)}
-                  </div>
-                )}
-                <time className="mt-3 block text-xs text-texto-secundario">{new Date(avaliacao.criado_em).toLocaleDateString('pt-BR')}</time>
-                <button
-                  type="button"
-                  onClick={() => votarUtil(avaliacao.id)}
-                  aria-pressed={Boolean(avaliacao.votou_util)}
-                  disabled={votandoUtil !== null}
-                  className={`mt-3 inline-flex items-center gap-2 rounded border px-3 py-1.5 text-sm disabled:opacity-50 ${avaliacao.votou_util ? 'border-[#d4af45] bg-[#d4af45] text-[#090a09]' : 'border-[#45402f] text-[#d4af45] hover:border-[#d4af45]'}`}
-                >
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">
-                    <path d="M7 10v11H3V10h4ZM7 10l4-7a3 3 0 0 1 3 3v4h5a2 2 0 0 1 2 2l-2 7a2 2 0 0 1-2 2H7" />
-                  </svg>
-                  Útil ({Number(avaliacao.uteis || 0)})
-                </button>
-              </article>
-            ))}
-          </div>
-        )}
-        {erroUtil && <p role="alert" className="mt-3 text-sm text-erro">{erroUtil}</p>}
-        {mensagemAvaliacao && !podeAvaliar && <p role="status" className="mt-3 text-sm">{mensagemAvaliacao}</p>}
-        {Boolean(podeAvaliar) && (
-          <form onSubmit={enviarAvaliacao} className="mt-8 grid gap-4 rounded-painel border border-divisor bg-superficie p-5">
-            <p className="font-semibold">Avalie este produto</p>
-            <Campo
-              as="select"
-              id="avaliacao-nota"
-              rotulo="Nota"
-              name="nota"
-              value={formAvaliacao.nota}
-              onChange={(evento) => setFormAvaliacao({ ...formAvaliacao, nota: evento.target.value })}
+          {Boolean(podeAvaliar) && (
+            <Botao
+              ref={botaoAvaliar}
+              variante="secundario"
+              className="mt-5"
+              aria-expanded={formularioAberto}
+              aria-controls="formulario-avaliacao"
+              onClick={alternarFormularioAvaliacao}
             >
-              {[5, 4, 3, 2, 1].map((nota) => <option key={nota} value={nota}>{'★'.repeat(nota)} ({nota})</option>)}
-            </Campo>
-            <Campo
-              as="textarea"
-              id="avaliacao-comentario"
-              rotulo="Comentário"
-              name="comentario"
-              required
-              maxLength="1000"
-              value={formAvaliacao.comentario}
-              onChange={(evento) => setFormAvaliacao({ ...formAvaliacao, comentario: evento.target.value })}
-              placeholder="Conte como foi sua experiência"
-            />
-            <div>
-              <label htmlFor="fotos-avaliacao" className="block text-sm font-semibold">
-                Compartilhe suas fotos (opcional)
-              </label>
-              <label htmlFor="fotos-avaliacao" className="mt-3 flex h-20 cursor-pointer items-center justify-center rounded-controle border border-dashed border-borda-forte bg-campo text-marca hover:border-marca">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                  <path d="M14 20H4a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h3l2-3h6l2 3h3a2 2 0 0 1 2 2v5" />
-                  <circle cx="12" cy="12" r="4" /><path d="M19 16v6M16 19h6" />
-                </svg>
-                <span className="sr-only">Adicionar fotos</span>
-              </label>
-              <input id="fotos-avaliacao" type="file" accept="image/jpeg,image/png,image/webp" multiple onChange={selecionarFotos} disabled={lendoFotos || salvandoAvaliacao || formAvaliacao.fotos.length >= 5} className="sr-only" />
-              <p className="mt-2 text-xs text-texto-secundario">{formAvaliacao.fotos.length}/5 - JPG, PNG ou WebP</p>
-              <div className="mt-3 flex flex-wrap gap-3">
-                {formAvaliacao.fotos.map((foto, indice) => (
-                  <div key={indice} className="relative">
-                    <img src={foto} alt={'Foto selecionada ' + (indice + 1)} className="h-20 w-20 rounded object-cover" />
-                    <BotaoIcone tamanho="sm" disabled={salvandoAvaliacao} onClick={() => setFormAvaliacao(atual => ({ ...atual, fotos: atual.fotos.filter((_, i) => i !== indice) }))} rotulo={'Remover foto ' + (indice + 1)} className="absolute -right-3 -top-3">×</BotaoIcone>
-                  </div>
-                ))}
-              </div>
-            </div>
-            <label className="flex items-center gap-2 text-sm">
-              <input type="checkbox" checked={formAvaliacao.anonimo} onChange={evento => setFormAvaliacao(atual => ({ ...atual, anonimo: evento.target.checked }))} className="accent-marca" />
-              Publicar como Anônimo
-            </label>
-            <Botao type="submit" tamanho="lg" carregando={salvandoAvaliacao} disabled={lendoFotos}>
-              {salvandoAvaliacao ? 'Salvando...' : 'Publicar avaliação'}
+              Avaliar este produto
             </Botao>
-            {mensagemAvaliacao && <p className="text-sm text-texto">{mensagemAvaliacao}</p>}
-          </form>
-        )}
-        </div>}
+          )}
+          <div id="formulario-avaliacao" hidden={!(podeAvaliar && formularioAberto)}>
+            {Boolean(podeAvaliar) && formularioAberto && (
+              <form onSubmit={enviarAvaliacao} className="mt-5 grid gap-4">
+                <Campo
+                  ref={primeiroCampoAvaliacao}
+                  as="select"
+                  id="avaliacao-nota"
+                  rotulo="Nota"
+                  name="nota"
+                  value={formAvaliacao.nota}
+                  onChange={(evento) => setFormAvaliacao({ ...formAvaliacao, nota: evento.target.value })}
+                >
+                  {/* <option> não aceita SVG: a nota fica por extenso. */}
+                  {[5, 4, 3, 2, 1].map((nota) => <option key={nota} value={nota}>{nota} {nota === 1 ? 'estrela' : 'estrelas'}</option>)}
+                </Campo>
+                <Campo
+                  as="textarea"
+                  id="avaliacao-comentario"
+                  rotulo="Comentário"
+                  name="comentario"
+                  required
+                  maxLength="1000"
+                  value={formAvaliacao.comentario}
+                  onChange={(evento) => setFormAvaliacao({ ...formAvaliacao, comentario: evento.target.value })}
+                  placeholder="Conte como foi sua experiência"
+                />
+                <div>
+                  <label htmlFor="fotos-avaliacao" className="block text-rotulo text-texto">
+                    Compartilhe suas fotos (opcional)
+                  </label>
+                  {/* O input fica visualmente oculto, antes do rótulo visível, que mostra o foco do teclado (peer-focus-visible). */}
+                  <input
+                    id="fotos-avaliacao"
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    multiple
+                    onChange={selecionarFotos}
+                    disabled={lendoFotos || salvandoAvaliacao || formAvaliacao.fotos.length >= 5}
+                    aria-describedby="fotos-avaliacao-ajuda"
+                    className="peer sr-only"
+                  />
+                  <label
+                    htmlFor="fotos-avaliacao"
+                    className="mt-2 flex h-20 cursor-pointer items-center justify-center gap-2 rounded-controle border border-dashed border-borda-forte bg-campo text-auxiliar text-marca hover:border-marca peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-foco peer-disabled:cursor-not-allowed peer-disabled:opacity-50"
+                  >
+                    <IconeCamera tamanho={24} />
+                    Adicionar fotos
+                  </label>
+                  <p id="fotos-avaliacao-ajuda" className="mt-2 text-xs text-texto-secundario">
+                    {formAvaliacao.fotos.length} de 5 fotos · JPG, PNG ou WebP de até 1 MB cada
+                  </p>
+                  <div className="mt-3 flex flex-wrap gap-3">
+                    {formAvaliacao.fotos.map((foto, indice) => (
+                      <div key={indice} className="relative">
+                        <img src={foto} alt={'Foto selecionada ' + (indice + 1)} className="h-20 w-20 rounded object-cover" />
+                        <BotaoIcone tamanho="sm" disabled={salvandoAvaliacao} onClick={() => setFormAvaliacao(atual => ({ ...atual, fotos: atual.fotos.filter((_, i) => i !== indice) }))} rotulo={'Remover foto ' + (indice + 1)} className="absolute -right-3 -top-3">×</BotaoIcone>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <label className="flex items-center gap-2 text-sm">
+                  <input type="checkbox" checked={formAvaliacao.anonimo} onChange={evento => setFormAvaliacao(atual => ({ ...atual, anonimo: evento.target.checked }))} className="accent-marca" />
+                  Publicar como Anônimo
+                </label>
+                <div className="flex flex-wrap gap-3">
+                  <Botao type="submit" tamanho="lg" carregando={salvandoAvaliacao} disabled={lendoFotos}>
+                    {salvandoAvaliacao ? 'Salvando...' : 'Publicar avaliação'}
+                  </Botao>
+                  <Botao variante="discreto" tamanho="lg" onClick={alternarFormularioAvaliacao}>Cancelar</Botao>
+                </div>
+              </form>
+            )}
+          </div>
+          <p ref={mensagemAvaliacaoRef} tabIndex={-1} role="status" className={mensagemAvaliacao ? 'mt-3 text-sm text-texto outline-none' : 'outline-none'}>{mensagemAvaliacao}</p>
+        </div>
 
+        <div className="min-w-0">
+          {avaliacoes.length > 0 && (
+            <ul className="divide-y divide-divisor">
+              {avaliacoes.map((avaliacao) => (
+                <li key={avaliacao.id} className="py-5 first:pt-0">
+                  <article>
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <h3 className="font-semibold text-texto">{avaliacao.usuario_nome}</h3>
+                      <Estrelas valor={avaliacao.nota} />
+                    </div>
+                    {avaliacao.comentario && <p className="mt-2 max-w-[65ch] text-auxiliar text-texto-secundario [text-wrap:pretty]">{avaliacao.comentario}</p>}
+                    {avaliacao.fotos?.length > 0 && (
+                      <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
+                        {avaliacao.fotos.map((foto, indice) => <img key={indice} src={foto} alt={'Foto da avaliação ' + (indice + 1)} loading="lazy" className="aspect-square w-full rounded-controle object-cover" />)}
+                      </div>
+                    )}
+                    <div className="mt-3 flex flex-wrap items-center gap-4">
+                      <time className="text-legenda text-texto-discreto">{new Date(avaliacao.criado_em).toLocaleDateString('pt-BR')}</time>
+                      <Botao
+                        variante={avaliacao.votou_util ? 'secundario' : 'discreto'}
+                        tamanho="sm"
+                        onClick={() => votarUtil(avaliacao.id)}
+                        aria-pressed={Boolean(avaliacao.votou_util)}
+                        disabled={votandoUtil !== null}
+                        iconeAntes={<IconeUtil tamanho={16} />}
+                      >
+                        {/* Um só item flexível: o gap do Botao não separa os parênteses do número. */}
+                        <span>Útil (<span className="tabular-nums">{Number(avaliacao.uteis || 0)}</span>)</span>
+                      </Botao>
+                    </div>
+                  </article>
+                </li>
+              ))}
+            </ul>
+          )}
+          {erroUtil && <p role="alert" className="mt-3 text-sm text-erro">{erroUtil}</p>}
+        </div>
       </section>
 
       <PerguntasProduto produtoId={id} />
 
       {relacionados.length > 0 && (
-        <section className="mt-12 border-t border-divisor pt-8">
-          <h2 className="mb-5 text-xl font-bold">Produtos relacionados</h2>
-          <div className="grid grid-cols-2 gap-6 sm:grid-cols-3 lg:grid-cols-4">
+        <section aria-labelledby="titulo-relacionados" className="mt-secao border-t border-divisor pt-bloco">
+          <h2 id="titulo-relacionados" className="mb-5 text-titulo-md text-texto">Produtos relacionados</h2>
+          <div className="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 sm:gap-x-6 lg:grid-cols-4">
             {relacionados.map((item) => (
               <CartaoProduto key={item.id} produto={item} />
             ))}

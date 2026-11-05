@@ -405,7 +405,8 @@ h1, h2, h3 { letter-spacing: -0.02em; }
 
 /* Alvo do foco programático nas trocas de rota: sem anel no título focado. */
 [data-foco-rota]:focus { outline: none; }
-html { scroll-padding-block-start: 6rem; }
+/* Altura medida do cabeçalho fixo (App.jsx) + folga; sem a medida, mantém os 6rem anteriores. */
+html { scroll-padding-block-start: calc(var(--altura-cabecalho, 5rem) + 1rem); }
 
 /* Tabelas largas: rolagem horizontal própria (componente TabelaRolavel). */
 .tabela-rolavel { overflow-x: auto; overscroll-behavior-inline: contain; }
