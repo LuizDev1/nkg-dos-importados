@@ -5,7 +5,11 @@ import { useAutenticacao } from '../../contextos/ContextoAutenticacao';
 import { criarPedido } from '../../servicos/pedidoService';
 import { cotarFrete } from '../../servicos/freteService';
 import { listarEnderecos } from '../../servicos/enderecoService';
-import { formatarCep, formatarCpf, formatarTelefone } from '../../servicos/formatadores';
+import { formatarCep, formatarCpf, formatarTelefone } from '../../servicos/formatadores.mjs';
+import Botao from '../../componentes/ui/Botao';
+import Campo from '../../componentes/ui/Campo';
+import Preco from '../../componentes/ui/Preco';
+import Superficie from '../../componentes/ui/Superficie';
 
 const API_URL = import.meta.env.VITE_API_URL || '/api';
 // Ordem visual dos campos validados: o foco vai para o primeiro com erro.
@@ -242,25 +246,16 @@ export default function Checkout() {
     }
   }
 
+  // Classe extra do controle: 'campo-com-erro' é só um marcador, sem estilo próprio. O erro (borda vermelha,
+  // inclusive com foco) e o anel de foco vêm de index.css via aria-invalid, para não competir com o anel global.
   function classeCampo(campo) {
-    return `w-full border rounded px-3 py-2 text-base sm:text-sm ${erros[campo] ? 'focus:outline-none focus:ring-1 focus:ring-erro' : ''}`;
+    return erros[campo] ? 'campo-com-erro' : '';
   }
 
-  // id, name e ligação com a mensagem de erro de cada campo validado.
+  // id, name, erro e realce de cada campo validado (o foco no primeiro inválido usa o id checkout-<campo>).
   function propsCampo(campo) {
-    return {
-      id: `checkout-${campo}`,
-      name: campo,
-      'aria-invalid': erros[campo] ? 'true' : undefined,
-      'aria-describedby': erros[campo] ? `checkout-${campo}-erro` : undefined,
-    };
+    return { id: `checkout-${campo}`, name: campo, erro: erros[campo] || undefined, classeControle: classeCampo(campo) };
   }
-
-  function erroCampo(campo) {
-    return erros[campo] ? <p id={`checkout-${campo}-erro`} className="mt-1 text-sm text-erro">{erros[campo]}</p> : null;
-  }
-
-  const rotulo = 'block text-sm text-gray-600';
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-8">
@@ -275,28 +270,28 @@ export default function Checkout() {
         </button>
       </div>
 
-      <div className="bg-white p-6 rounded-lg shadow mb-6">
-        <h2 className="text-lg font-semibold mb-4">Resumo do Pedido</h2>
-        <p className="text-gray-600 mb-2">Quantidade de itens: {itens.length}</p>
+      <Superficie as="section" sombra className="mb-6" aria-labelledby="titulo-resumo">
+        <h2 id="titulo-resumo" className="text-lg font-semibold mb-4">Resumo do Pedido</h2>
+        <p className="text-texto-secundario mb-2">Quantidade de itens: {itens.length}</p>
         {resumoServidor ? (
-          <div className="text-gray-700 space-y-1">
-            <p>Subtotal: {Number(resumoServidor.subtotal).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
-            <p>Frete: {Number(resumoServidor.frete).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
-            <p className="text-xl font-bold text-blue-600">Total confirmado: {Number(resumoServidor.total).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
+          <div className="text-texto-secundario space-y-1">
+            <p>Subtotal: <Preco valor={resumoServidor.subtotal} /></p>
+            <p>Frete: <Preco valor={resumoServidor.frete} /></p>
+            <p className="text-xl font-bold text-marca">Total confirmado: <Preco valor={resumoServidor.total} /></p>
           </div>
         ) : (
-          <div className="text-gray-600">
+          <div className="text-texto-secundario">
             {!cotacaoFrete && <p>Frete calculado no servidor ao finalizar</p>}
             {cotacaoFrete && cotacaoFrete.opcoes?.length > 1 && (
               <fieldset className="mt-3">
-                <legend className="mb-2 text-sm font-semibold text-gray-700">Escolha a entrega</legend>
+                <legend className="mb-2 text-sm font-semibold text-texto">Escolha a entrega</legend>
                 <div className="grid gap-2 sm:grid-cols-2">
                   {cotacaoFrete.opcoes.map((opcao) => (
                     <label
                       key={opcao.servico_id}
-                      className={`cursor-pointer rounded-lg border p-3 transition ${
+                      className={`cursor-pointer rounded-cartao border p-3 transition ${
                         freteServicoId === opcao.servico_id
-                          ? 'border-acao bg-blue-50 ring-1 ring-acao'
+                          ? 'border-acao bg-marca-suave ring-1 ring-acao'
                           : 'border-borda-campo hover:border-link'
                       }`}
                     >
@@ -311,11 +306,11 @@ export default function Checkout() {
                         }}
                         className="mr-2"
                       />
-                      <span className="font-semibold">
+                      <span className="font-semibold text-texto">
                         {opcao.nome_exibicao || `${opcao.transportadora} - ${opcao.servico_nome}`}
                       </span>
-                      <span className="mt-1 block text-sm text-gray-600">
-                        {Number(opcao.valor).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                      <span className="mt-1 block text-sm text-texto-secundario">
+                        <Preco valor={opcao.valor} />
                         {' · '}até {opcao.prazo_dias} dias
                       </span>
                     </label>
@@ -326,124 +321,77 @@ export default function Checkout() {
             {cotacaoFrete?.gratuito ? (
               <p className="mt-2 font-semibold text-sucesso">Entrega grátis</p>
             ) : cotacaoFrete ? (
-              <p className="mt-2">
-                Frete: {Number(cotacaoFrete.valor).toLocaleString('pt-BR', {
-                  style: 'currency',
-                  currency: 'BRL',
-                })}
-              </p>
+              <p className="mt-2">Frete: <Preco valor={cotacaoFrete.valor} /></p>
             ) : null}
           </div>
         )}
-      </div>
+      </Superficie>
 
-      <form onSubmit={finalizarCompra} className="bg-white p-6 rounded-lg shadow space-y-4">
-        <h2 className="text-lg font-semibold mb-2">Dados de Entrega</h2>
+      <Superficie as="form" sombra onSubmit={finalizarCompra} className="space-y-4" aria-labelledby="titulo-entrega">
+        <h2 id="titulo-entrega" className="text-lg font-semibold mb-2">Dados de Entrega</h2>
 
         {/* Região estável para falhas gerais (frete, pedido, pagamento). */}
-        <div role="alert" className={erro ? 'rounded border border-erro-borda bg-erro-fundo p-3 text-[#fca5a5]' : ''}>{erro}</div>
+        <div role="alert" className={erro ? 'rounded-cartao border border-erro-borda bg-erro-fundo p-3 text-erro-texto' : ''}>{erro}</div>
 
-        <div role="status" className={carregandoEnderecos ? 'text-sm text-gray-500' : 'sr-only'}>
+        <div role="status" className={carregandoEnderecos ? 'text-sm text-texto-secundario' : 'sr-only'}>
           {carregandoEnderecos ? 'Carregando endereço principal...' : ''}
         </div>
-        {erroEnderecos && <p role="alert" className="rounded border border-aviso-borda bg-aviso-fundo p-3 text-sm text-aviso-texto">{erroEnderecos}</p>}
+        {erroEnderecos && <p role="alert" className="rounded-cartao border border-aviso-borda bg-aviso-fundo p-3 text-sm text-aviso-texto">{erroEnderecos}</p>}
 
-        <div>
-          <label htmlFor="cpf-pagamento" className={rotulo}>CPF do comprador</label>
-          <input id="cpf-pagamento" name="cpf" type="text" inputMode="numeric" autoComplete="off" value={cpf}
-            onChange={(e) => setCpf(formatarCpf(e.target.value))} required maxLength={14}
-            placeholder="000.000.000-00" aria-describedby="cpf-pagamento-ajuda" className={classeCampo('cpf')} />
-          <p id="cpf-pagamento-ajuda" className="text-xs text-gray-500 mt-1">Necessário para identificar o comprador no pagamento.</p>
-        </div>
+        <Campo
+          id="cpf-pagamento" rotulo="CPF do comprador" name="cpf" type="text" inputMode="numeric" autoComplete="off"
+          value={cpf} onChange={(e) => setCpf(formatarCpf(e.target.value))} required maxLength={14}
+          placeholder="000.000.000-00" ajuda="Necessário para identificar o comprador no pagamento."
+        />
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div>
-            <label htmlFor="checkout-telefone" className={rotulo}>Telefone de Contato</label>
-            <input type="tel" inputMode="tel" autoComplete="tel" {...propsCampo('telefone')} value={formulario.telefone} onChange={lidarComMudanca} className={classeCampo('telefone')} placeholder="(61) 90000-0000" />
-            {erroCampo('telefone')}
-          </div>
-          <div>
-            <label htmlFor="checkout-cep" className={rotulo}>CEP</label>
-            <div className="relative">
-              <input type="text" inputMode="numeric" autoComplete="postal-code" {...propsCampo('cep')} value={formulario.cep} onChange={lidarComCep} className={classeCampo('cep')} placeholder="00000-000" maxLength="9" />
-              {buscandoCep && (
-                <span role="status" className="absolute right-3 top-2.5 text-xs text-gray-400">Buscando...</span>
-              )}
-            </div>
-            {erroCampo('cep')}
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <div className="sm:col-span-2">
-            <label htmlFor="checkout-rua" className={rotulo}>Rua / Quadra</label>
-            <input type="text" autoComplete="address-line1" {...propsCampo('rua')} value={formulario.rua} onChange={lidarComMudanca} className={classeCampo('rua')} />
-            {erroCampo('rua')}
-          </div>
-          <div>
-            <label htmlFor="checkout-numero" className={rotulo}>Número</label>
-            <input type="text" inputMode="numeric" {...propsCampo('numero')} value={formulario.numero} onChange={lidarComMudanca} className={classeCampo('numero')} />
-            {erroCampo('numero')}
-          </div>
-        </div>
-
-        <div>
-          <label htmlFor="checkout-complemento" className={rotulo}>Complemento</label>
-          <input type="text" id="checkout-complemento" name="complemento" autoComplete="address-line2" value={formulario.complemento} onChange={lidarComMudanca} className={classeCampo('complemento')} placeholder="Apartamento, bloco, referência..." />
-        </div>
-
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div>
-            <label htmlFor="checkout-bairro" className={rotulo}>Bairro</label>
-            <input type="text" autoComplete="address-level3" {...propsCampo('bairro')} value={formulario.bairro} onChange={lidarComMudanca} className={classeCampo('bairro')} />
-            {erroCampo('bairro')}
-          </div>
-          <div>
-            <label htmlFor="checkout-cidade" className={rotulo}>Cidade</label>
-            <input type="text" autoComplete="address-level2" {...propsCampo('cidade')} value={formulario.cidade} onChange={lidarComMudanca} className={classeCampo('cidade')} />
-            {erroCampo('cidade')}
-          </div>
-        </div>
-
-        <div>
-          <label htmlFor="checkout-estado" className={rotulo}>Estado (UF)</label>
-          <input type="text" autoComplete="address-level1" {...propsCampo('estado')} value={formulario.estado} onChange={lidarComMudanca} className={classeCampo('estado')} placeholder="Ex: DF" maxLength="2" />
-          {erroCampo('estado')}
-        </div>
-
-        {enderecosSalvos.length > 0 && (
-          <div className="rounded border border-gray-200 bg-gray-50 p-4">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <div><p className="font-semibold text-gray-800">{enderecoSelecionadoId ? 'Endereço salvo aplicado' : 'Endereços salvos'}</p><p className="text-xs text-gray-600">{enderecoSelecionadoId ? 'Você pode revisar os campos acima antes de finalizar.' : 'Selecione um endereço para preencher os campos.'}</p></div>
-              {(enderecosSalvos.length > 1 || !enderecoSelecionadoId) && <button type="button" onClick={() => setMostrarEnderecos((aberto) => !aberto)} aria-expanded={mostrarEnderecos} className="text-sm font-semibold text-link underline underline-offset-2">{mostrarEnderecos ? 'Fechar opções' : 'Trocar endereço salvo'}</button>}
-            </div>
-            {(mostrarEnderecos || enderecosSalvos.length === 1 || !enderecoSelecionadoId) && (
-              <div className="mt-3 grid gap-2">
-                {enderecosSalvos.map((endereco) => <button key={endereco.id} type="button" onClick={() => { usarEndereco(endereco); setMostrarEnderecos(false); }} className={`rounded border p-3 text-left text-sm ${String(endereco.id) === enderecoSelecionadoId ? 'border-acao bg-blue-50' : 'border-borda-campo bg-white hover:border-link'}`} aria-pressed={String(endereco.id) === enderecoSelecionadoId}><strong>{endereco.apelido}{endereco.principal ? ' · Principal' : ''}</strong><span className="mt-1 block text-gray-600">{endereco.rua}, {endereco.numero}{endereco.complemento ? ` — ${endereco.complemento}` : ''} · {endereco.cidade}/{endereco.estado}</span></button>)}
-              </div>
-            )}
-          </div>
-        )}
-
-        <div>
-          <label htmlFor="checkout-cupom" className={rotulo}>Cupom de desconto</label>
-          <input
-            id="checkout-cupom"
-            name="codigo_promocao"
-            type="text"
-            autoComplete="off"
-            value={codigoPromocao}
-            onChange={(e) => setCodigoPromocao(e.target.value.toUpperCase())}
-            className={classeCampo('codigoPromocao')}
-            placeholder="Opcional"
-            maxLength="50"
+          <Campo rotulo="Telefone de Contato" type="tel" inputMode="tel" autoComplete="tel" {...propsCampo('telefone')} value={formulario.telefone} onChange={lidarComMudanca} placeholder="(61) 90000-0000" />
+          <Campo
+            rotulo="CEP" type="text" inputMode="numeric" autoComplete="postal-code" {...propsCampo('cep')} value={formulario.cep} onChange={lidarComCep} placeholder="00000-000" maxLength="9"
+            sufixo={buscandoCep ? <span role="status" className="text-xs text-texto-secundario">Buscando...</span> : null}
           />
         </div>
 
-        <button 
-          type="submit" 
-          disabled={carregando || buscandoCep || carregandoEstoque || Boolean(erroEstoque) || itens.some(item => !item.estoque_qtd || item.quantidade < 1)}
-          className="w-full py-3 rounded bg-acao text-acao-texto font-bold mt-4 transition hover:bg-acao-hover disabled:cursor-not-allowed disabled:opacity-60"
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <Campo rotulo="Rua / Quadra" type="text" autoComplete="address-line1" {...propsCampo('rua')} value={formulario.rua} onChange={lidarComMudanca} className="sm:col-span-2" />
+          <Campo rotulo="Número" type="text" inputMode="numeric" {...propsCampo('numero')} value={formulario.numero} onChange={lidarComMudanca} />
+        </div>
+
+        <Campo rotulo="Complemento" opcional type="text" id="checkout-complemento" name="complemento" autoComplete="address-line2" value={formulario.complemento} onChange={lidarComMudanca} placeholder="Apartamento, bloco, referência..." />
+
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <Campo rotulo="Bairro" type="text" autoComplete="address-level3" {...propsCampo('bairro')} value={formulario.bairro} onChange={lidarComMudanca} />
+          <Campo rotulo="Cidade" type="text" autoComplete="address-level2" {...propsCampo('cidade')} value={formulario.cidade} onChange={lidarComMudanca} />
+        </div>
+
+        <Campo rotulo="Estado (UF)" type="text" autoComplete="address-level1" {...propsCampo('estado')} value={formulario.estado} onChange={lidarComMudanca} placeholder="Ex: DF" maxLength="2" />
+
+        {enderecosSalvos.length > 0 && (
+          <Superficie nivel="elevada" espacamento="compacto">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div><p className="font-semibold text-texto">{enderecoSelecionadoId ? 'Endereço salvo aplicado' : 'Endereços salvos'}</p><p className="text-xs text-texto-secundario">{enderecoSelecionadoId ? 'Você pode revisar os campos acima antes de finalizar.' : 'Selecione um endereço para preencher os campos.'}</p></div>
+              {(enderecosSalvos.length > 1 || !enderecoSelecionadoId) && <Botao variante="discreto" tamanho="sm" onClick={() => setMostrarEnderecos((aberto) => !aberto)} aria-expanded={mostrarEnderecos} className="underline underline-offset-2">{mostrarEnderecos ? 'Fechar opções' : 'Trocar endereço salvo'}</Botao>}
+            </div>
+            {(mostrarEnderecos || enderecosSalvos.length === 1 || !enderecoSelecionadoId) && (
+              <div className="mt-3 grid gap-2">
+                {enderecosSalvos.map((endereco) => <button key={endereco.id} type="button" onClick={() => { usarEndereco(endereco); setMostrarEnderecos(false); }} className={`rounded-cartao border p-3 text-left text-sm ${String(endereco.id) === enderecoSelecionadoId ? 'border-acao bg-marca-suave' : 'border-borda-campo bg-superficie hover:border-link'}`} aria-pressed={String(endereco.id) === enderecoSelecionadoId}><strong>{endereco.apelido}{endereco.principal ? ' · Principal' : ''}</strong><span className="mt-1 block text-texto-secundario">{endereco.rua}, {endereco.numero}{endereco.complemento ? ` — ${endereco.complemento}` : ''} · {endereco.cidade}/{endereco.estado}</span></button>)}
+              </div>
+            )}
+          </Superficie>
+        )}
+
+        <Campo
+          rotulo="Cupom de desconto" opcional id="checkout-cupom" name="codigo_promocao" type="text" autoComplete="off"
+          value={codigoPromocao} onChange={(e) => setCodigoPromocao(e.target.value.toUpperCase())} maxLength="50"
+        />
+
+        <Botao
+          type="submit"
+          tamanho="lg"
+          larguraTotal
+          carregando={carregando}
+          disabled={buscandoCep || carregandoEstoque || Boolean(erroEstoque) || itens.some(item => !item.estoque_qtd || item.quantidade < 1)}
+          className="mt-4"
         >
           {carregando
             ? 'Processando...'
@@ -452,8 +400,8 @@ export default function Checkout() {
               : cotacaoFrete && freteServicoId
                 ? 'Ir para o Pagamento'
                 : 'Calcular frete'}
-        </button>
-      </form>
+        </Botao>
+      </Superficie>
     </div>
   );
 }

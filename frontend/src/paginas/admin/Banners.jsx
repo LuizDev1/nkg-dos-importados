@@ -1,6 +1,7 @@
 import SeletorFotos from '../../componentes/SeletorFotos';
 import { ConteudoBanner } from '../../componentes/CarrosselBanners';
-import { corStatus } from '../../servicos/statusVisual';
+import Botao from '../../componentes/ui/Botao';
+import SeloStatus from '../../componentes/ui/SeloStatus';
 import CampoRotulado from '../../componentes/CampoRotulado';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
@@ -85,11 +86,11 @@ export default function Banners() {
       {erro && <p className="mb-4 rounded bg-erro-fundo p-3 text-erro">{erro}</p>}
 
       <form onSubmit={salvar} className="mb-8 grid gap-3 rounded-lg bg-white p-5 shadow sm:grid-cols-2">
-        <CampoRotulado rotulo="Título" value={form.titulo} onChange={(e) => setForm({ ...form, titulo: e.target.value })} placeholder="Título" maxLength="150" className="rounded border p-2" />
-        <CampoRotulado rotulo="Ordem" type="number" min="0" value={form.ordem} onChange={(e) => setForm({ ...form, ordem: e.target.value })} placeholder="Ordem" className="rounded border p-2" />
+        <CampoRotulado rotulo="Título" name="titulo" value={form.titulo} onChange={(e) => setForm({ ...form, titulo: e.target.value })} placeholder="Título" maxLength="150" className="rounded border p-2" />
+        <CampoRotulado rotulo="Ordem" name="ordem" type="number" min="0" value={form.ordem} onChange={(e) => setForm({ ...form, ordem: e.target.value })} placeholder="Ordem" className="rounded border p-2" />
         <div className="sm:col-span-2"><SeletorFotos key={editandoId || 'novo'} rotulo="Imagens ou GIFs do banner (até 2)" maximo={2} limiteMb={20} rotaUpload="imagens/banner" aceitarGif fotos={[form.imagem_url, form.imagem_url_2].filter(Boolean)} disabled={salvando || enviandoFotos} onCarregando={setEnviandoFotos} onChange={atualizarFotos} /></div>
         {form.imagem_url && <div className="sm:col-span-2 rounded border border-[#393323] p-4">
-          <button type="button" onClick={() => setMostrarPrevia((atual) => !atual)} aria-expanded={mostrarPrevia} className="rounded border border-[#d4af45] px-4 py-2 text-sm text-[#d4af45] hover:bg-[#29251a]">{mostrarPrevia ? 'Ocultar prévia' : 'Ver prévia para o cliente'}</button>
+          <Botao variante="secundario" tamanho="sm" onClick={() => setMostrarPrevia((atual) => !atual)} aria-expanded={mostrarPrevia}>{mostrarPrevia ? 'Ocultar prévia' : 'Ver prévia para o cliente'}</Botao>
           {mostrarPrevia && <div className="mt-4">
             <p className="mb-2 text-xs text-[#aaa396]">Desktop</p>
             <div className="overflow-hidden rounded-lg bg-[#090a09] p-3">
@@ -112,14 +113,14 @@ export default function Banners() {
             </div>;
           })}
         </div>}
-        <CampoRotulado rotulo="Link ao clicar (opcional)" containerClassName="sm:col-span-2" type="url" value={form.link_url} onChange={(e) => setForm({ ...form, link_url: e.target.value })} placeholder="Link ao clicar (opcional)" className="rounded border p-2" />
+        <CampoRotulado rotulo="Link ao clicar (opcional)" name="link_url" containerClassName="sm:col-span-2" type="url" value={form.link_url} onChange={(e) => setForm({ ...form, link_url: e.target.value })} placeholder="Link ao clicar (opcional)" className="rounded border p-2" />
         <div className="flex flex-wrap items-center gap-5">
           <label className="flex items-center gap-2"><input type="checkbox" checked={form.ativo} onChange={(e) => setForm({ ...form, ativo: e.target.checked })} /> Banner ativo</label>
           <label className="flex items-center gap-2"><input type="checkbox" checked={form.principal} onChange={(e) => setForm({ ...form, principal: e.target.checked })} /> Banner principal</label>
         </div>
         <div className="flex justify-end gap-2">
-          {Boolean(editandoId) && <button type="button" onClick={() => { setEnviandoFotos(false); setEditandoId(null); setForm(VAZIO); setMostrarPrevia(false); }} className="rounded border px-4 py-2">Cancelar</button>}
-          <button disabled={salvando} className="rounded bg-blue-600 px-4 py-2 text-white disabled:opacity-50">{salvando ? 'Salvando...' : editandoId ? 'Salvar alterações' : 'Criar banner'}</button>
+          {Boolean(editandoId) && <Botao variante="discreto" onClick={() => { setEnviandoFotos(false); setEditandoId(null); setForm(VAZIO); setMostrarPrevia(false); }}>Cancelar</Botao>}
+          <Botao type="submit" carregando={salvando}>{salvando ? 'Salvando...' : editandoId ? 'Salvar alterações' : 'Criar banner'}</Botao>
         </div>
       </form>
 
@@ -131,10 +132,10 @@ export default function Banners() {
               {banner.imagem_url_2 && <img src={banner.imagem_url_2} alt={`Segunda imagem de ${banner.titulo || 'banner'}`} className="h-40 w-full object-cover" style={{ objectPosition: `${banner.posicao_x_2 ?? 50}% ${banner.posicao_y_2 ?? 50}%` }} />}
             </div>
             <div className="p-4">
-              <div className="flex justify-between gap-3"><strong>{banner.titulo || 'Sem título'}</strong><span className={corStatus(banner.ativo ? 'ativo' : 'inativo')}>{banner.ativo ? 'Ativo' : 'Inativo'}</span></div>
+              <div className="flex justify-between gap-3"><strong>{banner.titulo || 'Sem título'}</strong><SeloStatus status={banner.ativo ? 'ativo' : 'inativo'}>{banner.ativo ? 'Ativo' : 'Inativo'}</SeloStatus></div>
               {Boolean(banner.principal) && <p className="mt-1 text-sm font-semibold text-[#d4af45]">Principal</p>}
               <p className="mt-1 text-sm text-gray-500">Ordem: {banner.ordem}</p>
-              <div className="mt-4 flex gap-4"><button onClick={() => editar(banner)} className="text-blue-600 hover:underline">Editar</button><button onClick={() => excluir(banner.id)} className="text-erro hover:underline">Excluir</button></div>
+              <div className="mt-4 flex flex-wrap gap-2"><Botao variante="discreto" tamanho="sm" onClick={() => editar(banner)} aria-label={`Editar ${banner.titulo || 'banner sem título'}`}>Editar</Botao><Botao variante="destrutivo" tamanho="sm" onClick={() => excluir(banner.id)} aria-label={`Excluir ${banner.titulo || 'banner sem título'}`}>Excluir</Botao></div>
             </div>
           </article>
         ))}

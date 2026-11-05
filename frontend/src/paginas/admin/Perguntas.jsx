@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { listarProdutos } from '../../servicos/produtoService';
 import { listarPerguntas, responderPergunta } from '../../servicos/perguntaService';
 import { avisarAdmin } from '../../utilitarios/avisoAdmin';
+import Botao from '../../componentes/ui/Botao';
 
 function CardPergunta({ pergunta, onAtualizar }) {
   const [editando, setEditando] = useState(false);
@@ -44,12 +45,12 @@ function CardPergunta({ pergunta, onAtualizar }) {
           </label>
           {erro && <p role="alert" className="mt-2 text-sm text-erro">{erro}</p>}
           <div className="mt-3 flex gap-3">
-            <button disabled={salvando} className="rounded bg-[#d4af45] px-4 py-2 font-semibold text-[#090a09] disabled:opacity-50">{salvando ? 'Salvando...' : pergunta.resposta ? 'Salvar alterações' : 'Publicar resposta'}</button>
-            <button type="button" disabled={salvando} onClick={() => { setEditando(false); setTexto(pergunta.resposta || ''); setErro(''); }} className="rounded border border-[#45402f] px-4 py-2 text-sm text-[#aaa396]">Cancelar</button>
+            <Botao type="submit" carregando={salvando}>{salvando ? 'Salvando...' : pergunta.resposta ? 'Salvar alterações' : 'Publicar resposta'}</Botao>
+            <Botao variante="discreto" disabled={salvando} onClick={() => { setEditando(false); setTexto(pergunta.resposta || ''); setErro(''); }}>Cancelar</Botao>
           </div>
         </form>
       ) : (
-        <button type="button" onClick={() => { setTexto(pergunta.resposta || ''); setEditando(true); }} className="mt-4 rounded border border-[#45402f] px-4 py-2 text-sm font-semibold text-[#d4af45] hover:border-[#d4af45]">{pergunta.resposta ? 'Editar resposta' : 'Responder'}</button>
+        <Botao variante="secundario" tamanho="sm" className="mt-4" onClick={() => { setTexto(pergunta.resposta || ''); setEditando(true); }}>{pergunta.resposta ? 'Editar resposta' : 'Responder'}</Botao>
       )}
     </article>
   );

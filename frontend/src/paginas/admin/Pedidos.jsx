@@ -3,6 +3,9 @@ import { useEffect, useState } from 'react';
 import { avisarAdmin } from '../../utilitarios/avisoAdmin';
 import { Link } from 'react-router-dom';
 import TabelaRolavel from '../../componentes/TabelaRolavel';
+import Botao from '../../componentes/ui/Botao';
+import Preco from '../../componentes/ui/Preco';
+import SeloStatus from '../../componentes/ui/SeloStatus';
 import { listarPedidosAdmin, atualizarStatusOperacional } from '../../servicos/pedidoService';
 
 const TRANSICOES = {
@@ -72,7 +75,7 @@ export default function Pedidos() {
         <div className="rounded-lg border border-[#29261d] bg-[#111210] p-8 text-center">
           <p className="font-semibold">Nenhum pedido ainda</p>
           <p className="mt-1 text-sm text-texto-secundario">Quando um cliente finalizar uma compra, o pedido aparece aqui com o pagamento e a etapa da entrega.</p>
-          <Link to="/admin/produtos" className="mt-4 inline-flex rounded border border-borda-campo px-4 py-2 font-semibold text-link hover:border-link">Revisar produtos à venda</Link>
+          <Botao variante="secundario" para="/admin/produtos" className="mt-4">Revisar produtos à venda</Botao>
         </div>
       )) : (
         <TabelaRolavel rotulo="Pedidos">
@@ -94,13 +97,13 @@ export default function Pedidos() {
                   <p className="text-gray-400 text-xs">{pedido.usuario_email}</p>
                 </td>
                 <td className="p-3">
-                  {Number(pedido.total).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                  <Preco valor={pedido.total} />
                 </td>
                 <td className="p-3">
                   {new Date(pedido.criado_em).toLocaleDateString('pt-BR')}
                 </td>
-                <td className={`p-3 ${corStatus(pedido.payment_status)}`}>
-                  {STATUS_LABELS[pedido.payment_status] || pedido.payment_status}
+                <td className="p-3">
+                  <SeloStatus status={pedido.payment_status}>{STATUS_LABELS[pedido.payment_status] || pedido.payment_status}</SeloStatus>
                 </td>
                 <td className="p-3">
                   {(() => {

@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useAutenticacao } from '../contextos/ContextoAutenticacao';
+import Botao from './ui/Botao';
+import Campo from './ui/Campo';
 
 const API_URL = import.meta.env.VITE_API_URL || '/api';
 
@@ -42,23 +44,23 @@ headers: { 'Content-Type': 'application/json' },
     finally { setEnviando(false); }
   }
 
-  return <section className="mt-12 border-t border-[#302b20] pt-8">
-    <button type="button" onClick={() => setAberta(valor => !valor)} aria-expanded={aberta} aria-controls="conteudo-perguntas" className="flex w-full items-center justify-between rounded-xl bg-[#11120f] px-5 py-4 text-left hover:bg-[#171813]">
+  return <section className="mt-12 border-t border-divisor pt-8">
+    <button type="button" onClick={() => setAberta(valor => !valor)} aria-expanded={aberta} aria-controls="conteudo-perguntas" className="flex w-full items-center justify-between rounded-painel bg-superficie px-5 py-4 text-left hover:bg-superficie-elevada">
       <h2 className="text-xl font-bold">Perguntas e respostas</h2>
-      <span className={`text-2xl text-[#d4af45] transition-transform ${aberta ? 'rotate-180' : ''}`} aria-hidden="true">⌄</span>
+      <span className={`text-2xl text-marca transition-transform ${aberta ? 'rotate-180' : ''}`} aria-hidden="true">⌄</span>
     </button>
     {aberta && <div id="conteudo-perguntas" className="px-1 pt-5">
-      <p className="text-sm text-[#aaa396]">Tire suas dúvidas sobre este produto.</p>
+      <p className="text-sm text-texto-secundario">Tire suas dúvidas sobre este produto.</p>
       {erro && <p role="alert" className="mt-3 text-sm text-erro">{erro}</p>}
       <div className="mt-5 space-y-3">
-        {perguntas.length ? perguntas.map(item => <article key={item.id} className="rounded-lg border border-[#302b20] bg-[#11120f] p-4">
-          <p className="font-semibold">Pergunta</p><p className="mt-1 text-sm text-[#d8d1c4]">{item.pergunta}</p><p className="mt-2 text-xs text-texto-secundario">por {item.usuario_nome}</p>
-          {item.resposta ? <div className="mt-4 border-l-2 border-[#d4af45] pl-3"><p className="font-semibold text-[#d4af45]">Resposta da loja</p><p className="mt-1 text-sm text-[#d8d1c4]">{item.resposta}</p></div> : <p className="mt-4 text-sm text-[#aaa396]">Aguardando resposta da loja.</p>}
-        </article>) : <p className="text-sm text-[#aaa396]">Ainda não há perguntas.</p>}
+        {perguntas.length ? perguntas.map(item => <article key={item.id} className="rounded-cartao border border-divisor bg-superficie p-4">
+          <p className="font-semibold">Pergunta</p><p className="mt-1 text-sm text-texto">{item.pergunta}</p><p className="mt-2 text-xs text-texto-secundario">por {item.usuario_nome}</p>
+          {item.resposta ? <div className="mt-4 border-l-2 border-marca pl-3"><p className="font-semibold text-marca">Resposta da loja</p><p className="mt-1 text-sm text-texto">{item.resposta}</p></div> : <p className="mt-4 text-sm text-texto-secundario">Aguardando resposta da loja.</p>}
+        </article>) : <p className="text-sm text-texto-secundario">Ainda não há perguntas.</p>}
       </div>
       {usuario?.perfil !== 'admin' && <form onSubmit={enviar} className="mt-5">
-        <label className="block text-sm font-semibold">Faça uma pergunta<textarea name="pergunta" required minLength="5" maxLength="600" value={texto} onChange={e => setTexto(e.target.value)} className="mt-2 min-h-24 w-full rounded border border-[#45402f] bg-[#181915] px-3 py-2" placeholder="Ex.: O produto tem garantia?" /></label>
-        <button disabled={enviando || !usuario} className="mt-3 rounded bg-[#d4af45] px-4 py-2 font-semibold text-[#090a09] disabled:opacity-50">{usuario ? enviando ? 'Enviando...' : 'Enviar pergunta' : 'Entre para perguntar'}</button>
+        <Campo as="textarea" id="pergunta-produto" rotulo="Faça uma pergunta" name="pergunta" required minLength="5" maxLength="600" value={texto} onChange={e => setTexto(e.target.value)} placeholder="Ex.: O produto tem garantia?" />
+        <Botao type="submit" carregando={enviando} disabled={!usuario} className="mt-3">{usuario ? enviando ? 'Enviando...' : 'Enviar pergunta' : 'Entre para perguntar'}</Botao>
       </form>}
     </div>}
   </section>;

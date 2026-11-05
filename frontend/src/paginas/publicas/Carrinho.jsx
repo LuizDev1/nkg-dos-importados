@@ -2,6 +2,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useCarrinho } from '../../contextos/ContextoCarrinho';
 import { useAutenticacao } from '../../contextos/ContextoAutenticacao';
 import ItemCarrinho from '../../componentes/ItemCarrinho';
+import Botao from '../../componentes/ui/Botao';
+import Preco from '../../componentes/ui/Preco';
 
 function AvisoItensRemovidos({ nomes, aoDispensar }) {
   // Região estável: o leitor de tela anuncia quando os nomes entram.
@@ -14,7 +16,7 @@ function AvisoItensRemovidos({ nomes, aoDispensar }) {
               ? <>O item <strong>{nomes[0]}</strong> saiu do carrinho porque ficou sem estoque ou indisponível.</>
               : <>Estes itens saíram do carrinho porque ficaram sem estoque ou indisponíveis: <strong>{nomes.join(', ')}</strong>.</>}
           </p>
-          <button type="button" onClick={aoDispensar} className="font-semibold underline underline-offset-2">Entendi</button>
+          <Botao variante="discreto" tamanho="sm" onClick={aoDispensar} className="underline underline-offset-2">Entendi</Botao>
         </div>
       )}
     </div>
@@ -26,10 +28,6 @@ export default function Carrinho() {
   const { usuario } = useAutenticacao();
   const navigate = useNavigate();
   const itensDisponiveis = itens;
-
-  function formatarMoeda(valor) {
-    return valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-  }
 
   function handleFinalizarCompra() {
     if (!usuario) {
@@ -83,15 +81,14 @@ export default function Carrinho() {
           />
         ))}
       </div>
-      <div className="mt-6 flex flex-wrap justify-between items-center gap-3 border-t pt-4">
-        <span className="text-lg font-bold">Total: {formatarMoeda(total)}</span>
-        <button
+      <div className="mt-6 flex flex-wrap justify-between items-center gap-3 border-t border-borda pt-4">
+        <span className="text-lg font-bold">Total: <Preco valor={total} /></span>
+        <Botao
           onClick={handleFinalizarCompra}
           disabled={carregandoEstoque || Boolean(erroEstoque) || itensDisponiveis.length === 0 || itensDisponiveis.some(item => !item.estoque_qtd || item.quantidade < 1)}
-          className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
         >
           Finalizar compra
-        </button>
+        </Botao>
       </div>
     </div>
   );

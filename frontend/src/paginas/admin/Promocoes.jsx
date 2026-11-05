@@ -1,5 +1,7 @@
 import TabelaRolavel from '../../componentes/TabelaRolavel';
-import { corStatus } from '../../servicos/statusVisual';
+import Botao from '../../componentes/ui/Botao';
+import Preco from '../../componentes/ui/Preco';
+import SeloStatus from '../../componentes/ui/SeloStatus';
 import CampoRotulado from '../../componentes/CampoRotulado';
 import { useEffect, useState } from 'react';
 import { avisarAdmin } from '../../utilitarios/avisoAdmin';
@@ -186,13 +188,13 @@ export default function Promocoes() {
         <CampoRotulado rotulo="Limite de usos" name="uso_maximo" value={form.uso_maximo} onChange={aoMudarCampo} placeholder="Limite de usos" type="number" min="1" step="1" className="border rounded px-2 py-1" />
         <div className="flex justify-end gap-2 sm:col-span-2 lg:col-span-3">
           {Boolean(editandoId) && (
-            <button type="button" onClick={() => { setEditandoId(null); setForm(FORM_VAZIO); }} className="rounded border px-4 py-2">
+            <Botao variante="discreto" onClick={() => { setEditandoId(null); setForm(FORM_VAZIO); }}>
               Cancelar
-            </button>
+            </Botao>
           )}
-          <button type="submit" disabled={salvando} className="rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 disabled:bg-gray-400">
+          <Botao type="submit" carregando={salvando}>
             {salvando ? 'Salvando...' : editandoId ? 'Salvar alterações' : 'Criar promoção'}
-          </button>
+          </Botao>
         </div>
       </form>
 
@@ -212,16 +214,16 @@ export default function Promocoes() {
               {promocoes.map((promocao) => (
                 <tr key={promocao.id} className="border-t">
                   <td className="p-3 font-semibold">{promocao.codigo}</td>
-                  <td className="p-3">{promocao.tipo === 'percentual' ? `${promocao.valor}%` : `R$ ${Number(promocao.valor).toFixed(2).replace('.', ',')}`}</td>
+                  <td className="p-3 tabular-nums">{promocao.tipo === 'percentual' ? `${promocao.valor}%` : <Preco valor={promocao.valor} />}</td>
                   <td className="p-3">{promocao.usos}{promocao.uso_maximo ? ` / ${promocao.uso_maximo}` : ''}</td>
-                  <td className={`p-3 ${corStatus(promocao.ativo ? 'ativo' : 'inativo')}`}>{promocao.ativo ? 'Ativa' : 'Inativa'}</td>
+                  <td className="p-3"><SeloStatus status={promocao.ativo ? 'ativa' : 'inativa'}>{promocao.ativo ? 'Ativa' : 'Inativa'}</SeloStatus></td>
                   <td className="p-3">
-                    <div className="flex gap-3">
-                      <button onClick={() => aoEditar(promocao)} className="text-blue-600 hover:underline">Editar</button>
+                    <div className="flex gap-2">
+                      <Botao variante="discreto" tamanho="sm" onClick={() => aoEditar(promocao)} aria-label={`Editar ${promocao.codigo}`}>Editar</Botao>
                       {promocao.ativo ? (
-                        <button onClick={() => aoDesativar(promocao.id)} className="text-erro hover:underline">Desativar</button>
+                        <Botao variante="destrutivo" tamanho="sm" onClick={() => aoDesativar(promocao.id)} aria-label={`Desativar ${promocao.codigo}`}>Desativar</Botao>
                       ) : (
-                        <button onClick={() => aoReativar(promocao.id)} className="text-sucesso hover:underline">Reativar</button>
+                        <Botao variante="secundario" tamanho="sm" onClick={() => aoReativar(promocao.id)} aria-label={`Reativar ${promocao.codigo}`}>Reativar</Botao>
                       )}
                     </div>
                   </td>

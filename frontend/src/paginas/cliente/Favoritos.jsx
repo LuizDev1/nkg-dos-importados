@@ -1,6 +1,8 @@
 import { Link } from 'react-router-dom';
 import CartaoProduto from '../../componentes/CartaoProduto';
 import { useFavoritos } from '../../contextos/ContextoFavoritos';
+import Botao from '../../componentes/ui/Botao';
+import Superficie from '../../componentes/ui/Superficie';
 
 export default function Favoritos() {
   const { produtos, estado, recarregar } = useFavoritos();
@@ -10,7 +12,7 @@ export default function Favoritos() {
       <Link to="/" className="botao-voltar mb-6 inline-flex">
         &larr; Voltar para a loja
       </Link>
-      <p className="mb-2 text-sm font-semibold uppercase tracking-[0.28em] text-[#b99a42]">Sua seleção</p>
+      <p className="mb-2 text-sm font-semibold uppercase tracking-[0.28em] text-marca-ativo">Sua seleção</p>
       <h1 className="mb-7 text-3xl font-bold">Favoritos</h1>
 
       <div role="status" className={estado === 'carregando' ? 'py-8 text-center text-texto-secundario' : 'sr-only'}>
@@ -18,11 +20,11 @@ export default function Favoritos() {
       </div>
 
       {estado === 'erro' && (
-        <div role="alert" className="rounded border border-erro-borda bg-erro-fundo p-6 text-center">
-          <p className="mb-4 text-[#fca5a5]">Não foi possível carregar seus favoritos. Verifique a conexão e tente de novo.</p>
-          <button type="button" onClick={recarregar} className="rounded bg-acao px-4 py-2 font-semibold text-acao-texto hover:bg-acao-hover">
+        <div role="alert" className="rounded-cartao border border-erro-borda bg-erro-fundo p-6 text-center">
+          <p className="mb-4 text-erro-texto">Não foi possível carregar seus favoritos. Verifique a conexão e tente de novo.</p>
+          <Botao onClick={recarregar}>
             Tentar de novo
-          </button>
+          </Botao>
         </div>
       )}
 
@@ -31,10 +33,10 @@ export default function Favoritos() {
           {produtos.map((produto) => <CartaoProduto key={produto.id} produto={produto} />)}
         </div>
       ) : (
-        <div className="rounded border border-white/[0.05] bg-white p-8 text-center">
-          <p className="mb-4 text-gray-500">Você ainda não adicionou produtos aos favoritos.</p>
-          <Link to="/" className="text-link underline underline-offset-2">Explorar produtos</Link>
-        </div>
+        <Superficie espacamento="amplo" className="text-center">
+          <p className="mb-4 text-texto-secundario">Você ainda não adicionou produtos aos favoritos.</p>
+          <Botao variante="secundario" para="/">Explorar produtos</Botao>
+        </Superficie>
       ))}
     </div>
   );

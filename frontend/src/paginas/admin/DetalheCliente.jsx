@@ -1,5 +1,7 @@
 import TabelaRolavel from '../../componentes/TabelaRolavel';
-import { corStatus } from '../../servicos/statusVisual';
+import Botao from '../../componentes/ui/Botao';
+import Preco from '../../componentes/ui/Preco';
+import SeloStatus from '../../componentes/ui/SeloStatus';
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { listarClientes } from '../../servicos/usuarioService';
@@ -67,9 +69,9 @@ export default function DetalheCliente() {
         <p><strong>CPF:</strong> {cliente.cpf || 'Não informado'}</p>
         <p>
           <strong>Status:</strong>{' '}
-          <span className={corStatus(cliente.status)}>
+          <SeloStatus status={cliente.status === 'bloqueado' ? 'bloqueado' : 'ativo'}>
             {cliente.status === 'bloqueado' ? 'Bloqueado' : 'Ativo'}
-          </span>
+          </SeloStatus>
         </p>
       </div>
 
@@ -110,14 +112,11 @@ export default function DetalheCliente() {
                   <td className="p-3 text-texto-secundario">{pedido.id}</td>
 
                   <td className="p-3">
-                    {Number(pedido.total).toLocaleString('pt-BR', {
-                      style: 'currency',
-                      currency: 'BRL',
-                    })}
+                    <Preco valor={pedido.total} />
                   </td>
 
-                  <td className={`p-3 ${corStatus(pedido.payment_status)}`}>
-                    {pedido.payment_status}
+                  <td className="p-3">
+                    <SeloStatus status={pedido.payment_status}>{pedido.payment_status}</SeloStatus>
                   </td>
 
                   <td className="p-3">
@@ -125,12 +124,14 @@ export default function DetalheCliente() {
                   </td>
 
                   <td className="p-3">
-                    <Link
-                      to={`/admin/pedidos/${pedido.id}`}
-                      className="text-blue-600 hover:underline"
+                    <Botao
+                      variante="discreto"
+                      tamanho="sm"
+                      para={`/admin/pedidos/${pedido.id}`}
+                      aria-label={`Ver pedido #${pedido.numero_cliente}`}
                     >
                       Ver pedido
-                    </Link>
+                    </Botao>
                   </td>
                 </tr>
               ))}
