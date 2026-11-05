@@ -57,7 +57,7 @@ headers: { 'Content-Type': 'application/json' },
         </article>) : <p className="text-sm text-[#aaa396]">Ainda não há perguntas.</p>}
       </div>
       {usuario?.perfil !== 'admin' && <form onSubmit={enviar} className="mt-5">
-        <label className="block text-sm font-semibold">Faça uma pergunta<textarea required minLength="5" maxLength="600" value={texto} onChange={e => setTexto(e.target.value)} className="mt-2 min-h-24 w-full rounded border border-[#45402f] bg-[#181915] px-3 py-2" placeholder="Ex.: O produto tem garantia?" /></label>
+        <label className="block text-sm font-semibold">Faça uma pergunta<textarea name="pergunta" required minLength="5" maxLength="600" value={texto} onChange={e => setTexto(e.target.value)} className="mt-2 min-h-24 w-full rounded border border-[#45402f] bg-[#181915] px-3 py-2" placeholder="Ex.: O produto tem garantia?" /></label>
         <button disabled={enviando || !usuario} className="mt-3 rounded bg-[#d4af45] px-4 py-2 font-semibold text-[#090a09] disabled:opacity-50">{usuario ? enviando ? 'Enviando...' : 'Enviar pergunta' : 'Entre para perguntar'}</button>
       </form>}
     </div>}

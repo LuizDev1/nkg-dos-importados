@@ -107,6 +107,8 @@ export default function Pedidos() {
                     const opcoes = TRANSICOES[pedido.status_pedido] || [];
                     return (
                   <select
+                    name={`status-${pedido.id}`}
+                    aria-label={`Operação do pedido de ${pedido.usuario_nome}`}
                     value=""
                     disabled={opcoes.length === 0}
                     onChange={(e) => aoMudarStatus(pedido.id, e.target.value)}

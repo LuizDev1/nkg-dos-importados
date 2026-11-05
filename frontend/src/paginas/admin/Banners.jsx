@@ -80,7 +80,7 @@ export default function Banners() {
     <div className="mx-auto max-w-5xl px-4 py-8">
       <Link to="/admin" className="botao-voltar">&larr; Voltar ao painel</Link>
       <h1 className="mb-6 mt-2 text-2xl font-bold">Banners</h1>
-      <p className="mb-5 text-sm text-[#aaa396]">Cadastre até duas imagens por banner. Uma imagem ocupa toda a faixa; duas ficam lado a lado. O banner principal aparece primeiro e a troca ocorre a cada 15 segundos.</p>
+      <p className="mb-5 text-sm text-[#aaa396]">Cadastre até duas imagens por banner. Uma imagem ocupa toda a faixa; duas ficam lado a lado. O banner principal aparece primeiro; os demais são exibidos quando o cliente usa os botões abaixo da faixa.</p>
       <p className="mb-5 text-sm text-[#aaa396]">A faixa desktop tem proporção aproximada de 1920 × 400 px; no celular, 800 × 600 px. Imagens com outra proporção aparecem inteiras, com espaço escuro nas laterais ou acima e abaixo. Confira na prévia.</p>
       {erro && <p className="mb-4 rounded bg-erro-fundo p-3 text-erro">{erro}</p>}
 
@@ -107,8 +107,8 @@ export default function Banners() {
             const campoY = indice ? 'posicao_y_2' : 'posicao_y';
             return <div key={url} className="mt-4 grid gap-3 sm:grid-cols-2">
               <p className="font-semibold sm:col-span-2">Imagem {indice + 1}</p>
-              <label className="text-sm">Horizontal: {form[campoX]}%<input type="range" min="0" max="100" value={form[campoX]} onChange={e => setForm(atual => ({ ...atual, [campoX]: Number(e.target.value) }))} className="mt-2 w-full accent-[#d4af45]" /></label>
-              <label className="text-sm">Vertical: {form[campoY]}%<input type="range" min="0" max="100" value={form[campoY]} onChange={e => setForm(atual => ({ ...atual, [campoY]: Number(e.target.value) }))} className="mt-2 w-full accent-[#d4af45]" /></label>
+              <label className="text-sm">Horizontal: {form[campoX]}%<input type="range" name={campoX} min="0" max="100" value={form[campoX]} onChange={e => setForm(atual => ({ ...atual, [campoX]: Number(e.target.value) }))} className="mt-2 w-full accent-[#d4af45]" /></label>
+              <label className="text-sm">Vertical: {form[campoY]}%<input type="range" name={campoY} min="0" max="100" value={form[campoY]} onChange={e => setForm(atual => ({ ...atual, [campoY]: Number(e.target.value) }))} className="mt-2 w-full accent-[#d4af45]" /></label>
             </div>;
           })}
         </div>}

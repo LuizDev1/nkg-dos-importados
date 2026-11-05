@@ -73,6 +73,9 @@ export default function Clientes() {
         <label className="flex-1 min-w-0 text-sm text-[#aaa399]">
           Buscar cliente por nome ou e-mail
         <input
+          type="search"
+          name="busca"
+          autoComplete="off"
           value={busca}
           onChange={(evento) => setBusca(evento.target.value)}
           placeholder="Buscar por nome ou e-mail"

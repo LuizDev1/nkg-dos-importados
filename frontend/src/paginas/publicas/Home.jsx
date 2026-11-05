@@ -112,6 +112,8 @@ export default function Home() {
             </span>
             <input
               type="search"
+              name="busca"
+              autoComplete="off"
               value={termoBusca}
               onChange={(evento) => {
                 setTermoBusca(evento.target.value);
@@ -146,6 +148,7 @@ export default function Home() {
               </label>
               <select
                 id="categoria"
+                name="categoria"
                 value={filtrosPendentes.categoria}
                 onChange={(evento) => setFiltrosPendentes((atuais) => ({
                   ...atuais,
@@ -196,6 +199,7 @@ export default function Home() {
               </label>
               <select
                 id="ordenacao"
+                name="ordenacao"
                 value={filtrosPendentes.ordenacao}
                 onChange={(evento) => setFiltrosPendentes((atuais) => ({
                   ...atuais,

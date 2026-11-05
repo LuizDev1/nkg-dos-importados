@@ -91,14 +91,13 @@ export default function DetalhePedido() {
         className="bg-white rounded-lg shadow p-5 mb-6"
       >
         <h2 className="text-xl font-semibold mb-3">
-          Código de rastreio
+          <label htmlFor="codigo-rastreio">Código de rastreio</label>
         </h2>
 
         <div className="flex flex-wrap gap-2">
           <input
             id="codigo-rastreio"
             name="codigo_rastreio"
-            aria-label="Código de rastreio"
             autoComplete="off"
             value={codigoRastreio}
             onChange={(evento) => setCodigoRastreio(evento.target.value)}

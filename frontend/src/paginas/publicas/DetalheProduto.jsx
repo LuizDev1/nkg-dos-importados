@@ -605,6 +605,7 @@ export default function DetalheProduto() {
             <label className="text-sm">
               Nota
               <select
+                name="nota"
                 value={formAvaliacao.nota}
                 onChange={(evento) => setFormAvaliacao({ ...formAvaliacao, nota: evento.target.value })}
                 className="mt-1 block w-full rounded border border-[#45402f] bg-[#181915] px-3 py-2"
@@ -615,6 +616,7 @@ export default function DetalheProduto() {
             <label className="text-sm">
               Comentário
               <textarea
+                name="comentario"
                 required
                 maxLength="1000"
                 value={formAvaliacao.comentario}
