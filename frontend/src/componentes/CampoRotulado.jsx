@@ -1,12 +1,8 @@
-import { useId } from 'react';
+import Campo from './ui/Campo';
 
-export default function CampoRotulado({ rotulo, as: Elemento = 'input', containerClassName = '', ...props }) {
-  const idGerado = useId();
-  const id = props.id || idGerado;
-  return (
-    <div className={`min-w-0 ${containerClassName}`}>
-      <label htmlFor={id} className="mb-2 block text-sm text-[#aaa399]">{rotulo}</label>
-      <Elemento {...props} id={id} className={`w-full ${props.className || ''}`} />
-    </div>
-  );
+// Compatibilidade: mesma API usada no admin, agora sobre o componente base Campo.
+// O `className` antigo era só estilo do controle (ex.: "border rounded px-2 py-1") e passa a vir do Campo.
+// eslint-disable-next-line no-unused-vars
+export default function CampoRotulado({ rotulo, containerClassName = '', className, ...props }) {
+  return <Campo rotulo={rotulo} className={containerClassName} {...props} />;
 }

@@ -1,5 +1,7 @@
 import TabelaRolavel from '../../componentes/TabelaRolavel';
-import { corStatus } from '../../servicos/statusVisual';
+import Botao from '../../componentes/ui/Botao';
+import Preco from '../../componentes/ui/Preco';
+import SeloStatus from '../../componentes/ui/SeloStatus';
 import { useEffect, useState } from 'react';
 import { avisarAdmin } from '../../utilitarios/avisoAdmin';
 import { Link } from 'react-router-dom';
@@ -83,9 +85,9 @@ export default function Clientes() {
         />
         </label>
 
-        <button className="bg-black text-white rounded px-4">
+        <Botao type="submit" variante="secundario">
           Buscar
-        </button>
+        </Botao>
       </form>
 
       <div role="alert" className={erro ? "text-erro mb-4" : ""}>{erro}</div>
@@ -116,36 +118,38 @@ export default function Clientes() {
                   <td className="p-3">{cliente.quantidade_pedidos}</td>
 
                   <td className="p-3">
-                    {Number(cliente.total_gasto).toLocaleString('pt-BR', {
-                      style: 'currency',
-                      currency: 'BRL',
-                    })}
-                  </td>
-
-                  <td className={`p-3 ${corStatus(cliente.status)}`}>
-                    {cliente.status === 'bloqueado'
-                      ? 'Bloqueado'
-                      : 'Ativo'}
+                    <Preco valor={cliente.total_gasto} />
                   </td>
 
                   <td className="p-3">
-                    <div className="flex flex-col gap-1">
-                      <Link
-                        to={`/admin/clientes/${cliente.id}`}
-                        className="text-blue-600 hover:underline"
+                    <SeloStatus status={cliente.status === 'bloqueado' ? 'bloqueado' : 'ativo'}>
+                      {cliente.status === 'bloqueado'
+                        ? 'Bloqueado'
+                        : 'Ativo'}
+                    </SeloStatus>
+                  </td>
+
+                  <td className="p-3">
+                    <div className="flex flex-wrap gap-2">
+                      <Botao
+                        variante="discreto"
+                        tamanho="sm"
+                        para={`/admin/clientes/${cliente.id}`}
+                        aria-label={`Ver detalhes de ${cliente.nome}`}
                       >
                         Ver detalhes
-                      </Link>
+                      </Botao>
 
-                      <button
-                        type="button"
+                      <Botao
+                        variante={cliente.status === 'bloqueado' ? 'secundario' : 'destrutivo'}
+                        tamanho="sm"
                         onClick={() => alterarStatus(cliente)}
-                        className="text-left text-blue-600 hover:underline"
+                        aria-label={`${cliente.status === 'bloqueado' ? 'Desbloquear' : 'Bloquear'} ${cliente.nome}`}
                       >
                         {cliente.status === 'bloqueado'
                           ? 'Desbloquear'
                           : 'Bloquear'}
-                      </button>
+                      </Botao>
                     </div>
                   </td>
                 </tr>

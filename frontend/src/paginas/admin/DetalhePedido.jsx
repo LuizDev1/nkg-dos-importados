@@ -1,4 +1,8 @@
-import { corStatus } from '../../servicos/statusVisual';
+import Botao from '../../componentes/ui/Botao';
+import Preco from '../../componentes/ui/Preco';
+import SeloStatus from '../../componentes/ui/SeloStatus';
+import Superficie from '../../componentes/ui/Superficie';
+import { classesCampo } from '../../componentes/ui/estilos.mjs';
 import { useEffect, useState } from 'react';
 import { avisarAdmin } from '../../utilitarios/avisoAdmin';
 import { Link, useParams } from 'react-router-dom';
@@ -71,20 +75,18 @@ export default function DetalhePedido() {
       </h1>
       <p className="-mt-4 mb-6 text-sm text-texto-secundario">ID interno: {pedido.id}</p>
 
-      <div className="bg-white rounded-lg shadow p-5 mb-6 space-y-1">
+      <Superficie sombra className="mb-6 space-y-1">
         <p><strong>Cliente:</strong> {pedido.usuario_nome}</p>
         <p><strong>E-mail:</strong> {pedido.usuario_email}</p>
         <p><strong>Status:</strong>{' '}
-          <span className={corStatus(pedido.payment_status)}>
-            {pedido.payment_status}
-          </span>
+          <SeloStatus status={pedido.payment_status}>{pedido.payment_status}</SeloStatus>
         </p>
         <p><strong>Entrega:</strong> {pedido.tipo_entrega}</p>
         <p><strong>Endereço:</strong> {pedido.endereco_entrega}</p>
         <p><strong>Telefone:</strong> {pedido.telefone_contato}</p>
         <p><strong>Pagamento:</strong> {pedido.payment_id || 'Não informado'}</p>
         <p><strong>Rastreio:</strong> {pedido.codigo_rastreio || 'Não informado'}</p>
-      </div>
+      </Superficie>
 
       <form
         onSubmit={salvarRastreio}
@@ -102,20 +104,16 @@ export default function DetalhePedido() {
             value={codigoRastreio}
             onChange={(evento) => setCodigoRastreio(evento.target.value)}
             placeholder="Ex.: BR123456789BR"
-            className="border rounded px-3 py-2 flex-1 min-w-0 basis-48"
+            className={`flex-1 min-w-0 basis-48 ${classesCampo()}`}
           />
 
-          <button
-            type="submit"
-            disabled={salvando}
-            className="bg-black text-white rounded px-4 disabled:opacity-50"
-          >
+          <Botao type="submit" carregando={salvando}>
             {salvando ? 'Salvando...' : 'Salvar'}
-          </button>
+          </Botao>
         </div>
 
-        {mensagem && <p className="text-sucesso mt-2">{mensagem}</p>}
-        {erro && <p className="text-erro mt-2">{erro}</p>}
+        <p role="status" className={mensagem ? 'text-sucesso mt-2' : ''}>{mensagem}</p>
+        <p role="alert" className={erro ? 'text-erro mt-2' : ''}>{erro}</p>
       </form>
 
       <h2 className="text-xl font-semibold mb-3">Produtos do pedido</h2>
@@ -137,19 +135,10 @@ export default function DetalhePedido() {
                 <td className="p-3">{item.produto_nome}</td>
                 <td className="p-3">{item.quantidade}</td>
                 <td className="p-3">
-                  {Number(item.preco_unitario).toLocaleString('pt-BR', {
-                    style: 'currency',
-                    currency: 'BRL',
-                  })}
+                  <Preco valor={item.preco_unitario} />
                 </td>
                 <td className="p-3">
-                  {(item.quantidade * Number(item.preco_unitario)).toLocaleString(
-                    'pt-BR',
-                    {
-                      style: 'currency',
-                      currency: 'BRL',
-                    }
-                  )}
+                  <Preco valor={item.quantidade * Number(item.preco_unitario)} />
                 </td>
               </tr>
             ))}

@@ -9,6 +9,10 @@ import { useFavoritos } from '../../contextos/ContextoFavoritos';
 import { cadastrarAvisoEstoque } from '../../servicos/avisoEstoqueService';
 import { listarAvaliacoes, salvarAvaliacao, verificarPermissaoAvaliacao, marcarAvaliacaoUtil } from '../../servicos/avaliacaoService';
 import PerguntasProduto from '../../componentes/PerguntasProduto';
+import Botao from '../../componentes/ui/Botao';
+import BotaoIcone from '../../componentes/ui/BotaoIcone';
+import Campo from '../../componentes/ui/Campo';
+import Preco from '../../componentes/ui/Preco';
 
 export default function DetalheProduto() {
   const { id } = useParams();
@@ -355,25 +359,20 @@ export default function DetalheProduto() {
           <div className="mb-2 flex items-start justify-between gap-4">
             <h1 className="text-2xl font-bold">{produto.nome}</h1>
             {usuario?.perfil !== 'admin' && (
-              <button
-                type="button"
+              <BotaoIcone
                 onClick={() => usuario ? alternarFavorito(produto) : navigate('/login')}
                 disabled={!produtoAtivo}
-                className={`shrink-0 rounded-full border px-3 py-1.5 text-lg disabled:cursor-not-allowed disabled:opacity-40 ${estaFavorito(produto.id) ? 'border-[#d4af45] bg-[#d4af45] text-[#090a09]' : 'border-[#3a3526] text-[#d4af45] hover:border-[#d4af45]'}`}
-                aria-label={!produtoAtivo ? 'Produto inativo' : estaFavorito(produto.id) ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
+                variante={estaFavorito(produto.id) ? 'marca' : 'neutro'}
+                rotulo={!produtoAtivo ? 'Produto inativo' : estaFavorito(produto.id) ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
                 title={!produtoAtivo ? 'Produto inativo' : undefined}
+                className="text-lg"
               >
                 {estaFavorito(produto.id) ? '♥' : '♡'}
-              </button>
+              </BotaoIcone>
             )}
           </div>
-          <p className="text-sm text-gray-500 mb-4">{produto.categoria}</p>
-          <p className="text-2xl font-bold mb-4">
-            {Number(produto.preco).toLocaleString('pt-BR', {
-              style: 'currency',
-              currency: 'BRL',
-            })}
-          </p>
+          <p className="text-sm text-texto-secundario mb-4">{produto.categoria}</p>
+          <Preco valor={produto.preco} tamanho="destaque" as="p" className="mb-4 text-marca" />
 
           {!produtoAtivo ? (
             <p className="mb-4 text-sm font-semibold text-erro">Produto inativo e indisponível para compra</p>
@@ -448,23 +447,20 @@ export default function DetalheProduto() {
 
           {produtoAtivo && ((produto.variacoes?.length > 0 && variacaoSelecionada && estoqueDisponivel === 0)
             || (!produto.variacoes?.length && estoqueDisponivel === 0)) && (
-              <button
-                type="button"
-                onClick={solicitarAviso}
-                className="mt-3 w-full rounded border border-[#d4af45] px-4 py-3 font-semibold text-[#d4af45] hover:bg-[#d4af45] hover:text-[#090a09]"
-              >
+              <Botao variante="secundario" tamanho="lg" larguraTotal onClick={solicitarAviso} className="mt-3">
                 Avise-me quando estiver disponível
-              </button>
+              </Botao>
             )}
-          {avisoEstoque && <p className="mt-2 text-center text-sm text-[#c6c0b5]">{avisoEstoque}</p>}
+          <p role="status" className={avisoEstoque ? 'mt-2 text-center text-sm text-texto-secundario' : ''}>{avisoEstoque}</p>
 
-          <div className="mt-6 border-t border-gray-200 pt-5">
+          <div className="mt-6 border-t border-divisor pt-5">
             <h2 className="mb-3 font-semibold">Calcular entrega</h2>
             {usuario ? (
               <form onSubmit={calcularFrete} className="flex items-end gap-2">
-                <label className="flex-1 min-w-0 text-sm text-[#aaa399]">
-                  CEP de entrega
-                  <input
+                  <Campo
+                    id="frete-cep"
+                    rotulo="CEP de entrega"
+                    className="flex-1"
                     type="text"
                     inputMode="numeric"
                     value={cep}
@@ -481,27 +477,21 @@ export default function DetalheProduto() {
                     placeholder="00000-000"
                     aria-invalid={erroFrete ? 'true' : undefined}
                     aria-describedby={erroFrete ? 'frete-erro' : undefined}
-                    className="mt-2 w-full rounded border border-gray-300 px-3 py-2"
                   />
-                </label>
-                <button
-                  type="submit"
-                  disabled={calculandoFrete}
-                  className="rounded border border-blue-600 px-4 py-2 text-blue-600 hover:bg-blue-50 disabled:opacity-60"
-                >
+                <Botao type="submit" variante="secundario" carregando={calculandoFrete}>
                   {calculandoFrete ? 'Calculando...' : 'Calcular'}
-                </button>
+                </Botao>
               </form>
             ) : (
-              <p className="text-sm text-gray-600">
-                <Link to="/login" className="text-blue-600 hover:underline">Entre na sua conta</Link>{' '}
+              <p className="text-sm text-texto-secundario">
+                <Link to="/login" className="text-link underline underline-offset-2">Entre na sua conta</Link>{' '}
                 para calcular o prazo e o valor da entrega.
               </p>
             )}
 
             <p id="frete-erro" role="alert" className={erroFrete ? 'mt-2 text-sm text-erro' : ''}>{erroFrete}</p>
             {Boolean(cotacao?.gratuito) && (
-              <p className="mt-3 rounded bg-sucesso-fundo p-3 text-sm font-semibold text-sucesso">
+              <p className="mt-3 rounded-cartao border border-sucesso-borda bg-sucesso-fundo p-3 text-sm font-semibold text-sucesso-texto">
                 Entrega grátis
               </p>
             )}
@@ -510,27 +500,22 @@ export default function DetalheProduto() {
                 {(cotacao.opcoes || [cotacao]).map((opcao) => (
                   <div
                     key={opcao.servico_id}
-                    className="flex items-center justify-between rounded border border-gray-200 p-3 text-sm"
+                    className="flex items-center justify-between gap-3 rounded-cartao border border-borda p-3 text-sm"
                   >
                     <div>
                       <p className="font-semibold">
                         {opcao.nome_exibicao || `${opcao.transportadora} - ${opcao.servico_nome}`}
                       </p>
-                      <p className="text-gray-500">Até {opcao.prazo_dias} dias</p>
+                      <p className="text-texto-secundario">Até {opcao.prazo_dias} dias</p>
                     </div>
-                    <strong>
-                      {Number(opcao.valor).toLocaleString('pt-BR', {
-                        style: 'currency',
-                        currency: 'BRL',
-                      })}
-                    </strong>
+                    <Preco valor={opcao.valor} as="strong" />
                   </div>
                 ))}
               </div>
             )}
           </div>
 
-          <ul className="mt-6 space-y-2 border-t border-gray-200 pt-5 text-sm text-gray-600">
+          <ul className="mt-6 space-y-2 border-t border-divisor pt-5 text-sm text-texto-secundario">
             <li>Pagamento processado em ambiente seguro</li>
             <li>Estoque confirmado antes da finalização</li>
             <li>Trocas e devoluções conforme a política da loja</li>
@@ -600,36 +585,34 @@ export default function DetalheProduto() {
         {erroUtil && <p role="alert" className="mt-3 text-sm text-erro">{erroUtil}</p>}
         {mensagemAvaliacao && !podeAvaliar && <p role="status" className="mt-3 text-sm">{mensagemAvaliacao}</p>}
         {Boolean(podeAvaliar) && (
-          <form onSubmit={enviarAvaliacao} className="mt-8 grid gap-4 rounded-xl border border-[#302b20] bg-[#11120f] p-5">
+          <form onSubmit={enviarAvaliacao} className="mt-8 grid gap-4 rounded-painel border border-divisor bg-superficie p-5">
             <p className="font-semibold">Avalie este produto</p>
-            <label className="text-sm">
-              Nota
-              <select
-                name="nota"
-                value={formAvaliacao.nota}
-                onChange={(evento) => setFormAvaliacao({ ...formAvaliacao, nota: evento.target.value })}
-                className="mt-1 block w-full rounded border border-[#45402f] bg-[#181915] px-3 py-2"
-              >
-                {[5, 4, 3, 2, 1].map((nota) => <option key={nota} value={nota}>{'★'.repeat(nota)} ({nota})</option>)}
-              </select>
-            </label>
-            <label className="text-sm">
-              Comentário
-              <textarea
-                name="comentario"
-                required
-                maxLength="1000"
-                value={formAvaliacao.comentario}
-                onChange={(evento) => setFormAvaliacao({ ...formAvaliacao, comentario: evento.target.value })}
-                className="mt-1 min-h-24 w-full rounded border border-[#45402f] bg-[#181915] px-3 py-2"
-                placeholder="Conte como foi sua experiência"
-              />
-            </label>
+            <Campo
+              as="select"
+              id="avaliacao-nota"
+              rotulo="Nota"
+              name="nota"
+              value={formAvaliacao.nota}
+              onChange={(evento) => setFormAvaliacao({ ...formAvaliacao, nota: evento.target.value })}
+            >
+              {[5, 4, 3, 2, 1].map((nota) => <option key={nota} value={nota}>{'★'.repeat(nota)} ({nota})</option>)}
+            </Campo>
+            <Campo
+              as="textarea"
+              id="avaliacao-comentario"
+              rotulo="Comentário"
+              name="comentario"
+              required
+              maxLength="1000"
+              value={formAvaliacao.comentario}
+              onChange={(evento) => setFormAvaliacao({ ...formAvaliacao, comentario: evento.target.value })}
+              placeholder="Conte como foi sua experiência"
+            />
             <div>
               <label htmlFor="fotos-avaliacao" className="block text-sm font-semibold">
                 Compartilhe suas fotos (opcional)
               </label>
-              <label htmlFor="fotos-avaliacao" className="mt-3 flex h-20 cursor-pointer items-center justify-center rounded border border-dashed border-[#45402f] bg-[#181915] text-[#d4af45] hover:border-[#d4af45]">
+              <label htmlFor="fotos-avaliacao" className="mt-3 flex h-20 cursor-pointer items-center justify-center rounded-controle border border-dashed border-borda-forte bg-campo text-marca hover:border-marca">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                   <path d="M14 20H4a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h3l2-3h6l2 3h3a2 2 0 0 1 2 2v5" />
                   <circle cx="12" cy="12" r="4" /><path d="M19 16v6M16 19h6" />
@@ -637,24 +620,24 @@ export default function DetalheProduto() {
                 <span className="sr-only">Adicionar fotos</span>
               </label>
               <input id="fotos-avaliacao" type="file" accept="image/jpeg,image/png,image/webp" multiple onChange={selecionarFotos} disabled={lendoFotos || salvandoAvaliacao || formAvaliacao.fotos.length >= 5} className="sr-only" />
-              <p className="mt-2 text-xs text-[#aaa396]">{formAvaliacao.fotos.length}/5 - JPG, PNG ou WebP</p>
+              <p className="mt-2 text-xs text-texto-secundario">{formAvaliacao.fotos.length}/5 - JPG, PNG ou WebP</p>
               <div className="mt-3 flex flex-wrap gap-3">
                 {formAvaliacao.fotos.map((foto, indice) => (
                   <div key={indice} className="relative">
                     <img src={foto} alt={'Foto selecionada ' + (indice + 1)} className="h-20 w-20 rounded object-cover" />
-                    <button type="button" disabled={salvandoAvaliacao} onClick={() => setFormAvaliacao(atual => ({ ...atual, fotos: atual.fotos.filter((_, i) => i !== indice) }))} aria-label={'Remover foto ' + (indice + 1)} className="absolute -right-2 -top-2 rounded-full bg-[#11120f] px-2 text-[#d4af45]">×</button>
+                    <BotaoIcone tamanho="sm" disabled={salvandoAvaliacao} onClick={() => setFormAvaliacao(atual => ({ ...atual, fotos: atual.fotos.filter((_, i) => i !== indice) }))} rotulo={'Remover foto ' + (indice + 1)} className="absolute -right-3 -top-3">×</BotaoIcone>
                   </div>
                 ))}
               </div>
             </div>
             <label className="flex items-center gap-2 text-sm">
-              <input type="checkbox" checked={formAvaliacao.anonimo} onChange={evento => setFormAvaliacao(atual => ({ ...atual, anonimo: evento.target.checked }))} className="accent-[#d4af45]" />
+              <input type="checkbox" checked={formAvaliacao.anonimo} onChange={evento => setFormAvaliacao(atual => ({ ...atual, anonimo: evento.target.checked }))} className="accent-marca" />
               Publicar como Anônimo
             </label>
-            <button disabled={salvandoAvaliacao || lendoFotos} className="rounded bg-[#d4af45] px-5 py-3 font-semibold text-black hover:bg-[#e1c15b] disabled:opacity-60">
+            <Botao type="submit" tamanho="lg" carregando={salvandoAvaliacao} disabled={lendoFotos}>
               {salvandoAvaliacao ? 'Salvando...' : 'Publicar avaliação'}
-            </button>
-            {mensagemAvaliacao && <p className="text-sm text-[#d8d1c4]">{mensagemAvaliacao}</p>}
+            </Botao>
+            {mensagemAvaliacao && <p className="text-sm text-texto">{mensagemAvaliacao}</p>}
           </form>
         )}
         </div>}
@@ -664,7 +647,7 @@ export default function DetalheProduto() {
       <PerguntasProduto produtoId={id} />
 
       {relacionados.length > 0 && (
-        <section className="mt-12 border-t border-gray-200 pt-8">
+        <section className="mt-12 border-t border-divisor pt-8">
           <h2 className="mb-5 text-xl font-bold">Produtos relacionados</h2>
           <div className="grid grid-cols-2 gap-6 sm:grid-cols-3 lg:grid-cols-4">
             {relacionados.map((item) => (

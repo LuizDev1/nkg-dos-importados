@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { buscarRelatorioMensal } from '../../servicos/relatorioService';
+import Preco from '../../componentes/ui/Preco';
+import Superficie from '../../componentes/ui/Superficie';
 
 export default function Relatorios() {
   const [dados, setDados] = useState(null);
@@ -22,10 +24,6 @@ export default function Relatorios() {
     carregar();
   }, []);
 
-  function formatarMoeda(valor) {
-    return Number(valor).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-  }
-
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
       <Link to="/admin" className="botao-voltar">
@@ -34,23 +32,23 @@ export default function Relatorios() {
 
       <h1 className="text-2xl font-bold mt-2 mb-6">Relatório do mês</h1>
 
-      {carregando && <p>Carregando relatório...</p>}
-      {erro && <p className="text-erro">{erro}</p>}
+      {carregando && <p role="status">Carregando relatório...</p>}
+      <p role="alert" className={erro ? 'text-erro' : ''}>{erro}</p>
 
       {dados && (
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div className="bg-white rounded-lg shadow p-6 text-center">
-            <p className="text-sm text-gray-500 mb-1">Total vendido</p>
-            <p className="text-2xl font-bold">{formatarMoeda(dados.total_vendido)}</p>
-          </div>
-          <div className="bg-white rounded-lg shadow p-6 text-center">
-            <p className="text-sm text-gray-500 mb-1">Pedidos pagos</p>
-            <p className="text-2xl font-bold">{dados.quantidade_pedidos}</p>
-          </div>
-          <div className="bg-white rounded-lg shadow p-6 text-center">
-            <p className="text-sm text-gray-500 mb-1">Ticket médio</p>
-            <p className="text-2xl font-bold">{formatarMoeda(dados.ticket_medio)}</p>
-          </div>
+          <Superficie sombra className="text-center">
+            <p className="text-sm text-texto-secundario mb-1">Total vendido</p>
+            <Preco valor={dados.total_vendido} as="p" className="text-2xl font-bold" />
+          </Superficie>
+          <Superficie sombra className="text-center">
+            <p className="text-sm text-texto-secundario mb-1">Pedidos pagos</p>
+            <p className="text-2xl font-bold tabular-nums">{dados.quantidade_pedidos}</p>
+          </Superficie>
+          <Superficie sombra className="text-center">
+            <p className="text-sm text-texto-secundario mb-1">Ticket médio</p>
+            <Preco valor={dados.ticket_medio} as="p" className="text-2xl font-bold" />
+          </Superficie>
         </div>
       )}
     </div>

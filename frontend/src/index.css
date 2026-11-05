@@ -272,10 +272,18 @@ input:-webkit-autofill:focus {
   caret-color: var(--color-texto);
   transition: background-color 9999s ease-out;
 }
+/* Foco dos campos: anel externo dourado (faixa de fundo + 2px de foco), separado da borda.
+   A borda continua informando o estado: dourada quando válido, vermelha quando aria-invalid.
+   O contorno transparente garante um indicador no modo de alto contraste, que remove box-shadow. */
 input:focus, select:focus, textarea:focus {
   border-color: var(--color-marca) !important;
-  box-shadow: 0 0 0 2px rgb(212 175 69 / 18%) !important;
-  outline: none;
+  box-shadow: 0 0 0 2px var(--color-fundo), 0 0 0 4px var(--color-foco) !important;
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+}
+input[aria-invalid="true"]:focus, select[aria-invalid="true"]:focus, textarea[aria-invalid="true"]:focus { border-color: var(--color-erro) !important; }
+input:-webkit-autofill:focus {
+  box-shadow: 0 0 0 1000px var(--color-campo) inset, 0 0 0 2px var(--color-fundo), 0 0 0 4px var(--color-foco) !important;
 }
 
 .status-verde { color: var(--color-sucesso) !important; }

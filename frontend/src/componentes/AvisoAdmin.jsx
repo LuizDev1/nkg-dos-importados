@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import BotaoIcone from './ui/BotaoIcone';
 
 export default function AvisoAdmin() {
   const [aviso, setAviso] = useState(null);
@@ -19,10 +20,10 @@ export default function AvisoAdmin() {
 
   if (!aviso) return null;
   return (
-    <div role="status" aria-live="polite" className="fixed bottom-5 right-5 z-50 flex max-w-sm items-start gap-4 rounded-lg border border-[#d4af45] bg-[#171813] px-4 py-3 text-sm text-[#f4efe5] shadow-xl">
-      <span className="text-[#d4af45]" aria-hidden="true">✓</span>
+    <div role="status" aria-live="polite" className="fixed bottom-5 right-5 z-(--z-aviso) flex max-w-sm items-center gap-3 rounded-cartao border border-marca bg-superficie-elevada px-4 py-3 text-sm text-texto shadow-nivel-4">
+      <span className="text-marca" aria-hidden="true">✓</span>
       <span>{aviso.mensagem}</span>
-      <button type="button" onClick={() => setAviso(null)} aria-label="Fechar aviso" className="text-[#d4af45] hover:text-white">×</button>
+      <BotaoIcone tamanho="sm" rotulo="Fechar aviso" onClick={() => setAviso(null)}>×</BotaoIcone>
     </div>
   );
 }

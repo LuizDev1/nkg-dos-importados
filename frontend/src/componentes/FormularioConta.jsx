@@ -1,5 +1,7 @@
 import { useState } from 'react';
-import { formatarCpf } from '../servicos/formatadores';
+import { formatarCpf } from '../servicos/formatadores.mjs';
+import Botao from './ui/Botao';
+import Campo from './ui/Campo';
 
 export default function FormularioConta({ conta, salvar, aoSalvar }) {
   const [dados, setDados] = useState({ nome: conta.nome, email: conta.email, cpf: formatarCpf(conta.cpf) });
@@ -26,26 +28,32 @@ export default function FormularioConta({ conta, salvar, aoSalvar }) {
 
   return (
     <form onSubmit={enviar} className="formulario-conta space-y-5">
-      <div role="alert" className={erro ? 'rounded-lg border border-erro-borda bg-erro-fundo p-3 text-sm text-[#fca5a5]' : ''}>{erro}</div>
-      <div role="status" className={sucesso ? 'rounded-lg border border-sucesso-borda bg-sucesso-fundo p-3 text-sm text-sucesso-texto' : ''}>{sucesso}</div>
+      <div role="alert" className={erro ? 'rounded-cartao border border-erro-borda bg-erro-fundo p-3 text-sm text-erro-texto' : ''}>{erro}</div>
+      <div role="status" className={sucesso ? 'rounded-cartao border border-sucesso-borda bg-sucesso-fundo p-3 text-sm text-sucesso-texto' : ''}>{sucesso}</div>
       {[
         ['nome', 'Nome completo', 'text', 150, 'name'],
         ['email', 'E-mail', 'email', 150, 'email'],
         ['cpf', 'CPF', 'text', 14, 'off'],
       ].map(([campo, titulo, tipo, limite, autocomplete]) => (
-        <div key={campo}>
-          <label htmlFor={`conta-${campo}`} className="mb-2 block text-sm text-[#aaa399]">{titulo}</label>
-          <input id={`conta-${campo}`} name={campo} type={tipo} maxLength={limite} required
-            autoComplete={autocomplete} inputMode={campo === 'cpf' ? 'numeric' : undefined}
-            disabled={carregando} value={dados[campo]}
-            onChange={(e) => { setDados({ ...dados, [campo]: campo === 'cpf' ? formatarCpf(e.target.value) : e.target.value }); setSucesso(''); }}
-            className="w-full rounded-md border border-[#3a3526] bg-[#151613] px-4 py-3 text-[#f4efe5] focus:outline-none disabled:opacity-60" />
-        </div>
+        <Campo
+          key={campo}
+          id={`conta-${campo}`}
+          rotulo={titulo}
+          name={campo}
+          type={tipo}
+          maxLength={limite}
+          required
+          autoComplete={autocomplete}
+          inputMode={campo === 'cpf' ? 'numeric' : campo === 'email' ? 'email' : undefined}
+          disabled={carregando}
+          value={dados[campo]}
+          onChange={(e) => { setDados({ ...dados, [campo]: campo === 'cpf' ? formatarCpf(e.target.value) : e.target.value }); setSucesso(''); }}
+        />
       ))}
-      <p className="text-xs text-[#aaa399]">O CPF identifica o comprador no pagamento. A senha não é alterada aqui.</p>
-      <button disabled={carregando} className="w-full rounded-md bg-[#d4af45] px-5 py-3 font-semibold text-[#090a09] hover:bg-[#e2c25d] disabled:opacity-50 sm:w-auto">
+      <p className="text-xs text-texto-secundario">O CPF identifica o comprador no pagamento. A senha não é alterada aqui.</p>
+      <Botao type="submit" carregando={carregando} className="w-full sm:w-auto">
         {carregando ? 'Salvando...' : 'Salvar alterações'}
-      </button>
+      </Botao>
     </form>
   );
 }

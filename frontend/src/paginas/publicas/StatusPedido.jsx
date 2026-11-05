@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { useCarrinho } from '../../contextos/ContextoCarrinho';
 import { useAutenticacao } from '../../contextos/ContextoAutenticacao';
 import { buscarPedido } from '../../servicos/pedidoService';
+import Superficie from '../../componentes/ui/Superficie';
 
 const API_URL = import.meta.env.VITE_API_URL || '/api';
 
@@ -48,7 +49,7 @@ export default function StatusPedido() {
     }
   } else {
     if (resultado === 'acompanhamento') {
-      conteudo = { titulo: 'Buscando informações...', mensagem: 'Aguarde um momento.', cor: 'text-gray-500' };
+      conteudo = { titulo: 'Buscando informações...', mensagem: 'Aguarde um momento.', cor: 'text-texto-secundario' };
     } else {
       conteudo = CONTEUDO[resultado] || CONTEUDO.falha;
     }
@@ -113,18 +114,19 @@ export default function StatusPedido() {
   return (
     <div className="max-w-md mx-auto px-4 py-16 text-center">
       <h1 className={`text-2xl font-bold mb-3 ${conteudo.cor}`}>{conteudo.titulo}</h1>
-      <p className="text-gray-600 mb-2">{conteudo.mensagem}</p>
-      {pedido?.numero_cliente ? <p className="text-sm text-gray-400 mb-6">Pedido #{pedido.numero_cliente}</p> : <div className="mb-6" />}
+      <p className="text-texto-secundario mb-2">{conteudo.mensagem}</p>
+      {pedido?.numero_cliente ? <p className="text-sm text-texto-secundario mb-6">Pedido #{pedido.numero_cliente}</p> : <div className="mb-6" />}
 
       <div role="alert" className={erroPedido ? "text-sm text-erro mb-4" : ""}>{erroPedido}</div>
 
       {pedido && (
-        <div className="text-left bg-white border rounded-lg p-5 mb-6">
+        <Superficie className="text-left mb-6">
           <p className="font-semibold mb-4">Acompanhamento</p>
           <ol className="space-y-3">
             {etapas.map(([status, titulo], indice) => (
-              <li key={status} className={indice <= etapaAtual ? 'text-green-400' : 'text-yellow-400'}>
-                <span className="inline-block w-5">{indice <= etapaAtual ? '✓' : '○'}</span>
+              <li key={status} className={indice <= etapaAtual ? 'text-sucesso' : 'text-texto-secundario'}>
+                <span aria-hidden="true" className="inline-block w-5">{indice <= etapaAtual ? '✓' : '○'}</span>
+                <span className="sr-only">{indice <= etapaAtual ? 'Concluído: ' : 'Pendente: '}</span>
                 {titulo}
               </li>
             ))}
@@ -138,7 +140,7 @@ export default function StatusPedido() {
           {pedido.codigo_rastreio && (
             <p className="mt-4 text-sm">Código de rastreio: <strong>{pedido.codigo_rastreio}</strong></p>
           )}
-        </div>
+        </Superficie>
       )}
 
       <Link to="/" className="botao-voltar">

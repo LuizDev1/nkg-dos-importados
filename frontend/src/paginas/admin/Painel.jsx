@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import Botao from '../../componentes/ui/Botao';
 
 const SECOES = [
   ['/admin/produtos', 'Produtos', 'Catálogo, estoque e variações', 'P'],
@@ -40,7 +41,7 @@ export default function Painel() {
               <span>{produto.nome}{produto.variacao_nome ? ` · ${produto.variacao_nome}` : ''}</span>
               <span className="flex items-center gap-4 text-[#d4af45]">
                 {produto.estoque_qtd} {Number(produto.estoque_qtd) === 1 ? 'unidade disponível' : 'unidades disponíveis'}
-                <Link to={`/admin/produtos?editar=${produto.id}${produto.variacao_id ? `&variacao=${produto.variacao_id}` : ''}`} className="rounded border border-[#d4af45] px-2 py-1 font-semibold hover:bg-[#d4af45] hover:text-[#111210]">Gerenciar</Link>
+                <Botao variante="secundario" tamanho="sm" para={`/admin/produtos?editar=${produto.id}${produto.variacao_id ? `&variacao=${produto.variacao_id}` : ''}`} aria-label={`Gerenciar ${produto.nome}${produto.variacao_nome ? ` · ${produto.variacao_nome}` : ''}`}>Gerenciar</Botao>
               </span>
             </li>
           ))}</ul>}

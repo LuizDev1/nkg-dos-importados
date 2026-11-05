@@ -6,6 +6,10 @@ import { buscarConfiguracoes } from '../../servicos/configuracaoService';
 import CartaoProduto from '../../componentes/CartaoProduto';
 import CarrosselBanners from '../../componentes/CarrosselBanners';
 import { listarBanners } from '../../servicos/bannerService';
+import Botao from '../../componentes/ui/Botao';
+import Campo from '../../componentes/ui/Campo';
+import Superficie from '../../componentes/ui/Superficie';
+import { classesCampo } from '../../componentes/ui/estilos.mjs';
 
 export default function Home() {
   const [produtos, setProdutos] = useState([]);
@@ -140,13 +144,13 @@ export default function Home() {
 
         <div className={pesquisaRealizada ? 'grid items-start gap-6 lg:grid-cols-[240px_minmax(0,1fr)]' : ''}>
           {pesquisaRealizada && (
-            <aside className="rounded border border-[#2b2618] bg-[#10110f] p-5 shadow-sm">
-              <h2 className="mb-5 border-b border-[#2b2618] pb-3 text-sm font-bold uppercase tracking-[0.15em] text-[#d4af45]">Filtros</h2>
+            <Superficie as="aside" sombra aria-labelledby="titulo-filtros">
+              <h2 id="titulo-filtros" className="mb-5 border-b border-divisor pb-3 text-sm font-bold uppercase tracking-rotulo text-marca">Filtros</h2>
 
-              <label className="mb-2 block text-sm font-semibold" htmlFor="categoria">
-                Categoria
-              </label>
-              <select
+              <Campo
+                as="select"
+                rotulo="Categoria"
+                className="mb-5"
                 id="categoria"
                 name="categoria"
                 value={filtrosPendentes.categoria}
@@ -154,13 +158,12 @@ export default function Home() {
                   ...atuais,
                   categoria: evento.target.value,
                 }))}
-                className="mb-5 w-full rounded border border-gray-300 px-3 py-2"
               >
                 <option value="">Todas as categorias</option>
                 {categorias.map((item) => <option key={item} value={item}>{item}</option>)}
-              </select>
+              </Campo>
 
-              <p id="faixa-preco" className="mb-2 text-sm font-semibold">Faixa de preço (R$)</p>
+              <p id="faixa-preco" className="mb-1.5 text-rotulo text-texto">Faixa de preço (R$)</p>
               <div className="mb-5 grid grid-cols-2 gap-2" role="group" aria-labelledby="faixa-preco">
               <input
                 type="number"
@@ -175,7 +178,7 @@ export default function Home() {
                 inputMode="decimal"
                 placeholder="Mínimo"
                 aria-label="Preço mínimo"
-                className="min-w-0 rounded border border-gray-300 px-3 py-2"
+                className={`min-w-0 ${classesCampo()}`}
               />
               <input
                 type="number"
@@ -190,14 +193,13 @@ export default function Home() {
                 inputMode="decimal"
                 placeholder="Máximo"
                 aria-label="Preço máximo"
-                className="min-w-0 rounded border border-gray-300 px-3 py-2"
+                className={`min-w-0 ${classesCampo()}`}
               />
               </div>
 
-              <label className="mb-2 block text-sm font-semibold" htmlFor="ordenacao">
-                Ordenar por
-              </label>
-              <select
+              <Campo
+                as="select"
+                rotulo="Ordenar por"
                 id="ordenacao"
                 name="ordenacao"
                 value={filtrosPendentes.ordenacao}
@@ -205,30 +207,31 @@ export default function Home() {
                   ...atuais,
                   ordenacao: evento.target.value,
                 }))}
-                className="w-full rounded border border-gray-300 px-3 py-2"
               >
                 <option value="recentes">Mais recentes</option>
                 <option value="melhor_avaliados">Melhor avaliados</option>
                 <option value="menor_preco">Menor preço</option>
                 <option value="maior_preco">Maior preço</option>
                 <option value="nome">Nome</option>
-              </select>
+              </Campo>
 
-              <button
-                type="button"
+              <Botao
+                larguraTotal
+                className="mt-5"
                 onClick={() => {
                   setCategoria(filtrosPendentes.categoria);
                   setPrecoMinimo(filtrosPendentes.precoMinimo);
                   setPrecoMaximo(filtrosPendentes.precoMaximo);
                   setOrdenacao(filtrosPendentes.ordenacao);
                 }}
-                className="mt-5 w-full rounded bg-blue-600 px-4 py-2 font-semibold text-white transition hover:bg-blue-700"
               >
                 Aplicar filtros
-              </button>
+              </Botao>
 
-              <button
-                type="button"
+              <Botao
+                variante="discreto"
+                larguraTotal
+                className="mt-2"
                 onClick={() => {
                   setFiltrosPendentes({
                     categoria: '',
@@ -241,24 +244,23 @@ export default function Home() {
                   setPrecoMaximo('');
                   setOrdenacao('recentes');
                 }}
-                className="mt-5 w-full text-sm text-blue-600 hover:underline"
               >
                 Limpar filtros
-              </button>
-            </aside>
+              </Botao>
+            </Superficie>
           )}
 
           <section aria-label="Produtos">
             {pesquisaRealizada && (
-              <p className="mb-4 text-gray-600">
+              <p className="mb-4 text-texto-secundario">
                 Resultado da pesquisa para <strong>&quot;{busca}&quot;</strong>
               </p>
             )}
 
             {!erro && produtos.length === 0 ? (
-              <div className="rounded-lg bg-white p-8 text-center shadow">
-                <p className="text-gray-500">Nenhum produto encontrado.</p>
-              </div>
+              <Superficie sombra espacamento="amplo" className="text-center">
+                <p className="text-texto-secundario">Nenhum produto encontrado.</p>
+              </Superficie>
             ) : (
               <div className={`grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-6 ${pesquisaRealizada ? 'xl:grid-cols-3' : 'lg:grid-cols-4'}`}>
                 {produtos.map((produto) => (

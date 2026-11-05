@@ -2,6 +2,7 @@ import CampoRotulado from '../../componentes/CampoRotulado';
 import { useEffect, useState } from 'react';
 import { avisarAdmin } from '../../utilitarios/avisoAdmin';
 import { Link } from 'react-router-dom';
+import Botao from '../../componentes/ui/Botao';
 import {
   buscarConfiguracoes,
   atualizarConfiguracoes,
@@ -130,13 +131,9 @@ export default function ConfiguracaoLoja() {
           className="w-full border p-2 rounded"
         />
 
-        <button
-          type="submit"
-          disabled={salvando}
-          className="bg-black text-white px-5 py-2 rounded disabled:opacity-50"
-        >
+        <Botao type="submit" carregando={salvando}>
           {salvando ? 'Salvando...' : 'Salvar'}
-        </button>
+        </Botao>
 
         {mensagem && <p className="text-sm">{mensagem}</p>}
       </form>
