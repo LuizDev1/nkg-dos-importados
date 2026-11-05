@@ -24,6 +24,15 @@ export function textoNota(valor, quantidade) {
   return quantidade === undefined ? `Nota ${nota} de 5` : `Nota ${nota} de 5, ${textoAvaliacoes(quantidade)}`;
 }
 
+// Preenchimento proporcional das estrelas, em % (0 a 100, duas casas): 4.7 de 5 → 94.
+export function preenchimentoNota(valor, maximo = 5) {
+  const nota = Number(valor);
+  const teto = Number(maximo);
+  if (!Number.isFinite(nota) || !Number.isFinite(teto) || teto <= 0) return 0;
+  const fracao = Math.min(Math.max(nota / teto, 0), 1);
+  return Math.round(fracao * 10000) / 100;
+}
+
 // Estoque mostrado no card, sem expor quantidade: 'sem' (zerado), 'baixo' (até o estoque mínimo) ou null.
 export function estoqueDoCartao(produto) {
   const quantidade = Number(produto?.estoque_qtd);

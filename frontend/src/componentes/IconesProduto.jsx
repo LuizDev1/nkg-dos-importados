@@ -1,4 +1,4 @@
-import { textoNota } from '../servicos/produtoVisual.mjs';
+import { preenchimentoNota, textoNota } from '../servicos/produtoVisual.mjs';
 
 // Ícones do card e do detalhe do produto: SVG com currentColor e traço 1,7 (mesmo padrão dos ícones
 // existentes). São sempre decorativos; o significado vem do texto ao lado ou do nome do controle.
@@ -24,15 +24,22 @@ export const IconeUtil = (p) => <Svg {...p}><path d="M7 10v11H3V10h4ZM7 10l4-7a3
 export const IconeCamera = (p) => <Svg {...p}><path d="M14 20H4a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h3l2-3h6l2 3h3a2 2 0 0 1 2 2v5" /><circle cx="12" cy="12" r="4" /><path d="M19 16v6M16 19h6" /></Svg>;
 
 // Estrelas de uma nota: o texto acessível ("Nota 4,7 de 5, 3 avaliações") fica em sr-only e as
-// estrelas são decorativas. Estrela vazia usa a cor de borda forte, então a forma (cheia × vazada) também informa.
+// estrelas são decorativas. Duas fileiras sobrepostas: estrelas vazadas por baixo e estrelas cheias por
+// cima, recortadas na largura proporcional (4,7 → 94%). Sem gap entre as estrelas, para a porcentagem
+// cair exatamente na estrela certa, e sem IDs de SVG (nada de clipPath), então vários conjuntos convivem na página.
 export function Estrelas({ valor, quantidade, tamanho = 14, className = '' }) {
-  const cheias = Math.round(Number(valor) || 0);
+  const fileira = (cheia, cor) => [1, 2, 3, 4, 5].map((i) => (
+    <IconeEstrela key={i} tamanho={tamanho} cheia={cheia} className={`shrink-0 ${cor}`} />
+  ));
   return (
-    <span className={`inline-flex items-center gap-0.5 ${className}`.trim()}>
+    <span className={`inline-flex items-center ${className}`.trim()}>
       <span className="sr-only">{textoNota(valor, quantidade)}</span>
-      {[1, 2, 3, 4, 5].map((i) => (
-        <IconeEstrela key={i} tamanho={tamanho} cheia={i <= cheias} className={i <= cheias ? 'text-marca' : 'text-borda-forte'} />
-      ))}
+      <span className="relative inline-flex" aria-hidden="true">
+        {fileira(false, 'text-borda-forte')}
+        <span className="absolute inset-y-0 left-0 inline-flex overflow-hidden" style={{ width: `${preenchimentoNota(valor)}%` }}>
+          {fileira(true, 'text-marca')}
+        </span>
+      </span>
     </span>
   );
 }

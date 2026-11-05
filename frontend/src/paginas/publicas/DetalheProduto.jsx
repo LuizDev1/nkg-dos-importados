@@ -159,6 +159,9 @@ export default function DetalheProduto() {
 
   function alternarFormularioAvaliacao() {
     focoAvaliacao.current = formularioAberto ? 'botao' : 'campo';
+    // Mensagens do formulário (ex.: foto inválida) valem só enquanto ele está aberto. A mensagem de sucesso
+    // não é afetada: depois de publicar, podeAvaliar vira false e este botão deixa de existir.
+    setMensagemAvaliacao('');
     setFormularioAberto((aberto) => !aberto);
   }
 

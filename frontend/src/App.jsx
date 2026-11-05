@@ -26,16 +26,45 @@ function App() {
 
   // O cabeçalho é fixo e muda de altura com a largura (76 px no desktop, 167 px no celular). A altura real
   // vira --altura-cabecalho, usada no scroll-padding, para o foco nunca ficar escondido atrás dele (WCAG 2.4.11).
+  // Mede na montagem (sempre), quando as fontes ficam prontas (a Manrope pode mudar a altura) e a cada
+  // mudança de tamanho: pelo ResizeObserver quando existe; sem ele, pelo resize da janela, por mudanças no
+  // conteúdo do cabeçalho (a sessão carrega depois e acrescenta ícones e saudação) e pela troca de rota.
+  const medirCabecalho = useRef(null);
   useEffect(() => {
     const cabecalho = document.querySelector('header');
-    if (!cabecalho || typeof ResizeObserver === 'undefined') return undefined;
+    if (!cabecalho) return undefined;
     const raiz = document.documentElement;
-    const observador = new ResizeObserver(() => {
-      raiz.style.setProperty('--altura-cabecalho', `${Math.ceil(cabecalho.getBoundingClientRect().height)}px`);
-    });
-    observador.observe(cabecalho);
-    return () => { observador.disconnect(); raiz.style.removeProperty('--altura-cabecalho'); };
+    let ativo = true;
+    const medir = () => {
+      if (ativo) raiz.style.setProperty('--altura-cabecalho', `${Math.ceil(cabecalho.getBoundingClientRect().height)}px`);
+    };
+    medirCabecalho.current = medir;
+    medir();
+    document.fonts?.ready?.then(medir).catch(() => {});
+    let observador = null;
+    let observadorConteudo = null;
+    if (typeof ResizeObserver !== 'undefined') {
+      observador = new ResizeObserver(medir);
+      observador.observe(cabecalho);
+    } else {
+      window.addEventListener('resize', medir);
+      if (typeof MutationObserver !== 'undefined') {
+        observadorConteudo = new MutationObserver(medir);
+        observadorConteudo.observe(cabecalho, { childList: true, subtree: true, characterData: true, attributes: true });
+      }
+    }
+    return () => {
+      ativo = false;
+      medirCabecalho.current = null;
+      observador?.disconnect();
+      observadorConteudo?.disconnect();
+      window.removeEventListener('resize', medir);
+      raiz.style.removeProperty('--altura-cabecalho');
+    };
   }, []);
+
+  // O conteúdo do cabeçalho muda com a rota e a sessão; sem ResizeObserver, a troca de rota mede de novo.
+  useEffect(() => { medirCabecalho.current?.(); }, [location.pathname]);
 
   return (
     <div className={`site-shell min-h-screen flex flex-col text-[#f4efe5] ${areaAdmin ? 'admin-area' : ''}`}>

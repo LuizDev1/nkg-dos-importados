@@ -1,6 +1,18 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { estoqueDoCartao, formatarNota, textoAvaliacoes, textoNota, textoTamanhosIndisponiveis } from '../src/servicos/produtoVisual.mjs';
+import { estoqueDoCartao, formatarNota, preenchimentoNota, textoAvaliacoes, textoNota, textoTamanhosIndisponiveis } from '../src/servicos/produtoVisual.mjs';
+
+test('preenchimentoNota converte a nota em porcentagem proporcional entre 0 e 100', () => {
+  assert.equal(preenchimentoNota(0), 0);
+  assert.equal(preenchimentoNota(3.5), 70);
+  assert.equal(preenchimentoNota(4.7), 94);
+  assert.equal(preenchimentoNota('4.7'), 94);
+  assert.equal(preenchimentoNota(5), 100);
+  assert.equal(preenchimentoNota(6), 100);
+  assert.equal(preenchimentoNota(-1), 0);
+  assert.equal(preenchimentoNota('abc'), 0);
+  assert.equal(preenchimentoNota(2, 0), 0);
+});
 
 test('formatarNota usa vírgula e uma casa decimal', () => {
   assert.equal(formatarNota(4.7), '4,7');
