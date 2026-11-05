@@ -299,7 +299,7 @@ export default function DetalheProduto() {
   }
 
   if (carregando) return <p className="text-center mt-10">Carregando produto...</p>;
-  if (erro) return <p className="text-center mt-10 text-red-600">{erro}</p>;
+  if (erro) return <p className="text-center mt-10 text-erro">{erro}</p>;
   if (!produto) return null;
   const variacaoSelecionada = (produto.variacoes || []).find((item) => String(item.id) === variacaoId)
     || (variacaoId.startsWith('tamanho:') && !produto.variacoes?.length
@@ -376,13 +376,13 @@ export default function DetalheProduto() {
           </p>
 
           {!produtoAtivo ? (
-            <p className="mb-4 text-sm font-semibold text-red-500">Produto inativo e indisponível para compra</p>
+            <p className="mb-4 text-sm font-semibold text-erro">Produto inativo e indisponível para compra</p>
           ) : estoqueDisponivel > 0 ? (
-            <p className="text-sm text-green-600 mb-4">
+            <p className="text-sm text-sucesso mb-4">
               Em estoque ({estoqueDisponivel} disponíveis)
             </p>
           ) : (
-            <p className="text-sm text-red-600 mb-4">Fora de estoque</p>
+            <p className="text-sm text-erro mb-4">Fora de estoque</p>
           )}
 
           {coresDisponiveis.length > 0 && (
@@ -410,8 +410,11 @@ export default function DetalheProduto() {
           )}
 
           <div className="flex items-center gap-3 mb-4">
-            <label className="text-sm font-medium">Quantidade:</label>
+            <label htmlFor="produto-quantidade" className="text-sm font-medium">Quantidade:</label>
             <input
+              id="produto-quantidade"
+              name="quantidade"
+              inputMode="numeric"
               type="number"
               min="1"
               max={estoqueDisponivel}
@@ -432,7 +435,7 @@ export default function DetalheProduto() {
             onClick={aoAdicionar}
             disabled={!produtoAtivo || estoqueDisponivel === 0}
             className={`w-full py-3 rounded transition ${adicionado
-                ? 'bg-green-600 text-white'
+                ? 'bg-sucesso text-acao-texto'
                 : !produtoAtivo || estoqueDisponivel === 0
                   ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                   : 'bg-blue-600 text-white hover:bg-blue-700'
@@ -441,7 +444,7 @@ export default function DetalheProduto() {
             {adicionado ? 'Adicionado!' : 'Adicionar ao carrinho'}
           </button>
 
-          {erroCarrinho && <p role="alert" className="mt-2 text-sm text-red-600">{erroCarrinho}</p>}
+          {erroCarrinho && <p role="alert" className="mt-2 text-sm text-erro">{erroCarrinho}</p>}
 
           {produtoAtivo && ((produto.variacoes?.length > 0 && variacaoSelecionada && estoqueDisponivel === 0)
             || (!produto.variacoes?.length && estoqueDisponivel === 0)) && (
@@ -473,8 +476,11 @@ export default function DetalheProduto() {
                       setCalculandoFrete(false);
                       setCep(numeros.replace(/^(\d{5})(\d)/, '$1-$2'));
                     }}
+                    name="cep"
+                    autoComplete="postal-code"
                     placeholder="00000-000"
-                    aria-label="CEP de entrega"
+                    aria-invalid={erroFrete ? 'true' : undefined}
+                    aria-describedby={erroFrete ? 'frete-erro' : undefined}
                     className="mt-2 w-full rounded border border-gray-300 px-3 py-2"
                   />
                 </label>
@@ -493,9 +499,9 @@ export default function DetalheProduto() {
               </p>
             )}
 
-            {erroFrete && <p className="mt-2 text-sm text-red-600">{erroFrete}</p>}
+            <p id="frete-erro" role="alert" className={erroFrete ? 'mt-2 text-sm text-erro' : ''}>{erroFrete}</p>
             {Boolean(cotacao?.gratuito) && (
-              <p className="mt-3 rounded bg-green-50 p-3 text-sm font-semibold text-green-700">
+              <p className="mt-3 rounded bg-sucesso-fundo p-3 text-sm font-semibold text-sucesso">
                 Entrega grátis
               </p>
             )}
@@ -574,7 +580,7 @@ export default function DetalheProduto() {
                     {avaliacao.fotos.map((foto, indice) => <img key={indice} src={foto} alt={'Foto da avaliação ' + (indice + 1)} loading="lazy" className="max-h-72 w-full rounded-lg object-cover" />)}
                   </div>
                 )}
-                <time className="mt-3 block text-xs text-[#817b70]">{new Date(avaliacao.criado_em).toLocaleDateString('pt-BR')}</time>
+                <time className="mt-3 block text-xs text-texto-secundario">{new Date(avaliacao.criado_em).toLocaleDateString('pt-BR')}</time>
                 <button
                   type="button"
                   onClick={() => votarUtil(avaliacao.id)}
@@ -591,7 +597,7 @@ export default function DetalheProduto() {
             ))}
           </div>
         )}
-        {erroUtil && <p role="alert" className="mt-3 text-sm text-red-600">{erroUtil}</p>}
+        {erroUtil && <p role="alert" className="mt-3 text-sm text-erro">{erroUtil}</p>}
         {mensagemAvaliacao && !podeAvaliar && <p role="status" className="mt-3 text-sm">{mensagemAvaliacao}</p>}
         {Boolean(podeAvaliar) && (
           <form onSubmit={enviarAvaliacao} className="mt-8 grid gap-4 rounded-xl border border-[#302b20] bg-[#11120f] p-5">

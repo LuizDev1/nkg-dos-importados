@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useState, useEffect } from 'react';
+import { createContext, useCallback, useContext, useState, useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 import { abandonarPedidoPendente } from '../servicos/pedidoService';
 
@@ -22,6 +22,10 @@ export function ProvedorCarrinho({ children }) {
 
   const [carregandoEstoque, setCarregandoEstoque] = useState(true);
   const [erroEstoque, setErroEstoque] = useState('');
+  // Nomes dos itens que saíram do carrinho na revalidação (sem estoque ou inativos), para avisar o cliente.
+  const [itensRemovidos, setItensRemovidos] = useState([]);
+  const itensAtuais = useRef(itens);
+  useEffect(() => { itensAtuais.current = itens; }, [itens]);
   const produtosCarrinho = [...new Set(itens.map(item => String(item.produto_id)))].sort().join(',');
 
   useEffect(() => {
@@ -34,6 +38,10 @@ export function ProvedorCarrinho({ children }) {
         const resultados = await Promise.all(ids.map(async id => [id, await buscarProduto(id)]));
         if (!ativo) return;
         const produtos = new Map(resultados);
+        const removidos = itensAtuais.current
+          .filter((item) => atualizarEstoqueCarrinho([item], produtos).length === 0)
+          .map((item) => [item.nome, item.variacao_nome].filter(Boolean).join(' / '));
+        if (removidos.length) setItensRemovidos((anteriores) => [...new Set([...anteriores, ...removidos])]);
         setItens(atuais => atualizarEstoqueCarrinho(atuais, produtos));
       } catch {
         if (ativo) setErroEstoque('Erro ao atualizar estoque. Recarregue a página para tentar novamente.');
@@ -130,7 +138,7 @@ export function ProvedorCarrinho({ children }) {
 
   return (
     <ContextoCarrinho.Provider
-      value={{ carregandoEstoque, erroEstoque, itens, adicionarItem, removerItem, alterarQuantidade, limparCarrinho, total, quantidadeTotal }}
+      value={{ carregandoEstoque, erroEstoque, itens, adicionarItem, removerItem, alterarQuantidade, limparCarrinho, total, quantidadeTotal, itensRemovidos, dispensarItensRemovidos: () => setItensRemovidos([]) }}
     >
       {children}
     </ContextoCarrinho.Provider>

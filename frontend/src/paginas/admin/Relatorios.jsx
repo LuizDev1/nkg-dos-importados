@@ -35,7 +35,7 @@ export default function Relatorios() {
       <h1 className="text-2xl font-bold mt-2 mb-6">Relatório do mês</h1>
 
       {carregando && <p>Carregando relatório...</p>}
-      {erro && <p className="text-red-600">{erro}</p>}
+      {erro && <p className="text-erro">{erro}</p>}
 
       {dados && (
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">

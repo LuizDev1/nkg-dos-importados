@@ -33,7 +33,7 @@ export default function Painel() {
 
       <section className="mb-8 rounded border border-[#5a4820] bg-[#1b1a13] p-5" aria-labelledby="titulo-estoque-baixo">
         <h2 id="titulo-estoque-baixo" className="font-semibold text-[#d4af45]">Alerta de estoque baixo</h2>
-        {erroEstoque ? <p role="alert" className="mt-2 text-sm text-red-400">{erroEstoque}</p>
+        {erroEstoque ? <p role="alert" className="mt-2 text-sm text-erro">{erroEstoque}</p>
           : estoqueBaixo.length === 0 ? <p className="mt-2 text-sm text-gray-400">Nenhum produto abaixo do limite configurado.</p>
           : <ul className="mt-3 space-y-2">{estoqueBaixo.map(produto => (
             <li key={`${produto.id}:${produto.variacao_id || 'produto'}`} className="flex flex-wrap justify-between gap-2 text-sm">

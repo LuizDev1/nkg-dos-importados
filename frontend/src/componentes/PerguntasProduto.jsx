@@ -49,10 +49,10 @@ headers: { 'Content-Type': 'application/json' },
     </button>
     {aberta && <div id="conteudo-perguntas" className="px-1 pt-5">
       <p className="text-sm text-[#aaa396]">Tire suas dúvidas sobre este produto.</p>
-      {erro && <p role="alert" className="mt-3 text-sm text-red-400">{erro}</p>}
+      {erro && <p role="alert" className="mt-3 text-sm text-erro">{erro}</p>}
       <div className="mt-5 space-y-3">
         {perguntas.length ? perguntas.map(item => <article key={item.id} className="rounded-lg border border-[#302b20] bg-[#11120f] p-4">
-          <p className="font-semibold">Pergunta</p><p className="mt-1 text-sm text-[#d8d1c4]">{item.pergunta}</p><p className="mt-2 text-xs text-[#817b70]">por {item.usuario_nome}</p>
+          <p className="font-semibold">Pergunta</p><p className="mt-1 text-sm text-[#d8d1c4]">{item.pergunta}</p><p className="mt-2 text-xs text-texto-secundario">por {item.usuario_nome}</p>
           {item.resposta ? <div className="mt-4 border-l-2 border-[#d4af45] pl-3"><p className="font-semibold text-[#d4af45]">Resposta da loja</p><p className="mt-1 text-sm text-[#d8d1c4]">{item.resposta}</p></div> : <p className="mt-4 text-sm text-[#aaa396]">Aguardando resposta da loja.</p>}
         </article>) : <p className="text-sm text-[#aaa396]">Ainda não há perguntas.</p>}
       </div>

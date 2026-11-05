@@ -1,3 +1,4 @@
+import TabelaRolavel from '../../componentes/TabelaRolavel';
 import { corStatus } from '../../servicos/statusVisual';
 import { useEffect, useState } from 'react';
 import { avisarAdmin } from '../../utilitarios/avisoAdmin';
@@ -84,12 +85,12 @@ export default function Clientes() {
         </button>
       </form>
 
-      {erro && <p className="text-red-600 mb-4">{erro}</p>}
+      <div role="alert" className={erro ? "text-erro mb-4" : ""}>{erro}</div>
 
       {carregando ? (
         <p>Carregando clientes...</p>
       ) : (
-        <div className="overflow-x-auto">
+        <TabelaRolavel rotulo="Clientes">
           <table className="w-full bg-white rounded-lg shadow text-sm">
             <thead className="bg-gray-100 text-left">
               <tr>
@@ -148,7 +149,7 @@ export default function Clientes() {
               ))}
             </tbody>
           </table>
-        </div>
+        </TabelaRolavel>
       )}
     </div>
   );

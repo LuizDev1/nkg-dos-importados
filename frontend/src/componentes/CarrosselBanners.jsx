@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
 
-const TEMPO_BANNER = 15000;
 const DURACAO_TRANSICAO = 850;
 
 export function ConteudoBanner({ banner, modoPrevia = '' }) {
@@ -48,17 +47,7 @@ export default function CarrosselBanners({ banners }) {
     transicao.current = setTimeout(() => setAnterior(null), DURACAO_TRANSICAO);
   }
 
-  useEffect(() => {
-    if (banners.length < 2 || anterior !== null) return undefined;
-    const temporizador = setTimeout(() => {
-      setDirecao(1);
-      setAnterior(indice);
-      setIndice((indice + 1) % banners.length);
-      clearTimeout(transicao.current);
-      transicao.current = setTimeout(() => setAnterior(null), DURACAO_TRANSICAO);
-    }, TEMPO_BANNER);
-    return () => clearTimeout(temporizador);
-  }, [banners, indice, anterior]);
+  // Sem troca automática (WCAG 2.2.2): o banner só muda pelos controles abaixo.
 
   if (!banners.length) return null;
 
@@ -69,8 +58,10 @@ export default function CarrosselBanners({ banners }) {
             {anterior !== null && <div className={`col-start-1 row-start-1 ${direcao === 1 ? 'banner-slide-out-next' : 'banner-slide-out-prev'}`}><ConteudoBanner banner={banners[anterior]} /></div>}
             <div key={banners[indice].id} className={`col-start-1 row-start-1 ${anterior !== null ? (direcao === 1 ? 'banner-slide-in-next' : 'banner-slide-in-prev') : ''}`}><ConteudoBanner banner={banners[indice]} /></div>
         </div>
-        {banners.length > 1 && <div className="mt-4 flex justify-center gap-2">
-          {banners.map((banner, posicao) => <button key={banner.id} type="button" onClick={() => mostrar(posicao, posicao > indice ? 1 : -1)} aria-label={`Exibir banner ${posicao + 1}`} aria-current={posicao === indice ? 'true' : undefined} className={`h-2.5 w-2.5 rounded-full ${posicao === indice ? 'bg-[#d4af45]' : 'bg-[#787263]'}`} />)}
+        {banners.length > 1 && <div className="mt-3 flex justify-center gap-1">
+          {banners.map((banner, posicao) => <button key={banner.id} type="button" onClick={() => mostrar(posicao, posicao > indice ? 1 : -1)} aria-label={`Exibir banner ${posicao + 1} de ${banners.length}`} aria-current={posicao === indice ? 'true' : undefined} className="flex h-6 w-6 items-center justify-center rounded-full">
+            <span aria-hidden="true" className={`h-2.5 w-2.5 rounded-full ${posicao === indice ? 'bg-[#d4af45]' : 'bg-[#787263]'}`} />
+          </button>)}
         </div>}
       </div>
     </section>

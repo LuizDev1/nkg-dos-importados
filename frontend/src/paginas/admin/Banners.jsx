@@ -82,7 +82,7 @@ export default function Banners() {
       <h1 className="mb-6 mt-2 text-2xl font-bold">Banners</h1>
       <p className="mb-5 text-sm text-[#aaa396]">Cadastre até duas imagens por banner. Uma imagem ocupa toda a faixa; duas ficam lado a lado. O banner principal aparece primeiro e a troca ocorre a cada 15 segundos.</p>
       <p className="mb-5 text-sm text-[#aaa396]">A faixa desktop tem proporção aproximada de 1920 × 400 px; no celular, 800 × 600 px. Imagens com outra proporção aparecem inteiras, com espaço escuro nas laterais ou acima e abaixo. Confira na prévia.</p>
-      {erro && <p className="mb-4 rounded bg-red-50 p-3 text-red-600">{erro}</p>}
+      {erro && <p className="mb-4 rounded bg-erro-fundo p-3 text-erro">{erro}</p>}
 
       <form onSubmit={salvar} className="mb-8 grid gap-3 rounded-lg bg-white p-5 shadow sm:grid-cols-2">
         <CampoRotulado rotulo="Título" value={form.titulo} onChange={(e) => setForm({ ...form, titulo: e.target.value })} placeholder="Título" maxLength="150" className="rounded border p-2" />
@@ -134,7 +134,7 @@ export default function Banners() {
               <div className="flex justify-between gap-3"><strong>{banner.titulo || 'Sem título'}</strong><span className={corStatus(banner.ativo ? 'ativo' : 'inativo')}>{banner.ativo ? 'Ativo' : 'Inativo'}</span></div>
               {Boolean(banner.principal) && <p className="mt-1 text-sm font-semibold text-[#d4af45]">Principal</p>}
               <p className="mt-1 text-sm text-gray-500">Ordem: {banner.ordem}</p>
-              <div className="mt-4 flex gap-4"><button onClick={() => editar(banner)} className="text-blue-600 hover:underline">Editar</button><button onClick={() => excluir(banner.id)} className="text-red-600 hover:underline">Excluir</button></div>
+              <div className="mt-4 flex gap-4"><button onClick={() => editar(banner)} className="text-blue-600 hover:underline">Editar</button><button onClick={() => excluir(banner.id)} className="text-erro hover:underline">Excluir</button></div>
             </div>
           </article>
         ))}

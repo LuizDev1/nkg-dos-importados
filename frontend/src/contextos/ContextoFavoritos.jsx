@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import { adicionarFavorito, listarFavoritos, removerFavorito } from '../servicos/favoritoService';
 import { useAutenticacao } from './ContextoAutenticacao';
 
@@ -7,14 +7,22 @@ const ContextoFavoritos = createContext(null);
 export function ProvedorFavoritos({ children }) {
   const { usuario } = useAutenticacao();
   const [produtos, setProdutos] = useState([]);
+  // 'ocioso' (sem cliente logado), 'carregando', 'pronto' ou 'erro': a tela não confunde carregamento ou falha com lista vazia.
+  const [estado, setEstado] = useState('ocioso');
 
-  useEffect(() => {
+  const carregar = useCallback(() => {
     if (!usuario || usuario.perfil === 'admin') {
       setProdutos([]);
+      setEstado('ocioso');
       return;
     }
-    listarFavoritos().then(setProdutos).catch(() => setProdutos([]));
+    setEstado('carregando');
+    listarFavoritos()
+      .then((lista) => { setProdutos(lista); setEstado('pronto'); })
+      .catch(() => { setProdutos([]); setEstado('erro'); });
   }, [usuario]);
+
+  useEffect(() => { carregar(); }, [carregar]);
 
   function estaFavorito(produtoId) {
     return produtos.some((produto) => String(produto.id) === String(produtoId));
@@ -32,7 +40,7 @@ export function ProvedorFavoritos({ children }) {
   }
 
   return (
-    <ContextoFavoritos.Provider value={{ produtos, estaFavorito, alternarFavorito }}>
+    <ContextoFavoritos.Provider value={{ produtos, estado, recarregar: carregar, estaFavorito, alternarFavorito }}>
       {children}
     </ContextoFavoritos.Provider>
   );

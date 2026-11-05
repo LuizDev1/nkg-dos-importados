@@ -1,3 +1,4 @@
+import TabelaRolavel from '../../componentes/TabelaRolavel';
 import { corStatus } from '../../servicos/statusVisual';
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
@@ -44,7 +45,7 @@ export default function DetalheCliente() {
   }
 
   if (erro) {
-    return <p className="text-center mt-10 text-red-600">{erro}</p>;
+    return <p className="text-center mt-10 text-erro">{erro}</p>;
   }
 
   return (
@@ -89,11 +90,12 @@ export default function DetalheCliente() {
           Este cliente ainda não possui pedidos.
         </p>
       ) : (
-        <div className="overflow-x-auto rounded-md border border-[#343024] bg-[#111210]">
+        <TabelaRolavel rotulo="Pedidos do cliente" className="rounded-md border border-[#343024] bg-[#111210]">
           <table className="w-full text-sm">
             <thead className="bg-gray-100 text-left">
               <tr>
                 <th className="p-3">Pedido</th>
+                <th className="p-3">ID interno</th>
                 <th className="p-3">Total</th>
                 <th className="p-3">Status</th>
                 <th className="p-3">Data</th>
@@ -104,7 +106,8 @@ export default function DetalheCliente() {
             <tbody>
               {pedidos.map((pedido) => (
                 <tr key={pedido.id} className="border-t border-[#343024]">
-                  <td className="p-3">#{pedido.id}</td>
+                  <td className="p-3 font-semibold">#{pedido.numero_cliente}</td>
+                  <td className="p-3 text-texto-secundario">{pedido.id}</td>
 
                   <td className="p-3">
                     {Number(pedido.total).toLocaleString('pt-BR', {
@@ -133,7 +136,7 @@ export default function DetalheCliente() {
               ))}
             </tbody>
           </table>
-        </div>
+        </TabelaRolavel>
       )}
     </div>
   );
