@@ -11,7 +11,6 @@ export default function PerguntasProduto({ produtoId }) {
   const [texto, setTexto] = useState('');
   const [erro, setErro] = useState('');
   const [enviando, setEnviando] = useState(false);
-  const [aberta, setAberta] = useState(true);
 
   const carregar = useCallback(async () => {
     try {
@@ -25,7 +24,6 @@ export default function PerguntasProduto({ produtoId }) {
   }, [produtoId]);
 
   useEffect(() => {
-    setAberta(true);
     carregar();
   }, [carregar]);
 
@@ -44,24 +42,25 @@ headers: { 'Content-Type': 'application/json' },
     finally { setEnviando(false); }
   }
 
-  return <section className="mt-12 border-t border-divisor pt-8">
-    <button type="button" onClick={() => setAberta(valor => !valor)} aria-expanded={aberta} aria-controls="conteudo-perguntas" className="flex w-full items-center justify-between rounded-painel bg-superficie px-5 py-4 text-left hover:bg-superficie-elevada">
-      <h2 className="text-xl font-bold">Perguntas e respostas</h2>
-      <span className={`text-2xl text-marca transition-transform ${aberta ? 'rotate-180' : ''}`} aria-hidden="true">⌄</span>
-    </button>
-    {aberta && <div id="conteudo-perguntas" className="px-1 pt-5">
-      <p className="text-sm text-texto-secundario">Tire suas dúvidas sobre este produto.</p>
-      {erro && <p role="alert" className="mt-3 text-sm text-erro">{erro}</p>}
-      <div className="mt-5 space-y-3">
-        {perguntas.length ? perguntas.map(item => <article key={item.id} className="rounded-cartao border border-divisor bg-superficie p-4">
-          <p className="font-semibold">Pergunta</p><p className="mt-1 text-sm text-texto">{item.pergunta}</p><p className="mt-2 text-xs text-texto-secundario">por {item.usuario_nome}</p>
-          {item.resposta ? <div className="mt-4 border-l-2 border-marca pl-3"><p className="font-semibold text-marca">Resposta da loja</p><p className="mt-1 text-sm text-texto">{item.resposta}</p></div> : <p className="mt-4 text-sm text-texto-secundario">Aguardando resposta da loja.</p>}
-        </article>) : <p className="text-sm text-texto-secundario">Ainda não há perguntas.</p>}
-      </div>
-      {usuario?.perfil !== 'admin' && <form onSubmit={enviar} className="mt-5">
-        <Campo as="textarea" id="pergunta-produto" rotulo="Faça uma pergunta" name="pergunta" required minLength="5" maxLength="600" value={texto} onChange={e => setTexto(e.target.value)} placeholder="Ex.: O produto tem garantia?" />
-        <Botao type="submit" carregando={enviando} disabled={!usuario} className="mt-3">{usuario ? enviando ? 'Enviando...' : 'Enviar pergunta' : 'Entre para perguntar'}</Botao>
-      </form>}
-    </div>}
+  // Seção sempre visível: lista antes do formulário, para a pessoa ver o que já foi perguntado.
+  return <section aria-labelledby="titulo-perguntas" className="mt-secao border-t border-divisor pt-bloco">
+    <h2 id="titulo-perguntas" className="text-titulo-md text-texto">Perguntas e respostas</h2>
+    <p className="mt-2 text-auxiliar text-texto-secundario">Tire suas dúvidas sobre este produto.</p>
+    {erro && <p role="alert" className="mt-3 text-sm text-erro">{erro}</p>}
+    {perguntas.length ? <ul className="mt-5 max-w-3xl divide-y divide-divisor">
+      {perguntas.map(item => <li key={item.id} className="py-5 first:pt-0">
+        <article>
+          <h3 className="font-semibold text-texto"><span className="sr-only">Pergunta: </span>{item.pergunta}</h3>
+          <p className="mt-1 text-legenda text-texto-discreto">por {item.usuario_nome}</p>
+          {item.resposta
+            ? <div className="mt-3 border-l-2 border-borda-forte pl-4"><p className="text-rotulo text-texto">Resposta da loja</p><p className="mt-1 text-auxiliar text-texto-secundario">{item.resposta}</p></div>
+            : <p className="mt-3 text-auxiliar text-texto-secundario">Aguardando resposta da loja.</p>}
+        </article>
+      </li>)}
+    </ul> : <p className="mt-5 text-sm text-texto-secundario">Ainda não há perguntas.</p>}
+    {usuario?.perfil !== 'admin' && <form onSubmit={enviar} className="mt-6 max-w-3xl">
+      <Campo as="textarea" id="pergunta-produto" rotulo="Faça uma pergunta" name="pergunta" required minLength="5" maxLength="600" value={texto} onChange={e => setTexto(e.target.value)} placeholder="Ex.: O produto tem garantia?" />
+      <Botao type="submit" variante="secundario" carregando={enviando} disabled={!usuario} className="mt-3">{usuario ? enviando ? 'Enviando...' : 'Enviar pergunta' : 'Entre para perguntar'}</Botao>
+    </form>}
   </section>;
 }
