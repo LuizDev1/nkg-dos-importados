@@ -105,4 +105,21 @@ export function tomDoStatus(status) {
   return 'neutro';
 }
 
-export const PRECO_TAMANHOS = { herdar: '', padrao: 'text-preco', destaque: 'text-preco-destaque' };
+// Fase 1B: painéis flutuantes (menu, seletor, popover) e seus itens. O movimento fica nas classes mov-* de index.css.
+export const PAINEL_FLUTUANTE = 'z-(--z-flutuante) rounded-cartao border border-borda bg-superficie text-texto shadow-nivel-2 outline-none';
+// Item realçado: fundo da superfície interativa; no teclado, também o contorno de foco (regra em index.css).
+// Cor e realce ficam só na variante, sem classes concorrentes (no Tailwind, a ordem do CSS gerado decide o empate).
+const ITEM_LISTA_BASE = 'item-lista relative flex min-h-10 cursor-default select-none items-center gap-2 rounded-pequeno py-2 text-auxiliar outline-none data-disabled:pointer-events-none data-disabled:opacity-50';
+const ITEM_LISTA_TONS = {
+  neutro: 'text-texto data-highlighted:bg-superficie-destaque',
+  destrutivo: 'text-erro data-highlighted:bg-erro-fundo',
+};
+// `indicador`: lado reservado para a marca de seleção (seletor: direita; opção marcável: esquerda).
+const ITEM_LISTA_RECUOS = { nenhum: 'px-2.5', direita: 'pl-2.5 pr-8', esquerda: 'pl-8 pr-2.5' };
+export function classesItemLista({ destrutivo = false, indicador = 'nenhum' } = {}) {
+  return juntar(ITEM_LISTA_BASE, ITEM_LISTA_TONS[destrutivo ? 'destrutivo' : 'neutro'], ITEM_LISTA_RECUOS[indicador] || ITEM_LISTA_RECUOS.nenhum);
+}
+export const ROTULO_LISTA = 'px-2.5 pb-1 pt-2 text-legenda font-semibold text-texto-secundario';
+export const SEPARADOR_LISTA = '-mx-1 my-1 h-px bg-borda';
+
+export const PRECO_TAMANHOS ={ herdar: '', padrao: 'text-preco', destaque: 'text-preco-destaque' };

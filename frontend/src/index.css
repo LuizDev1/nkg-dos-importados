@@ -285,6 +285,7 @@
   --z-cabecalho: 50;
   --z-sobreposicao: 60;
   --z-modal: 70;
+  --z-flutuante: 75; /* menu, seletor, popover e dica: acima do modal, para abrirem dentro de um diálogo */
   --z-aviso: 80;
 
   --duracao-instantanea: 100ms;
@@ -532,6 +533,47 @@ html { scroll-padding-block-start: calc(var(--altura-cabecalho, 5rem) + 1rem); }
 .icone-tema > * { position: absolute; inset: 0; transition: opacity 180ms ease, transform 180ms var(--ease-saida); }
 .icone-tema > [data-ativo="false"] { opacity: 0; transform: rotate(-60deg) scale(0.7); }
 
+/* Sobreposições da fase 1B (receitas da skill Animate). O Radix só espera a saída quando ela é uma
+   `animation`, por isso keyframes curtos. Painéis crescem a partir do gatilho (transform-origin do Radix);
+   o diálogo, não ancorado, cresce do centro; a gaveta desliza com a curva própria. */
+.mov-flutuante[data-state="open"] { animation: mov-surgir 180ms var(--ease-saida); }
+.mov-flutuante[data-state="closed"] { animation: mov-sumir 140ms var(--ease-saida); }
+.mov-dica[data-state="delayed-open"] { animation: mov-surgir-dica 125ms var(--ease-saida); }
+.mov-dica[data-state="closed"] { animation: mov-sumir-dica 100ms var(--ease-saida); }
+.mov-dialogo[data-state="open"] { animation: mov-surgir-dialogo 250ms var(--ease-saida); }
+.mov-dialogo[data-state="closed"] { animation: mov-sumir-dialogo 180ms var(--ease-saida); }
+.mov-veu[data-state="open"] { animation: mov-aparecer 250ms var(--ease-saida); }
+.mov-veu[data-state="closed"] { animation: mov-desaparecer 180ms var(--ease-saida); }
+.mov-gaveta-direita[data-state="open"] { animation: mov-entrar-direita 300ms var(--ease-gaveta); }
+.mov-gaveta-direita[data-state="closed"] { animation: mov-sair-direita 250ms var(--ease-gaveta); }
+.mov-gaveta-baixo[data-state="open"] { animation: mov-entrar-baixo 300ms var(--ease-gaveta); }
+.mov-gaveta-baixo[data-state="closed"] { animation: mov-sair-baixo 250ms var(--ease-gaveta); }
+
+@keyframes mov-surgir { from { opacity: 0; transform: scale(0.95); } }
+@keyframes mov-sumir { to { opacity: 0; transform: scale(0.95); } }
+@keyframes mov-surgir-dica { from { opacity: 0; transform: scale(0.97); } }
+@keyframes mov-sumir-dica { to { opacity: 0; transform: scale(0.97); } }
+@keyframes mov-surgir-dialogo { from { opacity: 0; transform: scale(0.96); } }
+@keyframes mov-sumir-dialogo { to { opacity: 0; transform: scale(0.96); } }
+@keyframes mov-aparecer { from { opacity: 0; } }
+@keyframes mov-desaparecer { to { opacity: 0; } }
+@keyframes mov-entrar-direita { from { transform: translateX(100%); } }
+@keyframes mov-sair-direita { to { transform: translateX(100%); } }
+@keyframes mov-entrar-baixo { from { transform: translateY(100%); } }
+@keyframes mov-sair-baixo { to { transform: translateY(100%); } }
+
+/* Teclado não anima (direção aprovada): aberta ou fechada pelo teclado, a sobreposição aparece e some na hora.
+   O item realçado de menus e listas ganha contorno de foco; no ponteiro, basta o fundo. */
+html[data-entrada="teclado"] :is(.mov-flutuante, .mov-dica, .mov-dialogo, .mov-veu, .mov-gaveta-direita, .mov-gaveta-baixo) { animation: none !important; }
+html[data-entrada="teclado"] .item-lista[data-highlighted] { outline: 2px solid var(--color-foco); outline-offset: -2px; }
+/* A lista de abas recorta o que passa da altura dela: o contorno de foco da aba fica para dentro. */
+.aba:focus-visible { outline-offset: -2px; }
+
+/* Aviso: arrastar para a direita dispensa. O corpo segue o dedo; o li (motion) cuida de entrada e saída. */
+.aviso[data-swipe="move"] > .aviso-corpo { transform: translateX(var(--radix-toast-swipe-move-x)); }
+.aviso[data-swipe="cancel"] > .aviso-corpo { transform: translateX(0); transition: transform 200ms var(--ease-saida); }
+.aviso[data-swipe="end"] > .aviso-corpo { transform: translateX(var(--radix-toast-swipe-end-x)); }
+
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
   *, *::before, *::after {
@@ -545,4 +587,9 @@ html { scroll-padding-block-start: calc(var(--altura-cabecalho, 5rem) + 1rem); }
   .nav-icone::before, .nav-icone:hover::before, .nav-icone:focus-visible::before { transform: translate(-50%, 0); transition: opacity 120ms ease, visibility 120ms; }
   .icone-tema > * { transition: opacity 120ms ease; transform: none !important; }
   ::view-transition-old(root), ::view-transition-new(root) { animation: none; }
+  /* Sobreposições: sem escala nem deslizamento; só a opacidade, curta (vence a regra global de 0,01 ms). */
+  :is(.mov-flutuante, .mov-dialogo, .mov-veu, .mov-gaveta-direita, .mov-gaveta-baixo)[data-state="open"],
+  .mov-dica[data-state="delayed-open"] { animation: mov-aparecer 150ms ease !important; }
+  :is(.mov-flutuante, .mov-dica, .mov-dialogo, .mov-veu, .mov-gaveta-direita, .mov-gaveta-baixo)[data-state="closed"] { animation: mov-desaparecer 120ms ease !important; }
+  .aviso[data-swipe="cancel"] > .aviso-corpo { transition: none; }
 }

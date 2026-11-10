@@ -1,6 +1,13 @@
-import { Heart, Minus, Plus, Search, ShoppingCart, Trash2, Truck, User } from 'lucide-react';
+import { Copy, Ellipsis, Eye, Heart, Minus, Plus, Search, ShoppingCart, SlidersHorizontal, Trash2, Truck, User, XCircle } from 'lucide-react';
 import { useRef, useState } from 'react';
+import Abas from '../../componentes/ui/Abas';
+import { ProvedorAvisos, useAvisos } from '../../componentes/ui/Avisos';
 import Botao from '../../componentes/ui/Botao';
+import Dica, { ProvedorDicas } from '../../componentes/ui/Dica';
+import Dialogo, { DialogoFechar, Gaveta } from '../../componentes/ui/Dialogo';
+import Menu, { MenuItem, MenuOpcao, MenuRotulo, MenuSeparador } from '../../componentes/ui/Menu';
+import Popover from '../../componentes/ui/Popover';
+import Seletor from '../../componentes/ui/Seletor';
 import BotaoIcone from '../../componentes/ui/BotaoIcone';
 import BotaoTema from '../../componentes/ui/BotaoTema';
 import Campo from '../../componentes/ui/Campo';
@@ -10,7 +17,7 @@ import Superficie from '../../componentes/ui/Superficie';
 import { IconeCarrinho, IconeCoracao, veioDoPonteiro } from '../../componentes/icones/animados/IconesAnimados';
 import { useTema } from '../../contextos/ContextoTema';
 
-// Prancha da fase 1A: tokens, tipografia, ícones e primitivas nos dois temas.
+// Prancha das fases 1A e 1B: tokens, tipografia, ícones, primitivas e componentes interativos nos dois temas.
 // Existe só em desenvolvimento (RotasApp carrega esta página apenas com import.meta.env.DEV).
 // Textos e valores vêm da própria loja (rótulos das telas e preços do catálogo real).
 
@@ -61,7 +68,173 @@ function Estado({ nome, children }) {
   );
 }
 
+const ORDENACAO = [
+  { valor: 'recentes', rotulo: 'Mais recentes' },
+  { valor: 'menor', rotulo: 'Menor preço' },
+  { valor: 'maior', rotulo: 'Maior preço' },
+];
+const ESTADOS = ['AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MT', 'MS', 'MG', 'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN', 'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO']
+  .map((uf) => ({ valor: uf, rotulo: uf }));
+
+// Formulário de endereço com os rótulos reais do checkout: comprido o bastante para a gaveta rolar.
+function CamposEndereco() {
+  return (
+    <div className="grid gap-4">
+      <Campo rotulo="CEP" placeholder="00000-000" inputMode="numeric" autoComplete="postal-code" />
+      <Campo rotulo="Rua / Quadra" autoComplete="address-line1" />
+      <div className="grid grid-cols-2 gap-4">
+        <Campo rotulo="Número" inputMode="numeric" />
+        <Campo rotulo="Complemento" opcional />
+      </div>
+      <Campo rotulo="Bairro" />
+      <Campo rotulo="Cidade" autoComplete="address-level2" />
+      <Seletor rotulo="Estado (UF)" opcoes={ESTADOS} placeholder="Selecione o estado" />
+      <Campo rotulo="Telefone de Contato" type="tel" autoComplete="tel" placeholder="(61) 90000-0000" />
+      <Campo rotulo="CPF do comprador" inputMode="numeric" placeholder="000.000.000-00" />
+    </div>
+  );
+}
+
+function DemonstracaoAvisos() {
+  const { avisar } = useAvisos();
+  return (
+    <>
+      <Botao variante="secundario" onClick={() => avisar({ tom: 'sucesso', titulo: 'Produto adicionado ao carrinho', acao: { rotulo: 'Desfazer', textoAlternativo: 'Remover o produto do carrinho' } })}>Sucesso com ação</Botao>
+      <Botao variante="secundario" onClick={() => avisar({ tom: 'erro', titulo: 'Não foi possível calcular o frete', descricao: 'Confira o CEP e tente de novo.' })}>Erro</Botao>
+      <Botao variante="secundario" onClick={() => avisar({ tom: 'info', titulo: 'Endereço salvo' })}>Informação</Botao>
+    </>
+  );
+}
+
+function ComponentesInterativos() {
+  const [ordem, setOrdem] = useState('recentes');
+  const [colunas, setColunas] = useState({ status: true, pagamento: true, data: false });
+  const [ultimaAcao, setUltimaAcao] = useState('nenhuma');
+  const [lado, setLado] = useState('direita');
+  const [gavetaAberta, setGavetaAberta] = useState(false);
+  const cancelar = useRef(null);
+
+  return (
+    <>
+      <Linha titulo="Seletor">
+        <Seletor className="w-full sm:w-56" rotulo="Ordenar por" opcoes={ORDENACAO} valor={ordem} onValorMudar={setOrdem} />
+        <Seletor className="w-full sm:w-56" rotulo="Estado (UF)" opcoes={ESTADOS} placeholder="Selecione o estado" erro="Selecione o estado." />
+        <Seletor className="w-full sm:w-56" rotulo="Ordenar por (bloqueado)" opcoes={ORDENACAO} valorPadrao="menor" desabilitado />
+      </Linha>
+
+      <Linha titulo="Menu">
+        <Estado nome="Ações">
+          <Menu rotulo="Ações do pedido" gatilho={<Botao variante="secundario" iconeDepois={<Ellipsis size={16} />}>Ações</Botao>}>
+            <MenuItem icone={<Eye />} onSelecionar={() => setUltimaAcao('Ver detalhes')}>Ver detalhes</MenuItem>
+            <MenuItem icone={<Copy />} onSelecionar={() => setUltimaAcao('Copiar código')}>Copiar código</MenuItem>
+            <MenuItem icone={<Truck />} desabilitado>Rastrear entrega</MenuItem>
+            <MenuSeparador />
+            <MenuItem icone={<XCircle />} destrutivo onSelecionar={() => setUltimaAcao('Cancelar pedido')}>Cancelar pedido</MenuItem>
+          </Menu>
+        </Estado>
+        <Estado nome="Opções marcáveis">
+          <Menu rotulo="Colunas da tabela" alinhamento="end" gatilho={<BotaoIcone rotulo="Colunas da tabela" variante="contorno"><SlidersHorizontal size={18} /></BotaoIcone>}>
+            <MenuRotulo>Mostrar colunas</MenuRotulo>
+            <MenuOpcao marcado={colunas.status} onMarcadoMudar={(v) => setColunas((c) => ({ ...c, status: v }))}>Status</MenuOpcao>
+            <MenuOpcao marcado={colunas.pagamento} onMarcadoMudar={(v) => setColunas((c) => ({ ...c, pagamento: v }))}>Pagamento</MenuOpcao>
+            <MenuOpcao marcado={colunas.data} onMarcadoMudar={(v) => setColunas((c) => ({ ...c, data: v }))}>Data</MenuOpcao>
+          </Menu>
+        </Estado>
+        <p className="w-full text-legenda text-texto-secundario" data-teste="ultima-acao">Última ação: {ultimaAcao}</p>
+      </Linha>
+
+      <Linha titulo="Diálogo">
+        <Dialogo
+          titulo="Remover produto do carrinho?"
+          descricao="O produto sai do carrinho, mas continua nos seus favoritos."
+          focoInicial={cancelar}
+          gatilho={<Botao variante="destrutivo" iconeAntes={<Trash2 size={16} />}>Remover</Botao>}
+          rodape={(
+            <>
+              <DialogoFechar><Botao ref={cancelar} variante="discreto">Cancelar</Botao></DialogoFechar>
+              <DialogoFechar><Botao variante="destrutivo">Remover</Botao></DialogoFechar>
+            </>
+          )}
+        >
+          <p className="text-auxiliar text-texto-secundario">Foco inicial em “Cancelar”, a ação segura.</p>
+        </Dialogo>
+        <Dialogo
+          titulo="Ordenar produtos"
+          gatilho={<Botao variante="secundario">Seletor dentro do diálogo</Botao>}
+          rodape={<DialogoFechar><Botao>Aplicar</Botao></DialogoFechar>}
+        >
+          <Seletor rotulo="Ordenar por" opcoes={ORDENACAO} valor={ordem} onValorMudar={setOrdem} />
+        </Dialogo>
+      </Linha>
+
+      <Linha titulo="Gaveta">
+        <Botao variante="secundario" onClick={() => { setLado('direita'); setGavetaAberta(true); }}>Endereço (lateral)</Botao>
+        <Botao variante="secundario" onClick={() => { setLado('baixo'); setGavetaAberta(true); }}>Endereço (de baixo)</Botao>
+        <Gaveta
+          lado={lado}
+          aberto={gavetaAberta}
+          onAbertoMudar={setGavetaAberta}
+          titulo="Endereço de entrega"
+          descricao="Só a área do formulário rola; a página atrás fica parada."
+          rodape={(
+            <>
+              <DialogoFechar><Botao variante="discreto">Cancelar</Botao></DialogoFechar>
+              <DialogoFechar><Botao>Salvar endereço</Botao></DialogoFechar>
+            </>
+          )}
+        >
+          <CamposEndereco />
+        </Gaveta>
+      </Linha>
+
+      <Linha titulo="Popover">
+        <Popover titulo="Faixa de preço" gatilho={<Botao variante="secundario">Preço</Botao>}>
+          <div className="grid grid-cols-2 gap-3">
+            <Campo rotulo="Mínimo" inputMode="decimal" placeholder="R$ 0" />
+            <Campo rotulo="Máximo" inputMode="decimal" placeholder="R$ 2.000" />
+          </div>
+          <Botao className="mt-4" larguraTotal tamanho="sm">Aplicar preço</Botao>
+        </Popover>
+      </Linha>
+
+      <Linha titulo="Dica">
+        <Dica texto="Buscar produtos"><BotaoIcone rotulo="Buscar produtos" variante="fantasma" tamanho="lg"><Search size={20} /></BotaoIcone></Dica>
+        <Dica texto="Minha conta"><BotaoIcone rotulo="Minha conta" variante="fantasma" tamanho="lg"><User size={20} /></BotaoIcone></Dica>
+        <Dica texto="Favoritos" lado="bottom"><BotaoIcone rotulo="Favoritos" variante="fantasma" tamanho="lg"><Heart size={20} /></BotaoIcone></Dica>
+        <Dica texto="Carrinho" lado="bottom"><BotaoIcone rotulo="Carrinho" variante="fantasma" tamanho="lg"><ShoppingCart size={20} /></BotaoIcone></Dica>
+      </Linha>
+
+      <Linha titulo="Abas">
+        <Abas
+          className="w-full"
+          rotulo="Informações do produto"
+          abas={[
+            { valor: 'descricao', rotulo: 'Descrição', conteudo: <p className="max-w-prose text-texto-secundario">O prazo de entrega começa a contar depois da confirmação do pagamento.</p> },
+            { valor: 'avaliacoes', rotulo: 'Avaliações', conteudo: <p className="text-texto-secundario">Nenhuma avaliação ainda.</p> },
+            { valor: 'perguntas', rotulo: 'Perguntas', conteudo: <p className="text-texto-secundario">Nenhuma pergunta ainda.</p> },
+            { valor: 'trocas', rotulo: 'Trocas (indisponível)', conteudo: null, desabilitada: true },
+          ]}
+        />
+      </Linha>
+
+      <Linha titulo="Aviso">
+        <DemonstracaoAvisos />
+      </Linha>
+    </>
+  );
+}
+
 export default function PranchaComponentes() {
+  return (
+    <ProvedorAvisos>
+      <ProvedorDicas>
+        <Prancha />
+      </ProvedorDicas>
+    </ProvedorAvisos>
+  );
+}
+
+function Prancha() {
   const { tema } = useTema();
   const [favorito, setFavorito] = useState(false);
   const [quantidade, setQuantidade] = useState(4);
@@ -73,7 +246,7 @@ export default function PranchaComponentes() {
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="text-titulo-lg text-texto">Componentes base</h1>
-          <p className="mt-1 text-auxiliar text-texto-secundario">Fase 1A · tema {tema} · página só de desenvolvimento</p>
+          <p className="mt-1 text-auxiliar text-texto-secundario">Fases 1A e 1B · tema {tema} · página só de desenvolvimento</p>
         </div>
         <BotaoTema />
       </div>
@@ -184,6 +357,9 @@ export default function PranchaComponentes() {
         <Superficie nivel="elevada" className="w-full sm:w-60"><p className="text-rotulo text-texto">Auxiliar</p><p className="mt-1 text-auxiliar text-texto-secundario">Agrupamento secundário.</p></Superficie>
         <Superficie sombra className="w-full sm:w-60"><p className="text-rotulo text-texto">Com sombra</p><p className="mt-1 text-auxiliar text-texto-secundario">Menus e painéis flutuantes.</p></Superficie>
       </Linha>
+
+      <h2 className="mt-bloco font-titulo text-titulo-md text-texto">Componentes interativos</h2>
+      <ComponentesInterativos />
     </div>
   );
 }
