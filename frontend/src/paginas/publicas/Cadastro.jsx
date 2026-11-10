@@ -63,7 +63,7 @@ export default function Cadastro() {
     <div className="auth-page min-h-[calc(100dvh-73px)] flex items-center justify-center px-4 py-12">
       <form
         onSubmit={aoEnviar}
-        className="auth-card w-full max-w-md rounded-painel border border-borda bg-superficie/95 p-6 sm:p-8 shadow-nivel-4 backdrop-blur-md"
+        className="auth-card w-full max-w-md rounded-painel border border-borda bg-superficie/95 p-6 sm:p-8 shadow-nivel-2 backdrop-blur-md"
       >
         <div className="text-center mb-8">
           <h1 className="mt-4 text-3xl font-black tracking-[0.12em] text-texto">Criar conta</h1>

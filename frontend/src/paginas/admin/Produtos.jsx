@@ -98,7 +98,7 @@ export default function Produtos() {
     <section className="mb-8 rounded-lg border border-borda bg-white shadow">
       <button type="button" aria-expanded={formularioAberto} aria-controls="formulario-produto" onClick={() => setFormularioAberto(aberto => !aberto)} className="flex w-full items-center justify-between rounded-lg px-4 py-4 text-left font-semibold hover:bg-superficie-destaque">
         <span>{editandoId ? `Editar produto: ${form.nome}` : 'Cadastrar produto'}</span>
-        <span className={`text-xl text-marca-texto transition-transform ${formularioAberto ? 'rotate-180' : ''}`} aria-hidden="true">⌄</span>
+        <span className={`text-xl text-marca-texto transition-transform motion-reduce:transition-none ${formularioAberto ? 'rotate-180' : ''}`} aria-hidden="true">⌄</span>
       </button>
     {formularioAberto && <form id="formulario-produto" onSubmit={aoSalvar} className="grid grid-cols-2 gap-3 border-t border-borda p-4 sm:grid-cols-3">
       <CampoRotulado rotulo="Nome" name="nome" value={form.nome} onChange={aoMudarCampo} required className="border rounded px-2 py-1" /><CampoRotulado rotulo="Categoria" name="categoria" value={form.categoria} onChange={aoMudarCampo} className="border rounded px-2 py-1" /><CampoRotulado rotulo="Preco" name="preco" value={form.preco} onChange={aoMudarCampo} type="number" step="0.01" required className="border rounded px-2 py-1" /><CampoRotulado rotulo="Tag" name="tag" value={form.tag} onChange={aoMudarCampo} className="border rounded px-2 py-1" />

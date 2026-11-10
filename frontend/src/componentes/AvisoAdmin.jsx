@@ -20,7 +20,7 @@ export default function AvisoAdmin() {
 
   if (!aviso) return null;
   return (
-    <div role="status" aria-live="polite" className="fixed bottom-5 right-5 z-(--z-aviso) flex max-w-sm items-center gap-3 rounded-cartao border border-marca-texto bg-superficie-elevada px-4 py-3 text-sm text-texto shadow-nivel-4">
+    <div role="status" aria-live="polite" className="fixed bottom-5 right-5 z-(--z-aviso) flex max-w-sm items-center gap-3 rounded-cartao border border-marca-texto bg-superficie-elevada px-4 py-3 text-sm text-texto shadow-nivel-2">
       <span className="text-marca-texto" aria-hidden="true">✓</span>
       <span>{aviso.mensagem}</span>
       <BotaoIcone tamanho="sm" rotulo="Fechar aviso" onClick={() => setAviso(null)}>×</BotaoIcone>

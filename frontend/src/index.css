@@ -345,7 +345,7 @@ input:-webkit-autofill:focus {
   caret-color: var(--color-texto);
   transition: background-color 9999s ease-out;
 }
-:where(input:not([type="checkbox"], [type="radio"], [type="range"], [type="file"], [type="color"], [type="hidden"], [type="button"], [type="submit"], [type="reset"], [type="image"]), select, textarea):hover:not(:disabled):not(:focus) { border-color: var(--color-texto) !important; }
+:where(input:not([type="checkbox"], [type="radio"], [type="range"], [type="file"], [type="color"], [type="hidden"], [type="button"], [type="submit"], [type="reset"], [type="image"]), select, textarea):hover:not(:disabled):not(:focus):not([aria-invalid="true"]) { border-color: var(--color-texto) !important; }
 :where(input:not([type="checkbox"], [type="radio"], [type="range"], [type="file"], [type="color"], [type="hidden"], [type="button"], [type="submit"], [type="reset"], [type="image"]), select, textarea):is(:focus, :focus-visible) {
   border-color: var(--color-foco) !important;
   outline: 2px solid var(--color-foco);
@@ -542,6 +542,7 @@ html { scroll-padding-block-start: calc(var(--altura-cabecalho, 5rem) + 1rem); }
   /* Só cor e opacidade continuam; movimento e escala saem. */
   button:not(:disabled):active { transform: none; }
   .nav-link::after { transition: none; }
+  .nav-icone::before, .nav-icone:hover::before, .nav-icone:focus-visible::before { transform: translate(-50%, 0); transition: opacity 120ms ease, visibility 120ms; }
   .icone-tema > * { transition: opacity 120ms ease; transform: none !important; }
   ::view-transition-old(root), ::view-transition-new(root) { animation: none; }
 }
