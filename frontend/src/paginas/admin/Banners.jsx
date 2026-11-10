@@ -81,23 +81,23 @@ export default function Banners() {
     <div className="mx-auto max-w-5xl px-4 py-8">
       <Link to="/admin" className="botao-voltar">&larr; Voltar ao painel</Link>
       <h1 className="mb-6 mt-2 text-2xl font-bold">Banners</h1>
-      <p className="mb-5 text-sm text-[#aaa396]">Cadastre até duas imagens por banner. Uma imagem ocupa toda a faixa; duas ficam lado a lado. O banner principal aparece primeiro; os demais são exibidos quando o cliente usa os botões abaixo da faixa.</p>
-      <p className="mb-5 text-sm text-[#aaa396]">A faixa desktop tem proporção aproximada de 1920 × 400 px; no celular, 800 × 600 px. Imagens com outra proporção aparecem inteiras, com espaço escuro nas laterais ou acima e abaixo. Confira na prévia.</p>
+      <p className="mb-5 text-sm text-texto-secundario">Cadastre até duas imagens por banner. Uma imagem ocupa toda a faixa; duas ficam lado a lado. O banner principal aparece primeiro; os demais são exibidos quando o cliente usa os botões abaixo da faixa.</p>
+      <p className="mb-5 text-sm text-texto-secundario">A faixa desktop tem proporção aproximada de 1920 × 400 px; no celular, 800 × 600 px. Imagens com outra proporção aparecem inteiras, com espaço escuro nas laterais ou acima e abaixo. Confira na prévia.</p>
       {erro && <p className="mb-4 rounded bg-erro-fundo p-3 text-erro">{erro}</p>}
 
       <form onSubmit={salvar} className="mb-8 grid gap-3 rounded-lg bg-white p-5 shadow sm:grid-cols-2">
         <CampoRotulado rotulo="Título" name="titulo" value={form.titulo} onChange={(e) => setForm({ ...form, titulo: e.target.value })} placeholder="Título" maxLength="150" className="rounded border p-2" />
         <CampoRotulado rotulo="Ordem" name="ordem" type="number" min="0" value={form.ordem} onChange={(e) => setForm({ ...form, ordem: e.target.value })} placeholder="Ordem" className="rounded border p-2" />
         <div className="sm:col-span-2"><SeletorFotos key={editandoId || 'novo'} rotulo="Imagens ou GIFs do banner (até 2)" maximo={2} limiteMb={20} rotaUpload="imagens/banner" aceitarGif fotos={[form.imagem_url, form.imagem_url_2].filter(Boolean)} disabled={salvando || enviandoFotos} onCarregando={setEnviandoFotos} onChange={atualizarFotos} /></div>
-        {form.imagem_url && <div className="sm:col-span-2 rounded border border-[#393323] p-4">
+        {form.imagem_url && <div className="sm:col-span-2 rounded border border-borda p-4">
           <Botao variante="secundario" tamanho="sm" onClick={() => setMostrarPrevia((atual) => !atual)} aria-expanded={mostrarPrevia}>{mostrarPrevia ? 'Ocultar prévia' : 'Ver prévia para o cliente'}</Botao>
           {mostrarPrevia && <div className="mt-4">
-            <p className="mb-2 text-xs text-[#aaa396]">Desktop</p>
-            <div className="overflow-hidden rounded-lg bg-[#090a09] p-3">
+            <p className="mb-2 text-xs text-texto-secundario">Desktop</p>
+            <div className="overflow-hidden rounded-lg bg-banner-preenchimento p-3">
               <ConteudoBanner banner={form} modoPrevia="desktop" />
             </div>
-            <p className="mb-2 mt-4 text-xs text-[#aaa396]">Celular</p>
-            <div className="w-full max-w-xs overflow-hidden rounded-lg bg-[#090a09] p-2">
+            <p className="mb-2 mt-4 text-xs text-texto-secundario">Celular</p>
+            <div className="w-full max-w-xs overflow-hidden rounded-lg bg-banner-preenchimento p-2">
               <ConteudoBanner banner={form} modoPrevia="celular" />
             </div>
             <p className="mt-3 text-xs text-gray-500">A prévia mostra a imagem inteira dentro da faixa. No celular, a primeira imagem aparece sozinha.</p>
@@ -108,8 +108,8 @@ export default function Banners() {
             const campoY = indice ? 'posicao_y_2' : 'posicao_y';
             return <div key={url} className="mt-4 grid gap-3 sm:grid-cols-2">
               <p className="font-semibold sm:col-span-2">Imagem {indice + 1}</p>
-              <label className="text-sm">Horizontal: {form[campoX]}%<input type="range" name={campoX} min="0" max="100" value={form[campoX]} onChange={e => setForm(atual => ({ ...atual, [campoX]: Number(e.target.value) }))} className="mt-2 w-full accent-[#d4af45]" /></label>
-              <label className="text-sm">Vertical: {form[campoY]}%<input type="range" name={campoY} min="0" max="100" value={form[campoY]} onChange={e => setForm(atual => ({ ...atual, [campoY]: Number(e.target.value) }))} className="mt-2 w-full accent-[#d4af45]" /></label>
+              <label className="text-sm">Horizontal: {form[campoX]}%<input type="range" name={campoX} min="0" max="100" value={form[campoX]} onChange={e => setForm(atual => ({ ...atual, [campoX]: Number(e.target.value) }))} className="mt-2 w-full accent-marca-texto" /></label>
+              <label className="text-sm">Vertical: {form[campoY]}%<input type="range" name={campoY} min="0" max="100" value={form[campoY]} onChange={e => setForm(atual => ({ ...atual, [campoY]: Number(e.target.value) }))} className="mt-2 w-full accent-marca-texto" /></label>
             </div>;
           })}
         </div>}
@@ -133,7 +133,7 @@ export default function Banners() {
             </div>
             <div className="p-4">
               <div className="flex justify-between gap-3"><strong>{banner.titulo || 'Sem título'}</strong><SeloStatus status={banner.ativo ? 'ativo' : 'inativo'}>{banner.ativo ? 'Ativo' : 'Inativo'}</SeloStatus></div>
-              {Boolean(banner.principal) && <p className="mt-1 text-sm font-semibold text-[#d4af45]">Principal</p>}
+              {Boolean(banner.principal) && <p className="mt-1 text-sm font-semibold text-marca-texto">Principal</p>}
               <p className="mt-1 text-sm text-gray-500">Ordem: {banner.ordem}</p>
               <div className="mt-4 flex flex-wrap gap-2"><Botao variante="discreto" tamanho="sm" onClick={() => editar(banner)} aria-label={`Editar ${banner.titulo || 'banner sem título'}`}>Editar</Botao><Botao variante="destrutivo" tamanho="sm" onClick={() => excluir(banner.id)} aria-label={`Excluir ${banner.titulo || 'banner sem título'}`}>Excluir</Botao></div>
             </div>

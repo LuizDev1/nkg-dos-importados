@@ -72,7 +72,7 @@ export default function Clientes() {
         }}
         className="flex items-end gap-2 mb-6"
       >
-        <label className="flex-1 min-w-0 text-sm text-[#aaa399]">
+        <label className="flex-1 min-w-0 text-sm text-texto-secundario">
           Buscar cliente por nome ou e-mail
         <input
           type="search"

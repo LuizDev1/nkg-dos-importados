@@ -1,3 +1,4 @@
+import { LoaderCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { classesBotao } from './estilos.mjs';
 
@@ -11,7 +12,8 @@ export default function Botao({
   const classes = `${classesBotao({ variante, tamanho, larguraTotal })} ${className}`.trim();
   const conteudo = (
     <>
-      {iconeAntes && <span aria-hidden="true" className="inline-flex shrink-0">{iconeAntes}</span>}
+      {carregando && <LoaderCircle aria-hidden="true" size={16} className="shrink-0 animate-spin motion-reduce:animate-none" />}
+      {!carregando && iconeAntes && <span aria-hidden="true" className="inline-flex shrink-0">{iconeAntes}</span>}
       {children}
       {iconeDepois && <span aria-hidden="true" className="inline-flex shrink-0">{iconeDepois}</span>}
     </>

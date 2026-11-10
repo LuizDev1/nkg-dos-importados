@@ -26,7 +26,7 @@ function App() {
 
   // O cabeçalho é fixo e muda de altura com a largura (76 px no desktop, 167 px no celular). A altura real
   // vira --altura-cabecalho, usada no scroll-padding, para o foco nunca ficar escondido atrás dele (WCAG 2.4.11).
-  // Mede na montagem (sempre), quando as fontes ficam prontas (a Manrope pode mudar a altura) e a cada
+  // Mede na montagem (sempre), quando as fontes ficam prontas (as fontes da interface podem mudar a altura) e a cada
   // mudança de tamanho: pelo ResizeObserver quando existe; sem ele, pelo resize da janela, por mudanças no
   // conteúdo do cabeçalho (a sessão carrega depois e acrescenta ícones e saudação) e pela troca de rota.
   const medirCabecalho = useRef(null);
@@ -67,7 +67,7 @@ function App() {
   useEffect(() => { medirCabecalho.current?.(); }, [location.pathname]);
 
   return (
-    <div className={`site-shell min-h-screen flex flex-col text-[#f4efe5] ${areaAdmin ? 'admin-area' : ''}`}>
+    <div className={`site-shell min-h-screen flex flex-col text-texto ${areaAdmin ? 'admin-area' : ''}`}>
       <a href="#conteudo" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[60] focus:rounded focus:bg-acao focus:px-4 focus:py-2 focus:font-semibold focus:text-acao-texto">
         Pular para o conteúdo
       </a>

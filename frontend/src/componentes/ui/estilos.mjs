@@ -1,61 +1,69 @@
 // Classes dos componentes base, só com tokens de index.css. Módulo puro (sem JSX) para poder ser testado.
-// Sem transições novas: o projeto já tem a regra global de transição de button/a em index.css.
+// Transições e pressão (0,97) vêm da regra global de button/a em index.css. Direção 2 v2.
 
 const juntar = (...partes) => partes.filter(Boolean).join(' ');
 
 export const BOTAO_VARIANTES = {
-  primario: 'bg-marca text-texto-inverso hover:bg-marca-hover active:bg-marca-ativo',
-  secundario: 'border border-marca text-marca hover:bg-marca-suave active:bg-marca-suave',
-  discreto: 'text-marca hover:bg-marca-suave active:bg-marca-suave',
-  destrutivo: 'border border-erro-borda text-erro hover:bg-erro-fundo active:bg-erro-fundo',
+  primario: 'border-transparent bg-marca text-texto-inverso hover:bg-marca-hover active:bg-marca-ativo',
+  secundario: 'border-borda-destaque bg-superficie text-texto hover:bg-superficie-elevada active:bg-superficie-destaque',
+  discreto: 'border-transparent text-texto hover:bg-superficie-elevada active:bg-superficie-destaque',
+  destrutivo: 'border-erro-borda bg-superficie text-erro hover:bg-erro-fundo active:bg-erro-fundo',
 };
 
 // Altura mínima: sm 36 px (ações densas de tabela, acima dos 24 px do WCAG 2.5.8), md 44 px, lg 48 px.
 export const BOTAO_TAMANHOS = {
   sm: 'min-h-9 px-3 text-rotulo',
-  md: 'min-h-11 px-5 text-rotulo',
-  lg: 'min-h-12 px-6 text-corpo font-bold',
+  md: 'min-h-11 px-4 text-rotulo',
+  lg: 'min-h-12 px-5 text-corpo font-semibold',
 };
 
 export function classesBotao({ variante = 'primario', tamanho = 'md', larguraTotal = false } = {}) {
   return juntar(
-    'inline-flex items-center justify-center gap-2 rounded-controle text-center font-semibold no-underline',
-    'disabled:cursor-not-allowed disabled:opacity-50 aria-disabled:cursor-not-allowed aria-disabled:opacity-50',
+    'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-controle border text-center font-semibold no-underline',
+    // Desabilitado igual ao Figma: neutro, sem dourado. Interativa a 50% resulta no #f5f5f5 do Figma; sem pressão.
+    'disabled:cursor-not-allowed disabled:border-transparent disabled:bg-superficie-destaque disabled:text-texto disabled:opacity-50',
+    'aria-disabled:cursor-not-allowed aria-disabled:border-transparent aria-disabled:bg-superficie-destaque aria-disabled:text-texto aria-disabled:opacity-50',
     BOTAO_VARIANTES[variante] || BOTAO_VARIANTES.primario,
     BOTAO_TAMANHOS[tamanho] || BOTAO_TAMANHOS.md,
     larguraTotal && 'w-full',
   );
 }
 
-export const BOTAO_ICONE_TAMANHOS = { sm: 'h-8 w-8 text-sm', md: 'h-10 w-10 text-base' };
+// sm 32 px (sobre fotos, acima dos 24 px do WCAG 2.5.8), md 40 px, lg 44 px (barras de ação).
+export const BOTAO_ICONE_TAMANHOS = { sm: 'h-8 w-8 text-sm', md: 'h-10 w-10 text-base', lg: 'h-11 w-11 text-base' };
+// neutro: fundo sólido, legível sobre foto. fantasma: barra de ícones. contorno: ação isolada com limite visível.
 export const BOTAO_ICONE_VARIANTES = {
-  neutro: 'border-borda bg-fundo/70 text-texto hover:border-marca hover:text-marca',
+  neutro: 'border-borda-destaque bg-superficie text-texto hover:bg-superficie-elevada',
+  fantasma: 'border-transparent text-texto hover:bg-superficie-elevada',
+  contorno: 'border-borda-forte bg-superficie text-texto hover:bg-superficie-elevada',
   marca: 'border-marca bg-marca text-texto-inverso hover:bg-marca-hover',
 };
 
 export function classesBotaoIcone({ tamanho = 'md', variante = 'neutro' } = {}) {
   return juntar(
-    'inline-flex shrink-0 items-center justify-center rounded-pilula border',
+    'inline-flex shrink-0 items-center justify-center rounded-controle border',
     'disabled:cursor-not-allowed disabled:opacity-40',
     BOTAO_ICONE_TAMANHOS[tamanho] || BOTAO_ICONE_TAMANHOS.md,
     BOTAO_ICONE_VARIANTES[variante] || BOTAO_ICONE_VARIANTES.neutro,
   );
 }
 
-// Campos: 16 px no celular (evita o zoom do iOS), 14 px a partir de sm. Borda borda-forte: 3,26–3,85:1 (WCAG 1.4.11).
+// Campos: 16 px no celular (evita o zoom do iOS), 14 px a partir de sm. Borda borda-forte = control-border:
+// claro #858585 (3,10–3,69:1), escuro oklch(0.6 0 0) (3,21–5,01:1) em todas as superfícies (WCAG 1.4.11).
 export function classesCampo({ as = 'input' } = {}) {
   return juntar(
-    'w-full rounded-controle border border-borda-forte bg-campo px-3 py-2.5 text-base text-texto sm:text-sm',
-    'placeholder:text-placeholder disabled:cursor-not-allowed disabled:opacity-60',
+    'min-h-11 w-full rounded-controle border border-borda-forte bg-campo px-3 py-2.5 text-base text-texto sm:text-sm',
+    'placeholder:text-placeholder disabled:cursor-not-allowed',
     as === 'textarea' && 'min-h-24',
   );
 }
-export const CAMPO_ROTULO = 'mb-1.5 block text-rotulo text-texto';
+export const CAMPO_ROTULO = 'mb-1.5 block text-auxiliar font-medium text-texto';
 export const CAMPO_OPCIONAL = 'font-normal text-texto-discreto';
 export const CAMPO_AJUDA = 'mt-1.5 text-auxiliar text-texto-secundario';
-export const CAMPO_ERRO = 'mt-1.5 text-auxiliar text-erro';
+export const CAMPO_ERRO = 'mt-1.5 flex items-start gap-1.5 text-auxiliar font-medium text-erro';
 
-export const SUPERFICIE_NIVEIS = { base: 'bg-superficie', elevada: 'bg-superficie-elevada', destaque: 'bg-superficie-destaque' };
+// "destaque" usa o auxiliar: a superfície interativa (superficie-destaque) fica só para hover e seleção.
+export const SUPERFICIE_NIVEIS = { base: 'bg-superficie', elevada: 'bg-superficie-elevada', destaque: 'bg-superficie-elevada' };
 export const SUPERFICIE_ESPACOS = { nenhum: '', compacto: 'p-4', padrao: 'p-5 sm:p-6', amplo: 'p-6 sm:p-8' };
 
 export function classesSuperficie({ nivel = 'base', espacamento = 'padrao', borda = true, sombra = false } = {}) {
@@ -78,7 +86,7 @@ export const SELO_TONS = {
 
 export function classesSelo(tom = 'neutro') {
   return juntar(
-    'inline-flex items-center gap-1.5 whitespace-nowrap rounded-pilula border px-2.5 py-0.5 text-legenda font-semibold',
+    'inline-flex items-center gap-1.5 whitespace-nowrap rounded-pequeno border px-2 py-0.5 text-legenda font-semibold',
     SELO_TONS[tom] || SELO_TONS.neutro,
   );
 }

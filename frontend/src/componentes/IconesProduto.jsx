@@ -37,7 +37,7 @@ export function Estrelas({ valor, quantidade, tamanho = 14, className = '' }) {
       <span className="relative inline-flex" aria-hidden="true">
         {fileira(false, 'text-borda-forte')}
         <span className="absolute inset-y-0 left-0 inline-flex overflow-hidden" style={{ width: `${preenchimentoNota(valor)}%` }}>
-          {fileira(true, 'text-marca')}
+          {fileira(true, 'text-marca-texto')}
         </span>
       </span>
     </span>

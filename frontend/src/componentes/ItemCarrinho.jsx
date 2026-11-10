@@ -14,7 +14,7 @@ export default function ItemCarrinho({ item, onAlterarQuantidade, onRemover, car
       <div className="min-w-0 flex-1 basis-40">
         <Link
           to={`/produto/${item.produto_id}`}
-          className="font-semibold hover:text-marca hover:underline"
+          className="font-semibold hover:text-marca-texto hover:underline"
         >
           {item.nome}
         </Link>

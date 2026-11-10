@@ -1,3 +1,4 @@
+import { CircleAlert } from 'lucide-react';
 import { forwardRef, useId } from 'react';
 import { CAMPO_AJUDA, CAMPO_ERRO, CAMPO_OPCIONAL, CAMPO_ROTULO, classesCampo } from './estilos.mjs';
 
@@ -34,7 +35,7 @@ const Campo = forwardRef(function Campo({
         {sufixo && <div className="absolute inset-y-0 right-2 flex items-center">{sufixo}</div>}
       </div>
       {ajuda && <p id={idAjuda} className={CAMPO_AJUDA}>{ajuda}</p>}
-      {erro && <p id={idErro} className={CAMPO_ERRO}>{erro}</p>}
+      {erro && <p id={idErro} className={CAMPO_ERRO}><CircleAlert aria-hidden="true" size={14} className="mt-0.5 shrink-0" />{erro}</p>}
     </div>
   );
 });

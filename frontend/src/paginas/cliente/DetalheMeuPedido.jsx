@@ -101,7 +101,7 @@ export default function DetalheMeuPedido() {
               const atual = etapaAtual === indice;
               return <li key={chave} className="flex items-center gap-2 pr-2 text-sm">
                 <span aria-hidden="true" className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold ${concluida ? 'bg-marca text-texto-inverso' : 'bg-superficie-destaque text-texto-secundario'}`}>{concluida ? '✓' : indice + 1}</span>
-                <span className={atual ? 'font-semibold text-marca' : concluida ? 'text-texto' : 'text-texto-secundario'}>{titulo}</span>
+                <span className={atual ? 'font-semibold text-marca-texto' : concluida ? 'text-texto' : 'text-texto-secundario'}>{titulo}</span>
               </li>;
             })}
           </ol>
@@ -151,7 +151,7 @@ export default function DetalheMeuPedido() {
 
         {pedido.status_pedido === 'entregue' && (
           <div className="mx-5 mb-5 rounded-cartao border border-marca-borda bg-marca-suave p-4">
-            <p className="font-semibold text-marca">Seu pedido foi entregue. Conte como foi sua experiência.</p>
+            <p className="font-semibold text-marca-texto">Seu pedido foi entregue. Conte como foi sua experiência.</p>
             <p className="mt-1 text-sm text-texto-secundario">Você pode avaliar cada produto comprado uma vez.</p>
           </div>
         )}
@@ -171,7 +171,7 @@ export default function DetalheMeuPedido() {
               <div className="flex-1">
                 <Link
                   to={`/produto/${item.produto_id}`}
-                  className="font-semibold hover:text-marca"
+                  className="font-semibold hover:text-marca-texto"
                 >
                   {item.produto_nome}
                 </Link>

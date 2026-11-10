@@ -67,7 +67,7 @@ export default function Cadastro() {
       >
         <div className="text-center mb-8">
           <h1 className="mt-4 text-3xl font-black tracking-[0.12em] text-texto">Criar conta</h1>
-          <p className="mt-2 text-xs font-medium uppercase tracking-[0.3em] text-marca">NKG Dos Importados</p>
+          <p className="mt-2 text-xs font-medium uppercase tracking-[0.3em] text-marca-texto">NKG Dos Importados</p>
         </div>
 
         {/* Regiões estáveis: existem vazias antes de receber a mensagem. */}
@@ -160,7 +160,7 @@ export default function Cadastro() {
 
         <p className="text-xs text-center mt-6 text-texto-secundario tracking-wider">
           Já tem conta?{' '}
-          <Link to="/login" className="font-medium text-link underline underline-offset-4 hover:text-marca-hover">
+          <Link to="/login" className="font-medium text-link underline underline-offset-4 hover:text-marca-clara">
             Entrar
           </Link>
         </p>

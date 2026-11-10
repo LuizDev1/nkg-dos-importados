@@ -19,9 +19,9 @@ export default function MinhaConta() {
   }, []);
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-10 text-[#f4efe5]">
+    <div className="mx-auto max-w-3xl px-4 py-10 text-texto">
       <Link to="/" className="botao-voltar">← Voltar para a loja</Link>
-      <p className="mt-8 text-xs uppercase tracking-[0.25em] text-[#d4af45]">Seu espaço</p>
+      <p className="mt-8 text-xs uppercase tracking-[0.25em] text-marca-texto">Seu espaço</p>
       <h1 className="mt-2 text-3xl font-bold">Minha conta</h1>
       <p className="mt-2 mb-8 text-texto-secundario">Confira e mantenha suas informações atualizadas.</p>
       {erro ? <p role="alert" className="text-erro">{erro}</p> : !conta ? <p role="status">Carregando conta...</p> : (
@@ -36,7 +36,7 @@ export default function MinhaConta() {
             setConta(dados); atualizarUsuario(dados);
           }} />
           <EnderecosConta />
-          <div className="mt-7 flex flex-wrap gap-5 border-t border-[#343024] pt-5 text-sm text-[#d4af45]">
+          <div className="mt-7 flex flex-wrap gap-5 border-t border-borda pt-5 text-sm text-marca-texto">
             <Link to="/minha-conta/pedidos" className="hover:underline">Meus pedidos</Link>
             <Link to="/privacidade" className="hover:underline">Privacidade e dados</Link>
           </div>

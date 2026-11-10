@@ -38,7 +38,7 @@ export default function CartaoProduto({ produto }) {
           <span className="min-w-0 truncate">{produto.categoria}</span>
           {temAvaliacoes && (
             <span className="inline-flex shrink-0 items-center gap-1 tabular-nums">
-              <IconeEstrela tamanho={12} className="text-marca" />
+              <IconeEstrela tamanho={12} className="text-marca-texto" />
               <span aria-hidden="true">{formatarNota(produto.avaliacao_media)} ({produto.avaliacoes_total})</span>
               <span className="sr-only">{textoNota(produto.avaliacao_media, Number(produto.avaliacoes_total))}</span>
             </span>

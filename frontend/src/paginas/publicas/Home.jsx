@@ -90,7 +90,7 @@ export default function Home() {
   return (
     <div className="min-h-full bg-transparent">
       {Number(configuracoes.aviso_ativo) === 1 && Boolean(configuracoes.aviso_texto) && (
-        <div className="bg-transparent px-4 py-2 text-center text-xs uppercase tracking-[0.12em] text-[#d4af45]">
+        <div className="bg-transparent px-4 py-2 text-center text-xs uppercase tracking-[0.12em] text-marca-texto">
           {configuracoes.aviso_texto}
         </div>
       )}
@@ -99,8 +99,8 @@ export default function Home() {
 
       <div className="mx-auto w-full max-w-[1760px] px-4 py-10 sm:px-6 lg:px-8">
         <div className="mb-7">
-          <p className="mb-2 text-sm font-semibold uppercase tracking-[0.28em] text-[#b99a42]">Catálogo</p>
-          <h1 className="text-3xl font-bold text-[#f4efe5]">Nossos produtos</h1>
+          <p className="mb-2 text-sm font-semibold uppercase tracking-[0.28em] text-marca-texto">Catálogo</p>
+          <h1 className="text-3xl font-bold text-texto">Nossos produtos</h1>
         </div>
 
         <form
@@ -129,19 +129,19 @@ export default function Home() {
               }}
               placeholder="Buscar produtos"
               aria-label="Buscar produtos"
-              className="w-full rounded-l border border-r-0 border-[#3a3526] bg-[#111210] py-3.5 pl-11 pr-4 outline-none transition"
+              className="w-full rounded-l border border-r-0 border-borda-forte bg-superficie py-3.5 pl-11 pr-4 outline-none transition"
             />
           </div>
           <button
             type="submit"
-            className="rounded-r bg-[#d4af45] px-7 text-xs font-bold uppercase tracking-[0.12em] text-[#090a09] transition hover:bg-[#e2c25d]"
+            className="rounded-r bg-marca px-7 text-xs font-bold uppercase tracking-[0.12em] text-texto-inverso transition hover:bg-marca-hover"
           >
             Buscar
           </button>
         </form>
 
         {erro && (
-          <p role="alert" className="mb-6 rounded border border-erro-borda bg-erro-fundo p-3 text-[#fca5a5]">
+          <p role="alert" className="mb-6 rounded border border-erro-borda bg-erro-fundo p-3 text-erro">
             {erro}
           </p>
         )}
@@ -149,7 +149,7 @@ export default function Home() {
         <div className={pesquisaRealizada ? 'grid items-start gap-6 lg:grid-cols-[240px_minmax(0,1fr)]' : ''}>
           {pesquisaRealizada && (
             <Superficie as="aside" sombra aria-labelledby="titulo-filtros">
-              <h2 id="titulo-filtros" className="mb-5 border-b border-divisor pb-3 text-sm font-bold uppercase tracking-rotulo text-marca">Filtros</h2>
+              <h2 id="titulo-filtros" className="mb-5 border-b border-divisor pb-3 text-sm font-bold uppercase tracking-rotulo text-marca-texto">Filtros</h2>
 
               <Campo
                 as="select"

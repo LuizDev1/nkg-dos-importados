@@ -24,7 +24,7 @@ export default function Preco({ valor, anterior, desconto, tamanho = 'herdar', a
         </s>
       )}
       {desconto && (
-        <span className="rounded-pilula bg-marca-suave px-2 py-0.5 text-legenda font-semibold text-marca-clara tabular-nums">{desconto}</span>
+        <span className="rounded-pequeno bg-marca-suave px-2 py-0.5 text-legenda font-semibold text-marca-clara tabular-nums">{desconto}</span>
       )}
     </Elemento>
   );

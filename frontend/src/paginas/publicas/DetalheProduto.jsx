@@ -458,7 +458,7 @@ export default function DetalheProduto() {
 
           <Superficie espacamento="padrao" className="flex flex-col gap-grupo">
             <div className="flex flex-wrap items-end justify-between gap-x-4 gap-y-2">
-              <Preco valor={produto.preco} tamanho="destaque" as="p" className="text-marca" />
+              <Preco valor={produto.preco} tamanho="destaque" as="p" className="text-marca-texto" />
               {!produtoAtivo ? (
                 <p className="inline-flex items-center gap-1.5 text-rotulo text-erro-texto"><IconeAlerta tamanho={16} />Produto inativo e indisponível para compra</p>
               ) : estoqueDisponivel > 0 ? (
@@ -695,7 +695,7 @@ export default function DetalheProduto() {
                   />
                   <label
                     htmlFor="fotos-avaliacao"
-                    className="mt-2 flex h-20 cursor-pointer items-center justify-center gap-2 rounded-controle border border-dashed border-borda-forte bg-campo text-auxiliar text-marca hover:border-marca peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-foco peer-disabled:cursor-not-allowed peer-disabled:opacity-50"
+                    className="mt-2 flex h-20 cursor-pointer items-center justify-center gap-2 rounded-controle border border-dashed border-borda-forte bg-campo text-auxiliar text-marca-texto hover:border-marca-texto peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-foco peer-disabled:cursor-not-allowed peer-disabled:opacity-50"
                   >
                     <IconeCamera tamanho={24} />
                     Adicionar fotos
@@ -713,7 +713,7 @@ export default function DetalheProduto() {
                   </div>
                 </div>
                 <label className="flex items-center gap-2 text-sm">
-                  <input type="checkbox" checked={formAvaliacao.anonimo} onChange={evento => setFormAvaliacao(atual => ({ ...atual, anonimo: evento.target.checked }))} className="accent-marca" />
+                  <input type="checkbox" checked={formAvaliacao.anonimo} onChange={evento => setFormAvaliacao(atual => ({ ...atual, anonimo: evento.target.checked }))} className="accent-marca-texto" />
                   Publicar como Anônimo
                 </label>
                 <div className="flex flex-wrap gap-3">

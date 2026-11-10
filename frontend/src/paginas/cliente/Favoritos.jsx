@@ -12,7 +12,7 @@ export default function Favoritos() {
       <Link to="/" className="botao-voltar mb-6 inline-flex">
         &larr; Voltar para a loja
       </Link>
-      <p className="mb-2 text-sm font-semibold uppercase tracking-[0.28em] text-marca-ativo">Sua seleção</p>
+      <p className="mb-2 text-sm font-semibold uppercase tracking-[0.28em] text-marca-clara">Sua seleção</p>
       <h1 className="mb-7 text-3xl font-bold">Favoritos</h1>
 
       <div role="status" className={estado === 'carregando' ? 'py-8 text-center text-texto-secundario' : 'sr-only'}>

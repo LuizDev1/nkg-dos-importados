@@ -72,7 +72,7 @@ export default function Pedidos() {
       {carregando ? (
         <p role="status">Carregando pedidos...</p>
       ) : !pedidos.length ? (!erro && (
-        <div className="rounded-lg border border-[#29261d] bg-[#111210] p-8 text-center">
+        <div className="rounded-lg border border-borda bg-superficie p-8 text-center">
           <p className="font-semibold">Nenhum pedido ainda</p>
           <p className="mt-1 text-sm text-texto-secundario">Quando um cliente finalizar uma compra, o pedido aparece aqui com o pagamento e a etapa da entrega.</p>
           <Botao variante="secundario" para="/admin/produtos" className="mt-4">Revisar produtos à venda</Botao>

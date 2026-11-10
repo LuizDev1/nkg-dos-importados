@@ -52,7 +52,7 @@ export default function CarrosselBanners({ banners }) {
   if (!banners.length) return null;
 
   return (
-    <section className="bg-[#090a09]" aria-label="Destaques da loja">
+    <section className="bg-banner-preenchimento" aria-label="Destaques da loja">
       <div className="mx-auto w-full max-w-[1760px] px-4 py-4 sm:px-6 sm:py-6 lg:px-8">
         <div className="grid min-w-0 overflow-hidden rounded-xl">
             {anterior !== null && <div className={`col-start-1 row-start-1 ${direcao === 1 ? 'banner-slide-out-next' : 'banner-slide-out-prev'}`}><ConteudoBanner banner={banners[anterior]} /></div>}
@@ -60,7 +60,7 @@ export default function CarrosselBanners({ banners }) {
         </div>
         {banners.length > 1 && <div className="mt-3 flex justify-center gap-1">
           {banners.map((banner, posicao) => <button key={banner.id} type="button" onClick={() => mostrar(posicao, posicao > indice ? 1 : -1)} aria-label={`Exibir banner ${posicao + 1} de ${banners.length}`} aria-current={posicao === indice ? 'true' : undefined} className="flex h-6 w-6 items-center justify-center rounded-full">
-            <span aria-hidden="true" className={`h-2.5 w-2.5 rounded-full ${posicao === indice ? 'bg-[#d4af45]' : 'bg-[#787263]'}`} />
+            <span aria-hidden="true" className={`h-2.5 w-2.5 rounded-full ${posicao === indice ? 'bg-marca' : 'bg-borda-forte'}`} />
           </button>)}
         </div>}
       </div>

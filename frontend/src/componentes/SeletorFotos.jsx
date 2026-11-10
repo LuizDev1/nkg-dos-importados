@@ -32,7 +32,7 @@ const resposta = await fetch(API_URL + '/' + rotaUpload, { method: 'POST', heade
     <label htmlFor={id} className="block text-sm font-semibold">{rotulo}</label>
     {/* Input visualmente oculto antes do rótulo visível: o rótulo mostra o foco do teclado (peer-focus-visible). */}
     <input id={id} type="file" accept={aceitarGif ? 'image/jpeg,image/png,image/webp,image/gif' : 'image/jpeg,image/png,image/webp'} multiple={maximo > 1} disabled={disabled || carregando || fotos.length >= maximo} onChange={selecionar} aria-describedby={`${id}-ajuda`} className="peer sr-only" />
-    <label htmlFor={id} className="mt-2 flex h-20 cursor-pointer items-center justify-center rounded border border-dashed border-[#45402f] bg-[#181915] text-[#d4af45] hover:border-[#d4af45] peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-foco peer-disabled:cursor-not-allowed peer-disabled:opacity-50">
+    <label htmlFor={id} className="mt-2 flex h-20 cursor-pointer items-center justify-center rounded border border-dashed border-borda-forte bg-superficie-elevada text-marca-texto hover:border-marca-texto peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-foco peer-disabled:cursor-not-allowed peer-disabled:opacity-50">
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M14 20H4a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h3l2-3h6l2 3h3a2 2 0 0 1 2 2v5" /><circle cx="12" cy="12" r="4" /><path d="M19 16v6M16 19h6" /></svg>
       <span className="sr-only">Selecionar fotos</span>
     </label>

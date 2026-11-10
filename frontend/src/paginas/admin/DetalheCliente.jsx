@@ -51,7 +51,7 @@ export default function DetalheCliente() {
   }
 
   return (
-    <div className="max-w-5xl mx-auto px-4 py-10 text-[#f4efe5]">
+    <div className="max-w-5xl mx-auto px-4 py-10 text-texto">
       <Link
         to="/admin/clientes"
         className="botao-voltar"
@@ -63,7 +63,7 @@ export default function DetalheCliente() {
         Detalhes do cliente
       </h1>
 
-      <div className="rounded-md border border-[#343024] bg-[#111210] p-6 mb-6 grid gap-3 sm:grid-cols-2 break-words">
+      <div className="rounded-md border border-borda bg-superficie p-6 mb-6 grid gap-3 sm:grid-cols-2 break-words">
         <p><strong>Nome:</strong> {cliente.nome}</p>
         <p><strong>E-mail:</strong> {cliente.email}</p>
         <p><strong>CPF:</strong> {cliente.cpf || 'Não informado'}</p>
@@ -75,8 +75,8 @@ export default function DetalheCliente() {
         </p>
       </div>
 
-      <section className="rounded-md border border-[#343024] bg-[#111210] p-6 mb-8 sm:p-8">
-        <h2 className="text-lg font-semibold mb-6 border-b border-[#343024] pb-5">
+      <section className="rounded-md border border-borda bg-superficie p-6 mb-8 sm:p-8">
+        <h2 className="text-lg font-semibold mb-6 border-b border-borda pb-5">
           Editar informações do cliente
         </h2>
         <FormularioConta key={id} conta={cliente} salvar={(dados) => salvarContaCliente(id, dados)}
@@ -92,7 +92,7 @@ export default function DetalheCliente() {
           Este cliente ainda não possui pedidos.
         </p>
       ) : (
-        <TabelaRolavel rotulo="Pedidos do cliente" className="rounded-md border border-[#343024] bg-[#111210]">
+        <TabelaRolavel rotulo="Pedidos do cliente" className="rounded-md border border-borda bg-superficie">
           <table className="w-full text-sm">
             <thead className="bg-gray-100 text-left">
               <tr>
@@ -107,7 +107,7 @@ export default function DetalheCliente() {
 
             <tbody>
               {pedidos.map((pedido) => (
-                <tr key={pedido.id} className="border-t border-[#343024]">
+                <tr key={pedido.id} className="border-t border-borda">
                   <td className="p-3 font-semibold">#{pedido.numero_cliente}</td>
                   <td className="p-3 text-texto-secundario">{pedido.id}</td>
 

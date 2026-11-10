@@ -277,7 +277,7 @@ export default function Checkout() {
           <div className="text-texto-secundario space-y-1">
             <p>Subtotal: <Preco valor={resumoServidor.subtotal} /></p>
             <p>Frete: <Preco valor={resumoServidor.frete} /></p>
-            <p className="text-xl font-bold text-marca">Total confirmado: <Preco valor={resumoServidor.total} /></p>
+            <p className="text-xl font-bold text-marca-texto">Total confirmado: <Preco valor={resumoServidor.total} /></p>
           </div>
         ) : (
           <div className="text-texto-secundario">

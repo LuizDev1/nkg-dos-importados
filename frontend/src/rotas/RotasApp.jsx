@@ -1,3 +1,4 @@
+import { lazy, Suspense } from 'react';
 import { Navigate, Routes, Route } from 'react-router-dom';
 import Login from '../paginas/publicas/Login';
 import Cadastro from '../paginas/publicas/Cadastro';
@@ -24,6 +25,10 @@ import Favoritos from '../paginas/cliente/Favoritos';
 import MinhaConta from '../paginas/cliente/MinhaConta';
 import Perguntas from '../paginas/admin/Perguntas';
 import NaoEncontrada from '../paginas/publicas/NaoEncontrada';
+
+// Prancha de componentes: só em desenvolvimento. No build de produção, import.meta.env.DEV é false
+// e o import dinâmico some do pacote.
+const PranchaComponentes = import.meta.env.DEV ? lazy(() => import('../paginas/dev/PranchaComponentes')) : null;
 
 export default function RotasApp() {
   return (
@@ -164,6 +169,7 @@ export default function RotasApp() {
           </RotaPrivada>
         }
       />
+      {PranchaComponentes && <Route path="/dev/componentes" element={<Suspense fallback={null}><PranchaComponentes /></Suspense>} />}
       <Route path="*" element={<NaoEncontrada />} />
     </Routes>
   );

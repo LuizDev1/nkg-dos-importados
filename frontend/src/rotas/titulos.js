@@ -23,6 +23,7 @@ const TITULOS = [
   [/^\/admin\/promocoes$/, 'Promoções · Admin'],
   [/^\/admin\/banners$/, 'Banners · Admin'],
   [/^\/admin\/perguntas$/, 'Perguntas · Admin'],
+  [/^\/dev\/componentes$/, 'Componentes · Desenvolvimento'],
 ];
 
 export function tituloDaRota(caminho) {

@@ -46,7 +46,7 @@ export default function Login() {
         className="auth-card w-full max-w-md rounded-painel border border-borda bg-superficie/95 p-6 sm:p-8 shadow-nivel-4 backdrop-blur-md"
       >
         <div className="text-center mb-8">
-          <h1 className="mt-4 text-4xl font-black tracking-[0.2em] text-marca"><span className="sr-only">Entrar na </span>NKG</h1>
+          <h1 className="mt-4 text-4xl font-black tracking-[0.2em] text-marca-texto"><span className="sr-only">Entrar na </span>NKG</h1>
           <p className="mt-1 text-xs font-medium uppercase tracking-[0.3em] text-texto">Dos Importados</p>
         </div>
 
@@ -98,7 +98,7 @@ export default function Login() {
 
         <p className="text-xs text-center mt-6 text-texto-secundario tracking-wider">
           Não tem conta?{' '}
-          <Link to="/cadastro" className="font-medium text-link underline underline-offset-4 hover:text-marca-hover">
+          <Link to="/cadastro" className="font-medium text-link underline underline-offset-4 hover:text-marca-clara">
             Cadastre-se
           </Link>
         </p>
