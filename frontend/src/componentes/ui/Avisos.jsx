@@ -23,9 +23,25 @@ const TONS = {
   info: { Icone: Info, cor: 'text-info' },
 };
 
-// Receita Animate para toasts: 400 ms com a curva `ease` do CSS, entrando e saindo pelo mesmo caminho.
+// Curva aprovada (--ease-saida) com 300 ms (--duracao-lenta), entrando e saindo pelo mesmo caminho.
 // motion (e não keyframes) para a saída e o reflow da pilha serem interrompíveis.
-const TRANSICAO = { duration: 0.4, ease: [0.25, 0.1, 0.25, 1] };
+const TRANSICAO = { duration: 0.3, ease: [0.23, 1, 0.32, 1] };
+const SEM_TRANSICAO = { duration: 0 };
+
+// Variantes recebem o modo pelo `custom`: o AnimatePresence repassa o modo atual também a quem está saindo,
+// então um aviso dispensado pelo teclado sai na hora mesmo que tenha entrado animado.
+// Teclado não anima (direção aprovada); movimento reduzido fica só com a opacidade.
+const VARIANTES = {
+  fora: ({ teclado, reduzir }) => {
+    if (teclado) return { opacity: 0, transition: SEM_TRANSICAO };
+    return reduzir ? { opacity: 0 } : { opacity: 0, y: '100%' };
+  },
+  dentro: ({ teclado }) => ({ opacity: 1, y: 0, transition: teclado ? SEM_TRANSICAO : TRANSICAO }),
+};
+
+// Lida a cada render: avisar e dispensar renderizam logo depois do evento que os causou,
+// e o ouvinte de modalidade (fase de captura) já marcou a entrada usada.
+const veioDoTeclado = () => typeof document !== 'undefined' && document.documentElement.dataset.entrada === 'teclado';
 
 export function ProvedorAvisos({ children }) {
   const [avisos, setAvisos] = useState([]);
@@ -47,14 +63,13 @@ export function ProvedorAvisos({ children }) {
 
   // Só os três mais antigos aparecem; o cronômetro de cada um começa quando entra na tela.
   const visiveis = avisos.slice(0, MAXIMO_VISIVEIS);
-  const entrada = reduzir ? { opacity: 0 } : { opacity: 0, y: '100%' };
-  const repouso = reduzir ? { opacity: 1 } : { opacity: 1, y: 0 };
+  const modo = { teclado: veioDoTeclado(), reduzir: Boolean(reduzir) };
 
   return (
     <Contexto.Provider value={valor}>
       <Toast.Provider swipeDirection="right" label="Aviso">
         {children}
-        <AnimatePresence initial={false}>
+        <AnimatePresence initial={false} custom={modo}>
           {visiveis.map((aviso) => {
             const { Icone, cor } = TONS[aviso.tom] || TONS.info;
             return (
@@ -67,10 +82,13 @@ export function ProvedorAvisos({ children }) {
                 onOpenChange={(aberto) => { if (!aberto) dispensar(aviso.id); }}
               >
                 <motion.li
-                  layout={!reduzir}
-                  initial={entrada}
-                  animate={repouso}
-                  exit={entrada}
+                  // Reflow da pilha só anima com o ponteiro e sem movimento reduzido.
+                  layout={!modo.reduzir && !modo.teclado}
+                  custom={modo}
+                  variants={VARIANTES}
+                  initial="fora"
+                  animate="dentro"
+                  exit="fora"
                   transition={TRANSICAO}
                   className="aviso pointer-events-auto list-none"
                 >

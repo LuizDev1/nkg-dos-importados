@@ -215,6 +215,24 @@ function ComponentesInterativos() {
             { valor: 'trocas', rotulo: 'Trocas (indisponível)', conteudo: null, desabilitada: true },
           ]}
         />
+        {/* Casos-limite: a primeira aba desabilitada começa na primeira habilitada; todas desabilitadas, nenhuma selecionada. */}
+        <Abas
+          className="w-full"
+          rotulo="Primeira aba desabilitada"
+          abas={[
+            { valor: 'trocas', rotulo: 'Trocas (indisponível)', conteudo: null, desabilitada: true },
+            { valor: 'descricao', rotulo: 'Descrição', conteudo: <p className="text-texto-secundario">Começa aqui: a primeira aba habilitada.</p> },
+            { valor: 'perguntas', rotulo: 'Perguntas', conteudo: <p className="text-texto-secundario">Nenhuma pergunta ainda.</p> },
+          ]}
+        />
+        <Abas
+          className="w-full"
+          rotulo="Todas as abas desabilitadas"
+          abas={[
+            { valor: 'trocas', rotulo: 'Trocas (indisponível)', conteudo: null, desabilitada: true },
+            { valor: 'garantia', rotulo: 'Garantia (indisponível)', conteudo: null, desabilitada: true },
+          ]}
+        />
       </Linha>
 
       <Linha titulo="Aviso">

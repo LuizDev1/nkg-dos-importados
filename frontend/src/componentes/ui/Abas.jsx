@@ -6,8 +6,11 @@ import { Tabs } from 'radix-ui';
 // `abas`: [{ valor, rotulo, conteudo, desabilitada }].
 //   <Abas rotulo="Informações do produto" abas={[{ valor: 'descricao', rotulo: 'Descrição', conteudo: ... }]} />
 export default function Abas({ rotulo, abas = [], valor, valorPadrao, onValorMudar, className = '' }) {
+  // Sem `valorPadrao`, começa na primeira aba habilitada; se todas estiverem desabilitadas, nenhuma fica
+  // selecionada (o Radix aceita valor vazio e não mostra painel).
+  const padrao = valorPadrao ?? abas.find((aba) => !aba.desabilitada)?.valor ?? '';
   return (
-    <Tabs.Root value={valor} defaultValue={valorPadrao ?? abas[0]?.valor} onValueChange={onValorMudar} className={`min-w-0 ${className}`.trim()}>
+    <Tabs.Root value={valor} defaultValue={padrao} onValueChange={onValorMudar} className={`min-w-0 ${className}`.trim()}>
       {/* A linha de base é uma sombra interna: o traço da aba ativa pinta por cima sem transbordar a lista,
           que só rola na horizontal quando as abas não cabem (320 px). */}
       <Tabs.List aria-label={rotulo} className="flex max-w-full gap-1 overflow-x-auto overflow-y-hidden overscroll-x-contain shadow-[inset_0_-1px_0_var(--color-borda)] [scrollbar-width:thin]">
